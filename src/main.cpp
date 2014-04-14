@@ -1,11 +1,11 @@
 #include <iostream>
 #include <fstream>
-#include "Instance2f.h"
+#include "Instance.h"
 
 int main(int argc, char *argv[])
 {
   std::ifstream is("test.csv");
-  std::istream_iterator< Instance2f > start( is ), end;
+  std::istream_iterator< Instance< float, int, 2, 1 > > start( is ), end;
 
   for (; start != end; start++)
   {

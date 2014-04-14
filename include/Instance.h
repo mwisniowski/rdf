@@ -2,6 +2,7 @@
 #include <istream>
 #include <ostream>
 #include <sstream>
+#include <iostream>
 
 template< typename I, typename O, size_t in_size, size_t out_size > 
 class Instance
@@ -32,15 +33,19 @@ public:
     std::string line, ignore;
     std::getline( is, line );
     std::istringstream iss( line );
-
-    for (int i = 0; i < in_size; ++i)
-    {
-      iss >> instance._input[ i ];
-    }
+    I input;
+    O output;
 
     for (int i = 0; i < out_size; ++i)
     {
-      iss >> instance._output[ i ];
+      iss >> output;
+      instance._output.push_back( output );
+    }
+
+    for (int i = 0; i < in_size; ++i)
+    {
+      iss >> input;
+      instance._input.push_back( input );
     }
 
     return is;
@@ -49,13 +54,13 @@ public:
   friend std::ostream& operator<<( std::ostream& os, const Instance& instance )
   {
     os << "(";
-    for (int i = 0; i < instance._input.size() - 1; ++i)
+    for (int i = 0; i < in_size - 1; ++i)
     {
       os << instance._input[ i ] << ",";
     }
     os << instance._input.back() << "),("; 
 
-    for (int i = 0; i < instance._output.size() - 1; ++i)
+    for (int i = 0; i < out_size - 1; ++i)
     {
       os << instance._output[ i ] << ",";
     }

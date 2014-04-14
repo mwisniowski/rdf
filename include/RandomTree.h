@@ -1,9 +1,18 @@
+#include <vector>
+#include <set>
+#include "Instance2f.h"
+
 class RandomTree
 {
 public:
-  RandomTree ();
-  virtual ~RandomTree ();
+  RandomTree() {}
+
+  RandomTree( std::vector< Instance2f > data ) :
+    _data( data )
+  {}
+
+  virtual ~RandomTree() {}
 
 private:
-  /* data */
+  std::vector< Instance2f > _data;
 };

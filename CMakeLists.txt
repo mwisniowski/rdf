@@ -9,12 +9,12 @@ find_package(cvt_debug REQUIRED)
 
 set(RT_HEADERS
   include/Instance.h
-  include/CsvIterator.h
-  )
+  include/RandomTree.h
+)
 
 set(RT_SOURCES
 
-  )
+)
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations

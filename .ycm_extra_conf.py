@@ -20,7 +20,8 @@ flags = [
 '-isystem',
 '/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/c++/v1',
 '-isystem',
-'/Users/mwis/.vim/bundle/YouCompleteMe/python/ycm/server/../../clang_includes']
+'/Users/mwis/.vim/bundle/YouCompleteMe/python/ycm/server/../../clang_includes'
+]
 
 # Set this to the absolute path to the folder (NOT the file!) containing the
 # compile_commands.json file to use that instead of 'flags'. See here for
@@ -28,6 +29,7 @@ flags = [
 #
 # Most projects will NOT need to set this to anything; you can just change the
 # 'flags' list of compilation flags. Notice that YCM itself uses that approach.
+# compilation_database_folder='~/Developer/rt/build/'
 compilation_database_folder=''
 
 if compilation_database_folder:
@@ -102,9 +104,14 @@ def FlagsForFile( filename ):
     # python list, but a "list-like" StringVec object
     # TODO: If we don't find any flags, use the default list of flags provided.
     compilation_info = database.GetCompilationInfoForFile( filename )
-    final_flags = MakeRelativePathsInFlagsAbsolute(
-      compilation_info.compiler_flags_,
-      compilation_info.compiler_working_dir_ )
+    if compilation_info:
+        final_flags = MakeRelativePathsInFlagsAbsolute(
+        compilation_info.compiler_flags_,
+        compilation_info.compiler_working_dir_ )
+    else:
+        relative_to = DirectoryOfThisScript()
+        final_flags = MakeRelativePathsInFlagsAbsolute( flags, relative_to )
+        
 
   else:
     relative_to = DirectoryOfThisScript()
