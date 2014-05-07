@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 2.8.3)
-project(CVT_RandomForest CXX C)
+project(CVT_RDF CXX C)
 
 find_package(cvt_debug REQUIRED)
 
@@ -7,12 +7,19 @@ find_package(cvt_debug REQUIRED)
 ## Build ##
 ###########
 
-set(RT_HEADERS
-  include/Instance.h
-  include/RandomTree.h
+set(RDF_HEADERS
+  include/DataPoint.h
+  include/IDataPointCollection.h
+  include/IStatisticsAggregator.h
+  include/IFeature.h
+  include/Forest.h
+  include/ForestTrainer.h
+  include/Tree.h
+  include/TreeTrainer.h
+  include/Node.h
 )
 
-set(RT_SOURCES
+set(RDF_SOURCES
 
 )
 
@@ -21,14 +28,14 @@ set(RT_SOURCES
 include_directories(
   include
   ${CVT_INCLUDE_DIRS}
-  )
+)
 
 ADD_EXECUTABLE( main 
-  ${RT_HEADERS}
-  ${RT_SOURCES}
+  ${RDF_HEADERS}
+  ${RDF_SOURCES}
   src/main.cpp
-  )
+)
 TARGET_LINK_LIBRARIES(
   main
   ${CVT_LIBRARIES}
-  )
+)
