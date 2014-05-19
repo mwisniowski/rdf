@@ -32,7 +32,9 @@ class StatisticsAggregator //: public IStatisticsAggregator
 
     void aggregate( DataPoint2f& point )
     {
-      _statistics.at( point.output() )++;
+      map< u_int, float >::iterator it =
+        _statistics.insert( pair< u_int, float >( point.output(), 0.0f ) ).first;
+      it->second++;
       _n++;
     }
 

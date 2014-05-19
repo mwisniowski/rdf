@@ -25,7 +25,7 @@ int main(int argc, char *argv[])
   cout << "Starting" << endl;
 
   TrainingParameters params;
-  params.maxDecisionLevels = 2;
+  params.maxDecisionLevels = 4;
 
   cout << "Reading Data" << endl;
 
@@ -38,11 +38,16 @@ int main(int argc, char *argv[])
   TrainingContext context;
   TreeTrainer trainer( context );
 
-  cout << "Created trainer, startnig training" << endl;
+  cout << "Created trainer, starting training" << endl;
 
   Tree t = trainer.trainTree( params, data );
 
   cout << "Completed training" << endl;
+
+  DataPoint2f point = data[ 103 ];
+  pair< u_int, float > c = t.classify( point );
+
+  cout << "(" << point.input()[ 0 ] << "," << point.input()[ 1 ] << ") classified as (" << c.first << "," << c.second << "), should be " << point.output() << endl;
 
   return 0;
 }
