@@ -16,7 +16,6 @@ set(RDF_HEADERS
   include/ForestTrainer.h
   include/Tree.h
   include/TreeTrainer.h
-  include/Node.h
 )
 
 set(RDF_SOURCES

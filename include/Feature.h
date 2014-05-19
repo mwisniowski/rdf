@@ -3,9 +3,12 @@
 
 #include "IFeature.h"
 
-class Feature : public IFeature
+class Feature //: public IFeature
 {
   public:
+    Feature()
+    {}
+
     Feature( float a, float b ) :
       _a( a ),
       _b( b )

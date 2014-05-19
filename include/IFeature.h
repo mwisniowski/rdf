@@ -6,7 +6,7 @@
 class IFeature 
 {
   public:
-    virtual float operator()( DataPoint2f& point ) const =0;
+    virtual float operator()( const DataPoint2f& point ) const =0;
 };
 
 #endif

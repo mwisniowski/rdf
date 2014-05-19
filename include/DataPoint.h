@@ -22,29 +22,29 @@ public:
   {
   }
 
-  inline vector<I>& input() const
+  inline vector<I>& input()
   {
     return _input;
   }
 
-  inline O& output() const
+  inline O& output()
   {
     return _output;
   }
 
-  friend istream& operator>>( istream& is, DataPoint& instance )
+  friend istream& operator>>( istream& is, DataPoint& point )
   {
-    string line, ignore;
+    string line;
     getline( is, line );
     istringstream iss( line );
     I input;
 
-    iss >> instance._output;
+    iss >> point._output;
 
     for (int i = 0; i < in_size; ++i)
     {
       iss >> input;
-      instance._input.push_back( input );
+      point._input.push_back( input );
     }
 
     return is;

@@ -3,12 +3,12 @@
 #include <vector>
 #include <algorithm>
 
-#include "Instance.h"
-#include "RandomTree.h"
+#include "DataPoint.h"
+#include "IDataPointCollection.h"
+#include "TreeTrainer.h"
+#include "TrainingParameters.h"
 
 using namespace std;
-typedef Instance< float, int, 2, 1 > Instance2f;
-
 int main(int argc, char *argv[])
 {
   if( argc <= 1 )
@@ -18,10 +18,31 @@ int main(int argc, char *argv[])
   }
   ifstream is( argv[1] );
 
-  istream_iterator< Instance2f > start( is ), end;
+  // istream_iterator< Instance2f > start( is ), end;
 
-  vector< Instance2f > v( start, end );
-  RandomTree rt( v );
+  // vector< Instance2f > v( start, end );
+
+  cout << "Starting" << endl;
+
+  TrainingParameters params;
+  params.maxDecisionLevels = 2;
+
+  cout << "Reading Data" << endl;
+
+  istream_iterator< DataPoint2f > start( is ), end;
+  IDataPointCollection data( start, end );
+  is.close();
+  
+  cout << "Successfully read data" << endl;
+
+  TrainingContext context;
+  TreeTrainer trainer( context );
+
+  cout << "Created trainer, startnig training" << endl;
+
+  Tree t = trainer.trainTree( params, data );
+
+  cout << "Completed training" << endl;
 
   return 0;
 }

@@ -10,7 +10,7 @@ flags = [
 '-D__APPLE__',
 '-g',
 '-I/usr/local/include',
-'-I/Users/mwis/Developer/rt/include',
+'-I/Users/mwis/Developer/rdf/include',
 '-I/Users/mwis/Developer/cvt',
 '-I/Users/mwis/Developer/cvt/build',
 '-I/System/Library/Frameworks/OpenCL.framework/Headers',

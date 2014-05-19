@@ -8,7 +8,8 @@
 #include "Feature.h"
 #include "StatisticsAggregator.h"
 
-class TrainingContext : public ITrainingContext
+using namespace std;
+class TrainingContext// : public ITrainingContext
 {
   public:
     TrainingContext()
@@ -16,25 +17,29 @@ class TrainingContext : public ITrainingContext
       srand(time(0));
     }
 
-    const IFeature& getRandomFeature()
+    const Feature getRandomFeature()
     {
       int r = rand() % 2;
-      std::set< IFeature >::iterator it = _features.insert( Feature( r, !r ) ).first();
-      return *it;
+      // Feature f( r, !r );
+      // pair< set< Feature >::iterator, bool > ret =
+      //   _features.insert( f );
+      // return *ret.first;
+      return Feature( r, !r );
     }
 
-    IStatisticsAggregator* getStatisticsAggregator() const
+    StatisticsAggregator getStatisticsAggregator() const
     {
-      return new StatisticsAggregator();
+      StatisticsAggregator s;
+      return s;
     }
 
-    float computeInformationGain( const IStatisticsAggregator& parent,
-        const IStatisticsAggregator& left,
-        const IStatisticsAggregator& right ) const
+    float computeInformationGain( StatisticsAggregator& parent,
+        StatisticsAggregator& left,
+        StatisticsAggregator& right ) const
     {
-      float H_p = computeEntropy( parent );
-      float H_l = computeEntropy( left );
-      float H_r = computeEntropy( right );
+      float H_p = parent.entropy();
+      float H_l = left.entropy();
+      float H_r = right.entropy();
 
       float fraction = left.numClasses() / 
         static_cast<float>( parent.numClasses() );
@@ -42,28 +47,14 @@ class TrainingContext : public ITrainingContext
       return H_p - ( fraction * H_l ) - ( ( 1.0f  - fraction ) * H_r );
     }
 
-    bool shouldTerminate( IStatisticsAggregator& parent,
-        IStatisticsAggregator& left,
-        IStatisticsAggregator& right ) const
+    bool shouldTerminate( float information_gain ) const
     {
-      // TODO
-      return true;
+      //TODO
+      return information_gain < 0.1f;
     }
 
   private:
-    float computeEntropy( const IStatisticsAggregator& stats ) const
-    {
-      float sum = 0.0f;
-      for( size_t i = 0; i < stats.numClasses(); i++ )
-      {
-        float p_c = stats.probability( i );
-        sum += p_c * cvt::Math::log( p_c );
-      }
-      return -sum;
-    }
-
-    //TODO use as cache
-    set< IFeature > _features;
+    // set< Feature > _features;
 };
 
 #endif
