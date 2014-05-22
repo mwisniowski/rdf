@@ -37,6 +37,7 @@ class TrainingContext// : public ITrainingContext
         StatisticsAggregator& left_s,
         StatisticsAggregator& right_s ) const
     {
+
       float H_p = parent_s.getEntropy();
       float H_l = left_s.getEntropy();
       float H_r = right_s.getEntropy();

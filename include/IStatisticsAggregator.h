@@ -23,6 +23,7 @@ class IStatisticsAggregator
         aggregate( *it );
       }
     }
+
 };
 
 #endif

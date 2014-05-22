@@ -5,7 +5,7 @@
 #include <map>
 #include "IStatisticsAggregator.h"
 
-class StatisticsAggregator //: public IStatisticsAggregator
+class StatisticsAggregator : public IStatisticsAggregator
 {
   public:
     StatisticsAggregator() :
@@ -31,17 +31,21 @@ class StatisticsAggregator //: public IStatisticsAggregator
     virtual ~StatisticsAggregator() 
     {}
 
-    void aggregate( DataPoint2f& point )
+    void aggregate( const DataPoint2f& point )
     {
-      map< u_int, float >::iterator it =
-        statistics.insert( pair< u_int, float >( point.output, 0.0f ) ).first;
+      map< u_int, float>::iterator it = statistics.find( point.output ),
+        end = statistics.end();
+      if( it == end )
+      {
+        it = statistics.insert( pair< u_int, float >( point.output, 0.0f ) ).first;
+      }
       it->second++;
       n++;
     }
 
-    void aggregate( IDataPointCollection& data )
+    void aggregate( const IDataPointCollection& data )
     {
-      IDataPointCollection::iterator it = data.begin(),
+      IDataPointCollection::const_iterator it = data.begin(),
         end = data.end();
       for( ; it != end; ++it )
       {
@@ -57,7 +61,7 @@ class StatisticsAggregator //: public IStatisticsAggregator
     float probability( size_t class_label ) const
     {
       map< u_int, float>::const_iterator it = statistics.find( class_label ),
-        end;
+        end = statistics.end();
       if( it != end )
       {
         return it->second / n;
@@ -115,9 +119,9 @@ class StatisticsAggregator //: public IStatisticsAggregator
       return os;
     }
 
+    size_t n;
   private:
     map< u_int, float > statistics;
-    size_t n;
     auto_ptr< float > entropy;
 
 };

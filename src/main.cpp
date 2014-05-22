@@ -3,12 +3,44 @@
 #include <vector>
 #include <algorithm>
 
+#include <cvt/gui/Window.h>
+#include <cvt/gui/Button.h>
+#include <cvt/gui/WidgetLayout.h>
+#include <cvt/gui/Moveable.h>
+#include <cvt/gui/ImageView.h>
+#include <cvt/gui/Application.h>
+
+#include <cvt/gfx/Image.h>
+#include <cvt/gfx/IMapScoped.h>
+
 #include "DataPoint.h"
 #include "IDataPointCollection.h"
 #include "TreeTrainer.h"
 #include "TrainingParameters.h"
 
 using namespace std;
+using namespace cvt;
+
+void display( const Image& image, size_t width, size_t height ) {
+  Window w("BD Test");
+  
+  ImageView iv;
+  iv.setSize(width, height);
+  iv.setImage(image);
+  
+  WidgetLayout wl;
+  wl.setAnchoredTopBottom(0, 0);
+  wl.setAnchoredLeftRight(0, 0);
+  w.addWidget( &iv, wl );
+  
+  w.setSize( width, height );
+  w.setVisible( true );
+  w.update();
+  
+  Application::run();
+}
+
+
 int main(int argc, char *argv[])
 {
   string file =  "~/Developer/rdf/data/supervised classification/exp1_n2.txt";
@@ -46,8 +78,44 @@ int main(int argc, char *argv[])
   DataPoint2f point = data[ 2 ];
   pair< u_int, float > c = t.classify( point );
 
-  cout << "(" << point.input[ 0 ] << "," << point.input[ 1 ] << ") classified as (" << c.first << "," << c.second << "), should be " << point.output << endl;
+  // cout << "(" << point.input[ 0 ] << "," << point.input[ 1 ] << ") classified as (" << c.first << "," << c.second << "), should be " << point.output << endl;
   cout << t;
+
+  int min_data = 0;
+  int max_data = 1000;
+
+  cvt::Image img;
+  img.reallocate( 1000, 1000, cvt::IFormat::RGBA_FLOAT );
+  cvt::IMapScoped<float> map( img );
+  DataPoint2f pt;
+  pt.input.resize( 2 );
+  cvt::Color color;
+
+  for( int row = max_data; row > min_data; row-- )
+  {
+    float* ptr = map.ptr();
+    pt.input[ 0 ] = static_cast<float>( row );
+    for( int column = min_data; column < max_data; column++ )
+    {
+      pt.input[ 1 ] = static_cast<float>( column );
+      
+      pair< u_int, float > result = t.classify( pt );
+      if( result.first == 1 )
+      {
+        color.set( result.second, 0, 0 );
+      } else if (result.first == 2 )
+      {
+        color.set( 0, 0, result.second );
+      }
+      *ptr++ = color.red();
+      *ptr++ = color.green();
+      *ptr++ = color.blue();
+      *ptr++ = color.alpha();
+    }
+    map++;
+  }
+
+  display( img, 1000, 1000 );
 
   return 0;
 }

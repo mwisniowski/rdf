@@ -18,6 +18,12 @@ public:
     input.reserve( in_size );
   }
 
+  DataPoint( vector<I>& in, O& out )
+  {
+    input = in;
+    output = out;
+  }
+
   virtual ~DataPoint()
   {
   }

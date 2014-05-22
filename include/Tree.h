@@ -104,19 +104,19 @@ class Tree
     pair< u_int, float > classify( DataPoint2f& point )
     {
       Node n = nodes[ 0 ];
-      cout << "Classification trace: ";
+      // cout << "Classification trace: ";
       while( n.split )
       {
         if( n.feature( point ) < n.threshold )
         {
-          cout << "left ";
+          // cout << "left ";
           n = nodes[ n.left ];
         } else {
-          cout << "right ";
+          // cout << "right ";
           n = nodes[ n.right ];
         }
       }
-      cout << endl;
+      // cout << endl;
 
       u_int c = n.statistics.maxClass();
       return pair< u_int, float >( c, n.statistics.probability( c ) );
