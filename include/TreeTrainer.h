@@ -13,7 +13,7 @@ class TreeTrainer
 {
   public:
     TreeTrainer( TrainingContext& context ) :
-      _context( context )
+      context( context )
     {}
 
     virtual ~TreeTrainer() 
@@ -23,69 +23,80 @@ class TreeTrainer
         IDataPointCollection& data )
     {
       Node n = createLeaf( data );
-      _frontier.push_back( n );
-      Tree t( n );
+      Tree tree( n );
+      frontier.push_back( 0 );
 
-      for( size_t i = 0; i < params.maxDecisionLevels; i++ )
+      for( size_t d = 0; d < params.maxDecisionLevels; d++ )
       {
-        size_t current_size = _frontier.size();
+        size_t current_size = frontier.size();
         for( size_t i = 0; i < current_size; i++ )
         {
           IDataPointCollection left, right;
-          Feature feature = _context.getRandomFeature();
-          n = _frontier.front();
+          Feature feature = context.getRandomFeature();
+          size_t node_idx = frontier.front();
+          Node& node = tree.nodes.at( node_idx );
           
-          if( convertToSplit( n, left, right, feature ) )
+          float threshold;
+          float gain;
+          computeThreshold( threshold, gain, left, right,
+              node.data, node.statistics, feature );
+          if( !context.shouldTerminate( gain ) )
           {
+            tree.convertToSplit( node_idx, threshold, feature );
+
             Node left_n = createLeaf( left );
             Node right_n = createLeaf( right );
 
-            _frontier.push_back( left_n );
-            _frontier.push_back( right_n );
+            tree.addLeft( node_idx, left_n );
+            tree.addRight( node_idx, right_n );
 
-            t.addLeft( n, left_n );
-            t.addRight( n, right_n );
-          }
+            frontier.push_back( tree.nodes[ node_idx ].left );
+            frontier.push_back( tree.nodes[ node_idx ].right );
+          } 
 
-          _frontier.pop_front();
+          frontier.pop_front();
         }
-      }
 
-      return t;
+        // cout << tree << endl;
+
+      }
+      return tree;
     }
 
   private:
     Node createLeaf( IDataPointCollection& data )
     {
-      StatisticsAggregator s = _context.getStatisticsAggregator();
+      StatisticsAggregator s = context.getStatisticsAggregator();
       s.aggregate( data );
       return Node( s, data );
     }
 
-    bool convertToSplit( Node& node,
-        IDataPointCollection& left, 
-        IDataPointCollection& right, 
+    void computeThreshold( float& best_threshold,
+        float& best_gain,
+        IDataPointCollection& best_left, 
+        IDataPointCollection& best_right, 
+        IDataPointCollection& data,
+        StatisticsAggregator& statistics,
         const Feature& feature )
     {
-      float best_threshold;
-      float best_gain;
+      best_threshold = -FLT_MAX;
+      best_gain = -FLT_MAX;
 
-      IDataPointCollection best_left, best_right;
-
-      IDataPointCollection::const_iterator it = node._data.begin(),
-        end = node._data.end();
+      IDataPointCollection::iterator it = data.begin(),
+        end = data.end();
       for( ; it != end; ++it )
       {
-        float threshold = feature( *node._data.begin() );
-        partition( left, right, feature, threshold, node._data );
+        float threshold = feature( *it );
+        IDataPointCollection left, right;
+        partition( left, right, feature, threshold, data );
 
-        StatisticsAggregator left_s = _context.getStatisticsAggregator();
-        StatisticsAggregator right_s = _context.getStatisticsAggregator();
+        StatisticsAggregator left_s = context.getStatisticsAggregator();
+        StatisticsAggregator right_s = context.getStatisticsAggregator();
 
         left_s.aggregate( left );
         right_s.aggregate( right );
 
-        float gain = _context.computeInformationGain( node._statistics, left_s, right_s );
+        float gain = context.computeInformationGain( statistics, left_s, right_s );
         if( gain > best_gain )
         {
           best_gain = gain;
@@ -95,17 +106,6 @@ class TreeTrainer
         }
       }
 
-      if( _context.shouldTerminate( best_gain ) )
-      {
-        return false;
-      }
-
-      node._threshold = best_threshold;
-      node._feature = feature;
-      node._data = IDataPointCollection();
-      node._statistics = StatisticsAggregator();
-
-      return true;
     }
 
     void partition( IDataPointCollection& left, 
@@ -117,23 +117,23 @@ class TreeTrainer
       left.clear();
       right.clear();
 
-      for (size_t i = 0; i < data.size(); ++i)
+      IDataPointCollection::const_iterator it = data.begin(),
+        end = data.end();
+      for ( ; it != end; ++it )
       {
-        DataPoint2f instance = data[ i ];
-
-        if( feature( instance ) < threshold )
+        if( feature( *it ) < threshold )
         {
-          left.push_back( instance );
+          left.push_back( *it );
         } 
         else 
         {
-          right.push_back( instance );
+          right.push_back( *it );
         }
       }
     }
 
-    deque< Node > _frontier;
-    TrainingContext _context;
+    deque< size_t > frontier;
+    TrainingContext context;
 };
 
 #endif

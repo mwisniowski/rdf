@@ -11,10 +11,9 @@
 using namespace std;
 int main(int argc, char *argv[])
 {
-  if( argc <= 1 )
-  {
-    cerr << "Path to CSV required!" << endl;
-    return 1;
+  string file =  "~/Developer/rdf/data/supervised classification/exp1_n2.txt";
+  if( argc > 1 ) {
+    file = argv[ 1 ];
   }
   ifstream is( argv[1] );
 
@@ -25,7 +24,7 @@ int main(int argc, char *argv[])
   cout << "Starting" << endl;
 
   TrainingParameters params;
-  params.maxDecisionLevels = 4;
+  params.maxDecisionLevels = 3;
 
   cout << "Reading Data" << endl;
 
@@ -44,10 +43,11 @@ int main(int argc, char *argv[])
 
   cout << "Completed training" << endl;
 
-  DataPoint2f point = data[ 103 ];
+  DataPoint2f point = data[ 2 ];
   pair< u_int, float > c = t.classify( point );
 
-  cout << "(" << point.input()[ 0 ] << "," << point.input()[ 1 ] << ") classified as (" << c.first << "," << c.second << "), should be " << point.output() << endl;
+  cout << "(" << point.input[ 0 ] << "," << point.input[ 1 ] << ") classified as (" << c.first << "," << c.second << "), should be " << point.output << endl;
+  cout << t;
 
   return 0;
 }

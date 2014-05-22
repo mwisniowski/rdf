@@ -33,24 +33,25 @@ class TrainingContext// : public ITrainingContext
       return s;
     }
 
-    float computeInformationGain( StatisticsAggregator& parent,
-        StatisticsAggregator& left,
-        StatisticsAggregator& right ) const
+    float computeInformationGain( StatisticsAggregator& parent_s,
+        StatisticsAggregator& left_s,
+        StatisticsAggregator& right_s ) const
     {
-      float H_p = parent.entropy();
-      float H_l = left.entropy();
-      float H_r = right.entropy();
+      float H_p = parent_s.getEntropy();
+      float H_l = left_s.getEntropy();
+      float H_r = right_s.getEntropy();
 
-      float fraction = left.numClasses() / 
-        static_cast<float>( parent.numClasses() );
+      float fraction = left_s.numClasses() / 
+        static_cast<float>( parent_s.numClasses() );
 
-      return H_p - ( fraction * H_l ) - ( ( 1.0f  - fraction ) * H_r );
+      return H_p - ( ( fraction * H_l ) + ( ( 1.0f  - fraction ) * H_r ) );
     }
 
     bool shouldTerminate( float information_gain ) const
     {
       //TODO
-      return information_gain < 0.1f;
+      return false;
+      // return information_gain < 0.1f;
     }
 
   private:

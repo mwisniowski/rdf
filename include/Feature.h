@@ -10,21 +10,21 @@ class Feature //: public IFeature
     {}
 
     Feature( float a, float b ) :
-      _a( a ),
-      _b( b )
+      a( a ),
+      b( b )
     {}
 
     virtual ~Feature()
     {}
 
-    float operator()( DataPoint2f& point ) const
+    float operator()( const DataPoint2f& point ) const
     {
-      return _a * point.input()[ 0 ] + _b * point.input()[ 1 ];
+      return a * point.input[ 0 ] + b * point.input[ 1 ];
     }
 
   private:
-    float _a;
-    float _b;
+    float a;
+    float b;
 };
 
 #endif

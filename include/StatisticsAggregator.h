@@ -8,20 +8,21 @@
 class StatisticsAggregator //: public IStatisticsAggregator
 {
   public:
-    StatisticsAggregator() 
+    StatisticsAggregator() :
+      n( 0 )
     {}
 
     StatisticsAggregator( const StatisticsAggregator& other ) :
-      _statistics( other._statistics ),
-      _n( other._n )
+      statistics( other.statistics ),
+      n( other.n )
     {}
 
     StatisticsAggregator& operator=( const StatisticsAggregator& other )
     {
       if( this != &other )
       {
-        _statistics = other._statistics;
-        _n = other._n;
+        statistics = other.statistics;
+        n = other.n;
       }
       
       return *this;
@@ -33,9 +34,9 @@ class StatisticsAggregator //: public IStatisticsAggregator
     void aggregate( DataPoint2f& point )
     {
       map< u_int, float >::iterator it =
-        _statistics.insert( pair< u_int, float >( point.output(), 0.0f ) ).first;
+        statistics.insert( pair< u_int, float >( point.output, 0.0f ) ).first;
       it->second++;
-      _n++;
+      n++;
     }
 
     void aggregate( IDataPointCollection& data )
@@ -50,18 +51,25 @@ class StatisticsAggregator //: public IStatisticsAggregator
 
     size_t numClasses() const
     {
-      return _n;
+      return n;
     }
 
     float probability( size_t class_label ) const
     {
-      return _statistics.at( class_label ) / _n;
+      map< u_int, float>::const_iterator it = statistics.find( class_label ),
+        end;
+      if( it != end )
+      {
+        return it->second / n;
+      } else {
+        return 0.0f;
+      }
     }
 
     u_int maxClass() const
     {
-      map< u_int, float>::const_iterator it = _statistics.begin(),
-        end = _statistics.end();
+      map< u_int, float>::const_iterator it = statistics.begin(),
+        end = statistics.end();
 
       pair< u_int, float > max;
       for( ; it != end; ++it )
@@ -75,27 +83,42 @@ class StatisticsAggregator //: public IStatisticsAggregator
       return max.first;
     }
 
-    float entropy()
+    float getEntropy()
     {
-      if( _entropy.get() == NULL )
+      if( entropy.get() == NULL )
       {
-        _entropy = auto_ptr< float >( new float( 0.0f ) );
-        map< u_int, float >::const_iterator it = _statistics.begin(),
-          end = _statistics.end();
+        entropy = auto_ptr< float >( new float( 0.0f ) );
+
+        map< u_int, float >::const_iterator it = statistics.begin(),
+          end = statistics.end();
         for( ; it != end; ++it )
         {
-          float p_c = it->second / _n;
-          //TODO log2
-          *_entropy += p_c * cvt::Math::log( p_c );
+          float p_c = it->second / n;
+          *entropy += p_c * cvt::Math::log2( p_c );
         }
+        *entropy *= -1;
       }
-      return *_entropy;
+      return *entropy;
+    }
+
+    friend ostream& operator<<( ostream& os, const StatisticsAggregator& s )
+    {
+      os << s.n << ": { ";
+      map< u_int, float >::const_iterator it = s.statistics.begin(),
+        end = s.statistics.end();
+      for( ; it != end; ++it )
+      {
+        os << "(" << it->first << "," << it->second << ") ";
+      }
+      os << "}";
+
+      return os;
     }
 
   private:
-    map< u_int, float > _statistics;
-    size_t _n;
-    auto_ptr< float > _entropy;
+    map< u_int, float > statistics;
+    size_t n;
+    auto_ptr< float > entropy;
 
 };
 
