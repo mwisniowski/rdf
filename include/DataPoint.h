@@ -12,7 +12,10 @@ using namespace std;
 template< typename I, typename O, size_t in_size > 
 struct DataPoint
 {
-public:
+  vector<I> input;
+  O         output;
+
+
   DataPoint()
   {
     input.reserve( in_size );
@@ -67,9 +70,6 @@ public:
 
     return os;
   }
-
-  vector<I> input;
-  O         output;
 };
 
 typedef DataPoint< float, u_int, 2 > DataPoint2f;

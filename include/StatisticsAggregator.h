@@ -8,6 +8,13 @@
 class StatisticsAggregator// : public IStatisticsAggregator
 {
   public:
+    size_t n;
+
+  private:
+    map< u_int, float > statistics;
+
+
+  public:
     StatisticsAggregator() :
       n( 0 )
     {}
@@ -33,17 +40,16 @@ class StatisticsAggregator// : public IStatisticsAggregator
 
     void aggregate( const IDataPointRange& range )
     {
-      IDataPointCollection::iterator it = range.start;
+      IDataPointCollection::const_iterator it( range.start );
       for( ; it != range.end; ++it )
       {
-        DataPoint2f point = *it;
-        map< u_int, float>::iterator it = statistics.find( point.output ),
+        map< u_int, float>::iterator mit = statistics.find( it->output ),
           end = statistics.end();
-        if( it == end )
+        if( mit == end )
         {
-          it = statistics.insert( pair< u_int, float >( point.output, 0.0f ) ).first;
+          mit = statistics.insert( pair< u_int, float >( it->output, 0.0f ) ).first;
         }
-        it->second++;
+        mit->second++;
         n++;
       }
     }
@@ -70,10 +76,10 @@ class StatisticsAggregator// : public IStatisticsAggregator
     //   }
     // }
 
-    size_t numClasses() const
-    {
-      return n;
-    }
+    // size_t numClasses() const
+    // {
+    //   return n;
+    // }
 
     float probability( size_t class_label ) const
     {
@@ -104,22 +110,19 @@ class StatisticsAggregator// : public IStatisticsAggregator
       return max.first;
     }
 
-    float getEntropy()
+    float getEntropy() const
     {
-      if( entropy.get() == NULL )
-      {
-        entropy = auto_ptr< float >( new float( 0.0f ) );
+      float entropy = 0.0f;
 
-        map< u_int, float >::const_iterator it = statistics.begin(),
-          end = statistics.end();
-        for( ; it != end; ++it )
-        {
-          float p_c = it->second / n;
-          *entropy += p_c * cvt::Math::log2( p_c );
-        }
-        *entropy *= -1;
+      map< u_int, float >::const_iterator it = statistics.begin(),
+        end = statistics.end();
+      for( ; it != end; ++it )
+      {
+        float p_c = it->second / n;
+        entropy += p_c * cvt::Math::log2( p_c );
       }
-      return *entropy;
+      entropy *= -1;
+      return entropy;
     }
 
     friend ostream& operator<<( ostream& os, const StatisticsAggregator& s )
@@ -136,10 +139,6 @@ class StatisticsAggregator// : public IStatisticsAggregator
       return os;
     }
 
-    size_t n;
-  private:
-    map< u_int, float > statistics;
-    auto_ptr< float > entropy;
 
 };
 

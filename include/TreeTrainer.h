@@ -11,6 +11,10 @@
 using namespace std;
 struct Test
 {
+  const Feature feature;
+  float threshold;
+
+
   Test( const Feature& f, float t ) :
     feature( f ),
     threshold( t )
@@ -20,24 +24,30 @@ struct Test
   {
     return feature( point ) < threshold;
   }
-
-  const Feature feature;
-  float threshold;
 };
 
 class TreeTrainer 
 {
+  private:
+    TrainingContext context;
+
+
   public:
     TreeTrainer( TrainingContext& context ) :
       context( context )
+    {}
+
+    TreeTrainer( const TreeTrainer& other ) :
+      context( other.context )
     {}
 
     virtual ~TreeTrainer() 
     {}
 
     Tree trainTree( const TrainingParameters& params, 
-        IDataPointCollection& data )
+        IDataPointCollection& data ) const
     {
+      deque< size_t > frontier;
       IDataPointRange range( data.begin(), data.end() );
       Node n = createLeaf( range );
       Tree tree( n );
@@ -83,7 +93,7 @@ class TreeTrainer
     }
 
   private:
-    Node createLeaf( IDataPointRange& range )
+    Node createLeaf( IDataPointRange& range ) const
     {
       StatisticsAggregator s = context.getStatisticsAggregator();
       s.aggregate( range );
@@ -96,7 +106,7 @@ class TreeTrainer
         IDataPointRange& best_right,
         const IDataPointRange& parent,
         StatisticsAggregator& statistics,
-        const Feature& feature )
+        const Feature& feature ) const
     {
       best_threshold = -FLT_MAX;
       best_gain = -FLT_MAX;
@@ -154,9 +164,6 @@ class TreeTrainer
     //     }
     //   }
     // }
-
-    deque< size_t > frontier;
-    TrainingContext context;
 };
 
 #endif

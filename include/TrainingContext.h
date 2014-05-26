@@ -17,7 +17,7 @@ class TrainingContext// : public ITrainingContext
       srand(time(0));
     }
 
-    const Feature getRandomFeature()
+    const Feature getRandomFeature() const
     {
       int r = rand() % 2;
       // Feature f( r, !r );
@@ -29,8 +29,7 @@ class TrainingContext// : public ITrainingContext
 
     StatisticsAggregator getStatisticsAggregator() const
     {
-      StatisticsAggregator s;
-      return s;
+      return StatisticsAggregator();
     }
 
     float computeInformationGain( StatisticsAggregator& parent_s,
@@ -42,8 +41,8 @@ class TrainingContext// : public ITrainingContext
       float H_l = left_s.getEntropy();
       float H_r = right_s.getEntropy();
 
-      float fraction = left_s.numClasses() / 
-        static_cast<float>( parent_s.numClasses() );
+      float fraction = left_s.n / 
+        static_cast<float>( parent_s.n );
 
       return H_p - ( ( fraction * H_l ) + ( ( 1.0f  - fraction ) * H_r ) );
     }
@@ -52,11 +51,8 @@ class TrainingContext// : public ITrainingContext
     {
       //TODO
       // return false;
-      return information_gain < 0.1f;
+      return information_gain < 0.001f;
     }
-
-  private:
-    // set< Feature > _features;
 };
 
 #endif

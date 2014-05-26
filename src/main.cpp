@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
     map++;
   }
 
-  display( img, 1000, 1000 );
+  display( img, width, width );
 
   return 0;
 }

@@ -5,6 +5,11 @@
 
 class Feature //: public IFeature
 {
+  private:
+    float a;
+    float b;
+
+
   public:
     Feature()
     {}
@@ -14,17 +19,18 @@ class Feature //: public IFeature
       b( b )
     {}
 
+    Feature( const Feature& other ) :
+      a( other.a ),
+      b( other.b )
+    {}
+
     virtual ~Feature()
     {}
 
     float operator()( const DataPoint2f& point ) const
     {
-      return a * point.input[ 0 ] + b * point.input[ 1 ];
+      return a * point.input.at( 0 ) + b * point.input.at( 1 );
     }
-
-  private:
-    float a;
-    float b;
 };
 
 #endif

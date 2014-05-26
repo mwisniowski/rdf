@@ -7,10 +7,19 @@
 
 struct Node 
 {
-  Node()
-  {
-    init();
-  }
+  Feature              feature;
+  StatisticsAggregator statistics;
+  IDataPointRange      data;
+  float                threshold;
+  int                  left;
+  int                  right;
+  bool                 split;
+
+
+  // Node()
+  // {
+  //   init();
+  // }
 
   Node( const Feature& feature,
       float threshold ) :
@@ -68,20 +77,16 @@ struct Node
     os << n.statistics << " - (" << n.left << "," << n.right << ")";
     return os;
   }
-
-  Feature              feature;
-  StatisticsAggregator statistics;
-  IDataPointRange      data;
-  float                threshold;
-  int                  left;
-  int                  right;
-  bool                 split;
 };
 
 class Tree 
 {
   public:
-    Tree( Node& root ) 
+    vector< Node > nodes;
+
+
+  public:
+    Tree( const Node& root ) 
     {
       nodes.push_back( root );
     }
@@ -89,19 +94,19 @@ class Tree
     virtual ~Tree() 
     {}
 
-    void addLeft( size_t parent, Node& child )
+    void addLeft( size_t parent, const Node& child )
     {
       nodes.push_back( child );
       nodes.at( parent ).left = nodes.size() - 1;
     }
 
-    void addRight( size_t parent, Node& child )
+    void addRight( size_t parent, const Node& child )
     {
       nodes.push_back( child );
       nodes.at( parent ).right = nodes.size() - 1;
     }
 
-    pair< u_int, float > classify( DataPoint2f& point )
+    pair< u_int, float > classify( DataPoint2f& point ) const
     {
       // Node n = nodes[ 0 ];
       vector< Node >::const_iterator it = nodes.begin();
@@ -123,7 +128,7 @@ class Tree
       return pair< u_int, float >( c, it->statistics.probability( c ) );
     }
 
-    void convertToSplit( size_t node_idx, float threshold, Feature& feature )
+    void convertToSplit( size_t node_idx, float threshold, const Feature& feature )
     {
       Node& node = nodes.at( node_idx );
       node.threshold = threshold;
@@ -135,13 +140,11 @@ class Tree
 
     friend ostream& operator<<( ostream& os, const Tree& t )
     {
-      return t.preorder( os, t.nodes[ 0 ], 0 );
+      return t.preorder( os, t.nodes.at( 0 ), 0 );
     }
-    
-    vector< Node > nodes;
 
   private:
-    ostream& preorder( ostream& os, const Node& node, u_int level ) const
+    ostream& preorder( ostream& os, const Node& node, int level ) const
     {
       if( level )
       {
