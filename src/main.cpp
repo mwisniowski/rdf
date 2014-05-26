@@ -108,10 +108,10 @@ int main(int argc, char *argv[])
   for( int row = max_data; row > min_data; row-- )
   {
     float* ptr = map.ptr();
-    pt.input[ 0 ] = static_cast<float>( row );
+    pt.input[ 1 ] = static_cast<float>( row );
     for( int column = min_data; column < max_data; column++ )
     {
-      pt.input[ 1 ] = static_cast<float>( column );
+      pt.input[ 0 ] = static_cast<float>( column );
       
       pair< u_int, float > result = t.classify( pt );
       if( result.first == 1 )
