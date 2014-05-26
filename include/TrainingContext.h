@@ -51,8 +51,8 @@ class TrainingContext// : public ITrainingContext
     bool shouldTerminate( float information_gain ) const
     {
       //TODO
-      return false;
-      // return information_gain < 0.1f;
+      // return false;
+      return information_gain < 0.1f;
     }
 
   private:

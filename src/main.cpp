@@ -22,7 +22,7 @@ using namespace std;
 using namespace cvt;
 
 void display( const Image& image, size_t width, size_t height ) {
-  Window w("BD Test");
+  Window w("RDF");
   
   ImageView iv;
   iv.setSize(width, height);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[])
   cout << "Starting" << endl;
 
   TrainingParameters params;
-  params.maxDecisionLevels = 3;
+  params.maxDecisionLevels = 10;
 
   cout << "Reading Data" << endl;
 
@@ -75,17 +75,31 @@ int main(int argc, char *argv[])
 
   cout << "Completed training" << endl;
 
-  DataPoint2f point = data[ 2 ];
-  pair< u_int, float > c = t.classify( point );
-
-  // cout << "(" << point.input[ 0 ] << "," << point.input[ 1 ] << ") classified as (" << c.first << "," << c.second << "), should be " << point.output << endl;
   cout << t;
 
-  int min_data = 0;
-  int max_data = 1000;
+  int min_data = INT_MAX;
+  int max_data = -INT_MIN;
+
+  IDataPointCollection::const_iterator it = data.begin();
+  for( ; it != data.end(); ++it )
+  {
+    for( size_t i = 0; i < it->input.size(); i++ )
+    {
+      if( it->input.at( i )  < min_data )
+      {
+        min_data = it->input[ i ];
+      }
+      if( it->input.at( i ) > max_data )
+      {
+        max_data = it->input[ i ];
+      }
+    }
+  }
+
+  int width = max_data - min_data;
 
   cvt::Image img;
-  img.reallocate( 1000, 1000, cvt::IFormat::RGBA_FLOAT );
+  img.reallocate( width, width, cvt::IFormat::RGBA_FLOAT );
   cvt::IMapScoped<float> map( img );
   DataPoint2f pt;
   pt.input.resize( 2 );

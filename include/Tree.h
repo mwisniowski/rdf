@@ -21,9 +21,9 @@ struct Node
   }
 
   Node( const StatisticsAggregator& statistics,
-      const IDataPointCollection& data ) :
+      const IDataPointRange& range ) :
     statistics( statistics ),
-    data( data ),
+    data( range ),
     split( false )
   {
     init();
@@ -39,20 +39,20 @@ struct Node
     split( other.split )
   {}
 
-  Node& operator=( const Node& other )
-  {
-    if( this != &other )
-    {
-      feature = other.feature;
-      statistics = other.statistics;
-      threshold = other.threshold;
-      left = other.left;
-      right = other.right;
-      data = other.data;
-      split = other.split;
-    }
-    return *this;
-  }
+  // Node& operator=( const Node& other )
+  // {
+  //   if( this != &other )
+  //   {
+  //     feature = other.feature;
+  //     statistics = other.statistics;
+  //     threshold = other.threshold;
+  //     left = other.left;
+  //     right = other.right;
+  //     data = other.data;
+  //     split = other.split;
+  //   }
+  //   return *this;
+  // }
 
   virtual ~Node() 
   {}
@@ -71,7 +71,7 @@ struct Node
 
   Feature              feature;
   StatisticsAggregator statistics;
-  IDataPointCollection data; //TODO Inplace partitioning
+  IDataPointRange      data;
   float                threshold;
   int                  left;
   int                  right;
@@ -103,23 +103,24 @@ class Tree
 
     pair< u_int, float > classify( DataPoint2f& point )
     {
-      Node n = nodes[ 0 ];
+      // Node n = nodes[ 0 ];
+      vector< Node >::const_iterator it = nodes.begin();
       // cout << "Classification trace: ";
-      while( n.split )
+      while( it->split )
       {
-        if( n.feature( point ) < n.threshold )
+        if( it->feature( point ) < it->threshold )
         {
           // cout << "left ";
-          n = nodes[ n.left ];
+          it = nodes.begin() + it->left;
         } else {
           // cout << "right ";
-          n = nodes[ n.right ];
+          it = nodes.begin() + it->right;
         }
       }
       // cout << endl;
 
-      u_int c = n.statistics.maxClass();
-      return pair< u_int, float >( c, n.statistics.probability( c ) );
+      u_int c = it->statistics.maxClass();
+      return pair< u_int, float >( c, it->statistics.probability( c ) );
     }
 
     void convertToSplit( size_t node_idx, float threshold, Feature& feature )
@@ -127,8 +128,8 @@ class Tree
       Node& node = nodes.at( node_idx );
       node.threshold = threshold;
       node.feature = feature;
-      node.data = IDataPointCollection();
-      node.statistics = StatisticsAggregator();
+      // node.data = IDataPointCollection();
+      // node.statistics = StatisticsAggregator();
       node.split = true;
     }
 

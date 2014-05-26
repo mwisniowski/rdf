@@ -13,17 +13,17 @@ class IStatisticsAggregator
   public:
     virtual size_t numClasses() const =0;
     virtual float probability( size_t class_label ) const =0;
-    virtual void aggregate( const DataPoint2f& point ) =0;
-    virtual void aggregate( const IDataPointCollection& data )
-    {
-      IDataPointCollection::const_iterator it = data.begin(),
-        end = data.end();
-      for( ; it != end; ++it )
-      {
-        aggregate( *it );
-      }
-    }
-
+    // virtual void aggregate( const DataPoint2f& point ) =0;
+    // virtual void aggregate( const IDataPointCollection& data )
+    // {
+    //   IDataPointCollection::const_iterator it = data.begin(),
+    //     end = data.end();
+    //   for( ; it != end; ++it )
+    //   {
+    //     aggregate( *it );
+    //   }
+    // }
+    virtual void aggregate( const IDataPointRange& range );
 };
 
 #endif
