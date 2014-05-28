@@ -8,7 +8,12 @@ typedef std::vector< DataPoint2f > IDataPointCollection;
 
 struct IDataPointRange
 {
-  IDataPointRange() {}
+  IDataPointCollection::iterator start,
+    end;
+
+
+  IDataPointRange() 
+  {}
 
   IDataPointRange( const IDataPointCollection::iterator& start_,
       const IDataPointCollection::iterator& end_ ) :
@@ -20,9 +25,6 @@ struct IDataPointRange
     start( other.start ),
     end( other.end )
   {}
-
-  IDataPointCollection::iterator start,
-    end;
 };
 
 #endif

@@ -106,7 +106,7 @@ class Tree
       nodes.at( parent ).right = nodes.size() - 1;
     }
 
-    pair< u_int, float > classify( DataPoint2f& point ) const
+    const StatisticsAggregator& classify( const DataPoint2f& point ) const
     {
       // Node n = nodes[ 0 ];
       vector< Node >::const_iterator it = nodes.begin();
@@ -124,8 +124,9 @@ class Tree
       }
       // cout << endl;
 
-      u_int c = it->statistics.maxClass();
-      return pair< u_int, float >( c, it->statistics.probability( c ) );
+      // u_int c = it->statistics.maxClass();
+      // return pair< u_int, float >( c, it->statistics.probability( c ) );
+      return it->statistics;
     }
 
     void convertToSplit( size_t node_idx, float threshold, const Feature& feature )

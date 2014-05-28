@@ -15,7 +15,7 @@
 
 #include "DataPoint.h"
 #include "IDataPointCollection.h"
-#include "TreeTrainer.h"
+#include "ForestTrainer.h"
 #include "TrainingParameters.h"
 
 using namespace std;
@@ -56,7 +56,8 @@ int main(int argc, char *argv[])
   cout << "Starting" << endl;
 
   TrainingParameters params;
-  params.maxDecisionLevels = 10;
+  params.maxDecisionLevels = 4;
+  params.trees = 50;
 
   cout << "Reading Data" << endl;
 
@@ -67,15 +68,17 @@ int main(int argc, char *argv[])
   cout << "Successfully read data" << endl;
 
   TrainingContext context;
-  TreeTrainer trainer( context );
+  // TreeTrainer trainer( context );
+  ForestTrainer trainer( context );
 
   cout << "Created trainer, starting training" << endl;
 
-  Tree t = trainer.trainTree( params, data );
+  // Tree t = trainer.trainTree( params, data );
+  Forest f = trainer.trainForest( params, data );
 
   cout << "Completed training" << endl;
 
-  cout << t;
+  // cout << t;
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;
@@ -113,7 +116,7 @@ int main(int argc, char *argv[])
     {
       pt.input[ 0 ] = static_cast<float>( column );
       
-      pair< u_int, float > result = t.classify( pt );
+      pair< u_int, float > result = f.classify( pt );
       if( result.first == 1 )
       {
         color.set( result.second, 0, 0 );

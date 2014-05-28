@@ -54,6 +54,24 @@ class StatisticsAggregator// : public IStatisticsAggregator
       }
     }
 
+    void aggregate( const StatisticsAggregator& s )
+    {
+      map< u_int, float >::const_iterator sit = s.statistics.begin(),
+        send = s.statistics.end();
+      for( ; sit != send; ++sit )
+      {
+        map< u_int, float >::iterator it = statistics.find( sit->first ),
+          end = statistics.end();
+        if( it == end )
+        {
+          statistics.insert( pair< u_int, float >( sit->first, sit->second ) );
+        } else {
+          it->second += sit->second;
+        }
+      }
+      n += s.n;
+    }
+
     // void aggregate( const DataPoint2f& point )
     // {
     //   map< u_int, float>::iterator it = statistics.find( point.output ),

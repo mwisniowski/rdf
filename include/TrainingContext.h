@@ -19,12 +19,15 @@ class TrainingContext// : public ITrainingContext
 
     const Feature getRandomFeature() const
     {
-      int r = rand() % 2;
+      // int r = rand() % 2;
       // Feature f( r, !r );
       // pair< set< Feature >::iterator, bool > ret =
       //   _features.insert( f );
       // return *ret.first;
-      return Feature( r, !r );
+      float max = static_cast<float>(RAND_MAX);
+      float a = rand() / max;
+      float b = rand() / max;
+      return Feature( a, b );
     }
 
     StatisticsAggregator getStatisticsAggregator() const

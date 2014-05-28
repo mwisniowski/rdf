@@ -29,11 +29,11 @@ struct Test
 class TreeTrainer 
 {
   private:
-    TrainingContext context;
+    const TrainingContext context;
 
 
   public:
-    TreeTrainer( TrainingContext& context ) :
+    TreeTrainer( const TrainingContext& context ) :
       context( context )
     {}
 
