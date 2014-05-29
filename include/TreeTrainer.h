@@ -62,7 +62,7 @@ class TreeTrainer
           IDataPointRange left_range, right_range;
           Feature feature = context.getRandomFeature();
           size_t node_idx = frontier.front();
-          Node& node = tree.nodes.at( node_idx );
+          Node& node = tree.nodes[ node_idx ];
           
           float threshold;
           float gain;
@@ -71,16 +71,16 @@ class TreeTrainer
           // cout << "Gain: " << gain << endl;
           if( !context.shouldTerminate( gain ) )
           {
-            tree.convertToSplit( node_idx, threshold, feature );
-
             Node left_n = createLeaf( left_range );
             Node right_n = createLeaf( right_range );
 
-            tree.addLeft( node_idx, left_n );
-            tree.addRight( node_idx, right_n );
+            tree.convertToSplit( node_idx, threshold, feature, left_n, right_n);
 
-            frontier.push_back( tree.nodes[ node_idx ].left );
-            frontier.push_back( tree.nodes[ node_idx ].right );
+            // tree.addLeft( node_idx, left_n );
+            // tree.addRight( node_idx, right_n );
+
+            frontier.push_back( node_idx + tree.nodes[ node_idx ].childOffset );
+            frontier.push_back( node_idx + tree.nodes[ node_idx ].childOffset + 1 );
           } 
 
           frontier.pop_front();

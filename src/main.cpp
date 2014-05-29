@@ -40,6 +40,15 @@ void display( const Image& image, size_t width, size_t height ) {
   Application::run();
 }
 
+int countClasses( const IDataPointCollection& data )
+{
+  std::set< u_int > classes;
+  for( size_t i = 0; i < data.size(); i++ )
+  {
+    classes.insert( data[ i ].output );
+  }
+  return classes.size();
+}
 
 int main(int argc, char *argv[])
 {
@@ -47,38 +56,24 @@ int main(int argc, char *argv[])
   if( argc > 1 ) {
     file = argv[ 1 ];
   }
-  ifstream is( argv[1] );
-
-  // istream_iterator< Instance2f > start( is ), end;
-
-  // vector< Instance2f > v( start, end );
-
-  cout << "Starting" << endl;
+  ifstream is( argv[ 1 ] );
 
   TrainingParameters params;
-  params.maxDecisionLevels = 4;
-  params.trees = 50;
-
-  cout << "Reading Data" << endl;
+  params.maxDecisionLevels = 10;
+  params.trees = 200;
 
   istream_iterator< DataPoint2f > start( is ), end;
   IDataPointCollection data( start, end );
   is.close();
   
-  cout << "Successfully read data" << endl;
-
-  TrainingContext context;
+  TrainingContext context( countClasses( data ) );
+  
   // TreeTrainer trainer( context );
+  // Tree classifier = trainer.trainTree( params, data );
+  // cout << classifier;
+  
   ForestTrainer trainer( context );
-
-  cout << "Created trainer, starting training" << endl;
-
-  // Tree t = trainer.trainTree( params, data );
-  Forest f = trainer.trainForest( params, data );
-
-  cout << "Completed training" << endl;
-
-  // cout << t;
+  Forest classifier = trainer.trainForest( params, data );
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;
@@ -106,7 +101,7 @@ int main(int argc, char *argv[])
   cvt::IMapScoped<float> map( img );
   DataPoint2f pt;
   pt.input.resize( 2 );
-  cvt::Color color;
+  cvt::Color color, gray( 0.5f );
 
   for( int row = max_data; row > min_data; row-- )
   {
@@ -116,13 +111,14 @@ int main(int argc, char *argv[])
     {
       pt.input[ 0 ] = static_cast<float>( column );
       
-      pair< u_int, float > result = f.classify( pt );
-      if( result.first == 1 )
+      const StatisticsAggregator s = classifier.classify( pt );
+      pair< u_int, float > result = s.getMax();
+      if( result.first == 0 )
       {
-        color.set( result.second, 0, 0 );
-      } else if (result.first == 2 )
+        color.mix( gray, cvt::Color::RED, ( result.second - 0.5f ) * 2 );
+      } else if (result.first == 1 )
       {
-        color.set( 0, 0, result.second );
+        color.mix( gray, cvt::Color::BLUE, ( result.second - 0.5f ) * 2  );
       }
       *ptr++ = color.red();
       *ptr++ = color.green();

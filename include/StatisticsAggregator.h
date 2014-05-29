@@ -11,12 +11,14 @@ class StatisticsAggregator// : public IStatisticsAggregator
     size_t n;
 
   private:
-    map< u_int, float > statistics;
+    // map< u_int, float > statistics;
+    vector< float > statistics;
 
 
   public:
-    StatisticsAggregator() :
-      n( 0 )
+    StatisticsAggregator( size_t numClasses ) :
+      n( 0 ),
+      statistics( numClasses, 0.0f )
     {}
 
     StatisticsAggregator( const StatisticsAggregator& other ) :
@@ -43,31 +45,16 @@ class StatisticsAggregator// : public IStatisticsAggregator
       IDataPointCollection::const_iterator it( range.start );
       for( ; it != range.end; ++it )
       {
-        map< u_int, float>::iterator mit = statistics.find( it->output ),
-          end = statistics.end();
-        if( mit == end )
-        {
-          mit = statistics.insert( pair< u_int, float >( it->output, 0.0f ) ).first;
-        }
-        mit->second++;
+        statistics[ it->output ]++;
         n++;
       }
     }
 
     void aggregate( const StatisticsAggregator& s )
     {
-      map< u_int, float >::const_iterator sit = s.statistics.begin(),
-        send = s.statistics.end();
-      for( ; sit != send; ++sit )
+      for( size_t i = 0; i < s.statistics.size(); i++ )
       {
-        map< u_int, float >::iterator it = statistics.find( sit->first ),
-          end = statistics.end();
-        if( it == end )
-        {
-          statistics.insert( pair< u_int, float >( sit->first, sit->second ) );
-        } else {
-          it->second += sit->second;
-        }
+        statistics[ i ] += s.statistics[ i ];
       }
       n += s.n;
     }
@@ -99,58 +86,46 @@ class StatisticsAggregator// : public IStatisticsAggregator
     //   return n;
     // }
 
-    float probability( size_t class_label ) const
-    {
-      map< u_int, float>::const_iterator it = statistics.find( class_label ),
-        end = statistics.end();
-      if( it != end )
-      {
-        return it->second / n;
-      } else {
-        return 0.0f;
-      }
-    }
+    // float probability( u_int class_label ) const
+    // {
+    //   return statistics[ class_label ] / n;
+    // }
 
-    u_int maxClass() const
+    pair< u_int, float > getMax() const
     {
-      map< u_int, float>::const_iterator it = statistics.begin(),
-        end = statistics.end();
-
-      pair< u_int, float > max;
-      for( ; it != end; ++it )
+      float maxValue = FLT_MIN;
+      u_int maxC = 0;
+      for( size_t i = 0; i < statistics.size(); i++ )
       {
-        if ( it->second > max.second )
+        if( statistics[ i ] > maxValue )
         {
-          max = *it;
+          maxValue = statistics[ i ];
+          maxC = i;
         }
       }
-
-      return max.first;
+      return pair< u_int, float >( maxC, maxValue / n );
     }
 
     float getEntropy() const
     {
       float entropy = 0.0f;
 
-      map< u_int, float >::const_iterator it = statistics.begin(),
-        end = statistics.end();
-      for( ; it != end; ++it )
+      for( size_t i = 0; i < statistics.size(); i++ )
       {
-        float p_c = it->second / n;
-        entropy += p_c * cvt::Math::log2( p_c );
+        if( float p_i = statistics[ i ] / n )
+        {
+          entropy += p_i * cvt::Math::log2( p_i );
+        }
       }
-      entropy *= -1;
-      return entropy;
+      return -entropy;
     }
 
     friend ostream& operator<<( ostream& os, const StatisticsAggregator& s )
     {
       os << s.n << ": { ";
-      map< u_int, float >::const_iterator it = s.statistics.begin(),
-        end = s.statistics.end();
-      for( ; it != end; ++it )
+      for( size_t i = 0; i < s.statistics.size(); i++ )
       {
-        os << "(" << it->first << "," << it->second << ") ";
+        os << "(" << i << "," << s.statistics[ i ] << ") ";
       }
       os << "}";
 

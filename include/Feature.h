@@ -29,7 +29,7 @@ class Feature //: public IFeature
 
     float operator()( const DataPoint2f& point ) const
     {
-      return a * point.input.at( 0 ) + b * point.input.at( 1 );
+      return a * point.input[ 0 ] + b * point.input[ 1 ];
     }
 };
 

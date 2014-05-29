@@ -46,6 +46,7 @@ struct DataPoint
     I input;
 
     is >> point.output;
+    point.output -= 1;
 
     point.input.clear();
     for (int i = 0; i < in_size; ++i)

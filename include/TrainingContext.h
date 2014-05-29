@@ -12,7 +12,10 @@ using namespace std;
 class TrainingContext// : public ITrainingContext
 {
   public:
-    TrainingContext()
+    const size_t numClasses;
+
+    TrainingContext( size_t classes ) :
+      numClasses( classes )
     {
       srand(time(0));
     }
@@ -21,9 +24,7 @@ class TrainingContext// : public ITrainingContext
     {
       // int r = rand() % 2;
       // Feature f( r, !r );
-      // pair< set< Feature >::iterator, bool > ret =
-      //   _features.insert( f );
-      // return *ret.first;
+      // return Feature( r, !r );
       float max = static_cast<float>(RAND_MAX);
       float a = rand() / max;
       float b = rand() / max;
@@ -32,7 +33,7 @@ class TrainingContext// : public ITrainingContext
 
     StatisticsAggregator getStatisticsAggregator() const
     {
-      return StatisticsAggregator();
+      return StatisticsAggregator( numClasses );
     }
 
     float computeInformationGain( StatisticsAggregator& parent_s,
@@ -54,7 +55,7 @@ class TrainingContext// : public ITrainingContext
     {
       //TODO
       // return false;
-      return information_gain < 0.001f;
+      return information_gain < 0.01f;
     }
 };
 

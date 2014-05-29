@@ -7,7 +7,10 @@ using namespace std;
 class Forest 
 {
   public:
-    Forest() {}
+    Forest( size_t numClasses ) :
+      _numClasses( numClasses )
+    {}
+
     virtual ~Forest() {}
 
     void add( const Tree& tree )
@@ -15,9 +18,10 @@ class Forest
       _trees.push_back( tree );
     }
 
-    pair< u_int, float > classify( const DataPoint2f& point )
+    const StatisticsAggregator classify( const DataPoint2f& point )
     {
-      StatisticsAggregator statistics;
+      //TODO use TrainingContext
+      StatisticsAggregator statistics( _numClasses );
 
       vector< Tree >::iterator it = _trees.begin(),
         end = _trees.end();
@@ -26,12 +30,12 @@ class Forest
         statistics.aggregate( it->classify( point ) );
       }
 
-      u_int c = statistics.maxClass();
-      return pair< u_int, float >( c, statistics.probability( c ) );
+      return statistics;
     }
 
   private:
     vector< Tree > _trees;
+    size_t _numClasses;
 };
 
 #endif
