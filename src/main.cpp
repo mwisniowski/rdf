@@ -1,3 +1,4 @@
+#include <iterator>
 #include <iostream>
 #include <fstream>
 #include <vector>
@@ -52,7 +53,7 @@ int countClasses( const IDataPointCollection& data )
 
 int main(int argc, char *argv[])
 {
-  string file =  "~/Developer/rdf/data/supervised classification/exp1_n2.txt";
+  string file =  "~/Developer/rdf/data/supervised_classification/exp1_n2.txt";
   if( argc > 1 ) {
     file = argv[ 1 ];
   }
@@ -60,13 +61,14 @@ int main(int argc, char *argv[])
 
   TrainingParameters params;
   params.maxDecisionLevels = 10;
-  params.trees = 200;
+  params.trees = 400;
+  params.noCandidateFeatures = 1;
 
   istream_iterator< DataPoint2f > start( is ), end;
   IDataPointCollection data( start, end );
   is.close();
   
-  TrainingContext context( countClasses( data ) );
+  TrainingContext context( countClasses( data ), params.noCandidateFeatures );
   
   // TreeTrainer trainer( context );
   // Tree classifier = trainer.trainTree( params, data );

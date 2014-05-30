@@ -13,22 +13,57 @@ class TrainingContext// : public ITrainingContext
 {
   public:
     const size_t numClasses;
+    const size_t noCandidateFeatures;
 
-    TrainingContext( size_t classes ) :
-      numClasses( classes )
+  private:
+    vector< Feature > features;
+
+
+  public:
+    TrainingContext( size_t classes, size_t candidateFeatures ) :
+      numClasses( classes ),
+      noCandidateFeatures( candidateFeatures )
     {
       srand(time(0));
+      float max = static_cast< float >( RAND_MAX );
+      features.reserve( 2 * noCandidateFeatures );
+      for( size_t i = 0; i < 2 * noCandidateFeatures; i++ )
+      {
+        float a = rand() / max;
+        float b = rand() / max;
+        features.push_back( Feature( a, b ) );
+      }
     }
 
-    const Feature getRandomFeature() const
+    // const Feature getRandomFeature() const
+    // {
+    //   // int r = rand() % 2;
+    //   // Feature f( r, !r );
+    //   // return Feature( r, !r );
+    //   float max = static_cast<float>(RAND_MAX);
+    //   float a = rand() / max;
+    //   float b = rand() / max;
+    //   return Feature( a, b );
+    // }
+    
+    const vector< Feature > sampleFeatures() const
     {
-      // int r = rand() % 2;
-      // Feature f( r, !r );
-      // return Feature( r, !r );
-      float max = static_cast<float>(RAND_MAX);
-      float a = rand() / max;
-      float b = rand() / max;
-      return Feature( a, b );
+      vector< Feature > result;
+
+      vector< size_t > indices;
+      indices.reserve( 2 * noCandidateFeatures);
+      for( size_t i = 0; i < 2*noCandidateFeatures; i++ )
+      {
+        indices.push_back( i );
+      }
+      std::random_shuffle( indices.begin(), indices.end() );
+
+      for( size_t i = 0; i < noCandidateFeatures; i++ )
+      {
+        result.push_back( features[ indices[ i ] ] );
+      }
+
+      return result;
     }
 
     StatisticsAggregator getStatisticsAggregator() const

@@ -60,14 +60,16 @@ class TreeTrainer
         {
           // IDataPointCollection left, right;
           IDataPointRange left_range, right_range;
-          Feature feature = context.getRandomFeature();
+          // Feature feature = context.getRandomFeature();
+          vector< Feature > features = context.sampleFeatures();
           size_t node_idx = frontier.front();
           Node& node = tree.nodes[ node_idx ];
           
           float threshold;
           float gain;
-          computeThreshold( threshold, gain, left_range,
-              right_range, node.data, node.statistics, feature );
+          Feature feature;
+          computeThreshold( threshold, gain, feature, left_range,
+              right_range, node.data, node.statistics, features );
           // cout << "Gain: " << gain << endl;
           if( !context.shouldTerminate( gain ) )
           {
@@ -102,41 +104,48 @@ class TreeTrainer
 
     void computeThreshold( float& best_threshold,
         float& best_gain,
+        Feature& best_feature,
         IDataPointRange& best_left,
         IDataPointRange& best_right,
         const IDataPointRange& parent,
         StatisticsAggregator& statistics,
-        const Feature& feature ) const
+        const vector< Feature > features ) const
     {
       best_threshold = -FLT_MAX;
       best_gain = -FLT_MAX;
 
       IDataPointRange left( parent ), right( parent );
-      Test test( feature, best_threshold );
-      IDataPointCollection::const_iterator it = parent.start;
-      for( ; it != parent.end; ++it )
+
+      vector< Feature >::const_iterator fit = features.begin(),
+        fend = features.end();
+      for( ; fit != fend; ++fit)
       {
-        test.threshold = feature( *it );
-        left.end = std::partition( parent.start, parent.end, test );
-        right.start = left.end;
-
-        StatisticsAggregator left_s = context.getStatisticsAggregator();
-        StatisticsAggregator right_s = context.getStatisticsAggregator();
-
-        left_s.aggregate( left );
-        right_s.aggregate( right );
-
-        float gain = context.computeInformationGain( statistics, left_s, right_s );
-        if( gain > best_gain )
+        Test test( *fit, best_threshold );
+        IDataPointCollection::const_iterator it = parent.start;
+        for( ; it != parent.end; ++it )
         {
-          best_gain = gain;
-          best_threshold = test.threshold;
+          test.threshold = test.feature( *it );
+          left.end = std::partition( parent.start, parent.end, test );
+          right.start = left.end;
+
+          StatisticsAggregator left_s = context.getStatisticsAggregator();
+          StatisticsAggregator right_s = context.getStatisticsAggregator();
+
+          left_s.aggregate( left );
+          right_s.aggregate( right );
+
+          float gain = context.computeInformationGain( statistics, left_s, right_s );
+          if( gain > best_gain )
+          {
+            best_gain = gain;
+            best_threshold = test.threshold;
+            best_feature = *fit;
+          }
         }
       }
 
-      test.threshold = best_threshold;
       best_left.start = parent.start;
-      best_left.end = std::partition( parent.start, parent.end, test );
+      best_left.end = std::partition( parent.start, parent.end, Test( best_feature, best_threshold ) );
       best_right.start = best_left.end;
       best_right.end = parent.end;
     }
