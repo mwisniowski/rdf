@@ -62,7 +62,7 @@ int main(int argc, char *argv[])
   TrainingParameters params;
   params.maxDecisionLevels = 10;
   params.trees = 400;
-  params.noCandidateFeatures = 1;
+  params.noCandidateFeatures = 8;
 
   istream_iterator< DataPoint2f > start( is ), end;
   IDataPointCollection data( start, end );

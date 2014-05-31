@@ -52,9 +52,13 @@ class StatisticsAggregator// : public IStatisticsAggregator
 
     void aggregate( const StatisticsAggregator& s )
     {
-      for( size_t i = 0; i < s.statistics.size(); i++ )
+      //TODO ensure size
+      vector< float >::iterator it = statistics.begin(), 
+        end = statistics.end();
+      vector< float >::const_iterator sit = s.statistics.begin();
+      for( ; it != end; ++it, ++sit )
       {
-        statistics[ i ] += s.statistics[ i ];
+        ( *it ) += ( *sit );
       }
       n += s.n;
     }

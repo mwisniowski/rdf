@@ -34,7 +34,7 @@ class TreeTrainer
 
   public:
     TreeTrainer( const TrainingContext& context ) :
-      context( context )
+      context( context ) 
     {}
 
     TreeTrainer( const TreeTrainer& other ) :
@@ -53,24 +53,22 @@ class TreeTrainer
       Tree tree( n );
       frontier.push_back( 0 );
 
+      vector< Feature > features;
       for( size_t d = 0; d < params.maxDecisionLevels; d++ )
       {
         size_t current_size = frontier.size();
         for( size_t i = 0; i < current_size; i++ )
         {
-          // IDataPointCollection left, right;
-          IDataPointRange left_range, right_range;
-          // Feature feature = context.getRandomFeature();
-          vector< Feature > features = context.sampleFeatures();
+          context.getRandomFeatures( features );
           size_t node_idx = frontier.front();
           Node& node = tree.nodes[ node_idx ];
-          
+
           float threshold;
           float gain;
           Feature feature;
-          computeThreshold( threshold, gain, feature, left_range,
-              right_range, node.data, node.statistics, features );
-          // cout << "Gain: " << gain << endl;
+          IDataPointRange left_range, right_range;
+          computeThreshold( threshold, gain, feature,
+              left_range, right_range, node.data, node.statistics, features );
           if( !context.shouldTerminate( gain ) )
           {
             Node left_n = createLeaf( left_range );
@@ -78,18 +76,12 @@ class TreeTrainer
 
             tree.convertToSplit( node_idx, threshold, feature, left_n, right_n);
 
-            // tree.addLeft( node_idx, left_n );
-            // tree.addRight( node_idx, right_n );
-
             frontier.push_back( node_idx + tree.nodes[ node_idx ].childOffset );
             frontier.push_back( node_idx + tree.nodes[ node_idx ].childOffset + 1 );
           } 
 
           frontier.pop_front();
         }
-
-        // cout << tree << endl;
-
       }
       return tree;
     }
@@ -109,16 +101,15 @@ class TreeTrainer
         IDataPointRange& best_right,
         const IDataPointRange& parent,
         StatisticsAggregator& statistics,
-        const vector< Feature > features ) const
+        const vector< Feature >& features ) const
     {
-      best_threshold = -FLT_MAX;
       best_gain = -FLT_MAX;
 
       IDataPointRange left( parent ), right( parent );
 
       vector< Feature >::const_iterator fit = features.begin(),
         fend = features.end();
-      for( ; fit != fend; ++fit)
+      for( ; fit != fend; ++fit )
       {
         Test test( *fit, best_threshold );
         IDataPointCollection::const_iterator it = parent.start;
@@ -139,40 +130,17 @@ class TreeTrainer
           {
             best_gain = gain;
             best_threshold = test.threshold;
-            best_feature = *fit;
+            best_feature = test.feature;
           }
         }
       }
 
       best_left.start = parent.start;
-      best_left.end = std::partition( parent.start, parent.end, Test( best_feature, best_threshold ) );
+      best_left.end = std::partition( parent.start, parent.end, 
+          Test( best_feature, best_threshold ) );
       best_right.start = best_left.end;
       best_right.end = parent.end;
     }
-
-    // void partition( IDataPointCollection& left, 
-    //     IDataPointCollection& right,
-    //     const Feature& feature,
-    //     float threshold,
-    //     const IDataPointCollection& data ) const
-    // {
-    //   left.clear();
-    //   right.clear();
-    //
-    //   IDataPointCollection::const_iterator it = data.begin(),
-    //     end = data.end();
-    //   for ( ; it != end; ++it )
-    //   {
-    //     if( feature( *it ) < threshold )
-    //     {
-    //       left.push_back( *it );
-    //     } 
-    //     else 
-    //     {
-    //       right.push_back( *it );
-    //     }
-    //   }
-    // }
 };
 
 #endif
