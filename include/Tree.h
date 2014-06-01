@@ -9,12 +9,12 @@ struct Node
 {
   Feature              feature;
   StatisticsAggregator statistics;
-  IDataPointRange      data;
+  const DataRange      data;
   float                threshold;
   int                  childOffset;
 
   Node( const StatisticsAggregator& statistics,
-      const IDataPointRange& range ) :
+      const DataRange& range ) :
     statistics( statistics ),
     data( range ),
     childOffset( -1 )
@@ -64,10 +64,7 @@ class Tree
         } else {
           it += it->childOffset + 1;
         }
-        // it += it->childOffset + ( it->feature( point ) < it->threshold );
       }
-      // u_int c = it->statistics.maxClass();
-      // return pair< u_int, float >( c, it->statistics.probability( c ) );
       return it->statistics;
     }
 

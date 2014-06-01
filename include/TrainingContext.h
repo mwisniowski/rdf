@@ -2,14 +2,12 @@
 #define TRAINING_CONTEXT_H
 
 #include <cvt/math/Math.h>
-#include <set>
 
-#include "ITrainingContext.h"
 #include "Feature.h"
 #include "StatisticsAggregator.h"
 
 using namespace std;
-class TrainingContext// : public ITrainingContext
+class TrainingContext
 {
   public:
     const size_t numClasses;
@@ -58,8 +56,7 @@ class TrainingContext// : public ITrainingContext
     bool shouldTerminate( float information_gain ) const
     {
       //TODO
-      // return false;
-      return information_gain < 0.01f;
+      return information_gain < 0.001f;
     }
 };
 

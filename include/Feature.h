@@ -1,9 +1,9 @@
 #ifndef FEATURE_H
 #define FEATURE_H
 
-#include "IFeature.h"
+#include "DataPoint.h"
 
-class Feature //: public IFeature
+class Feature
 {
   private:
     float a;

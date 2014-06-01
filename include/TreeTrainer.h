@@ -4,7 +4,7 @@
 #include <deque>
 
 #include "TrainingContext.h"
-#include "IDataPointCollection.h"
+#include "DataCollection.h"
 #include "TrainingParameters.h"
 #include "Tree.h"
 
@@ -45,11 +45,11 @@ class TreeTrainer
     {}
 
     Tree trainTree( const TrainingParameters& params, 
-        IDataPointCollection& data ) const
+        DataCollection& data ) const
     {
       deque< size_t > frontier;
-      IDataPointRange range( data.begin(), data.end() );
-      Node n = createLeaf( range );
+      const DataRange range( data.begin(), data.end() );
+      const Node n = createLeaf( range );
       Tree tree( n );
       frontier.push_back( 0 );
 
@@ -66,13 +66,15 @@ class TreeTrainer
           float threshold;
           float gain;
           Feature feature;
-          IDataPointRange left_range, right_range;
+          DataRange left_range, right_range;
           computeThreshold( threshold, gain, feature,
-              left_range, right_range, node.data, node.statistics, features );
+              left_range, right_range, tree.nodes[ node_idx ].data, 
+              tree.nodes[ node_idx ].statistics, features );
+
           if( !context.shouldTerminate( gain ) )
           {
-            Node left_n = createLeaf( left_range );
-            Node right_n = createLeaf( right_range );
+            const Node left_n = createLeaf( left_range );
+            const Node right_n = createLeaf( right_range );
 
             tree.convertToSplit( node_idx, threshold, feature, left_n, right_n);
 
@@ -87,7 +89,7 @@ class TreeTrainer
     }
 
   private:
-    Node createLeaf( IDataPointRange& range ) const
+    Node createLeaf( DataRange& range ) const
     {
       StatisticsAggregator s = context.getStatisticsAggregator();
       s.aggregate( range );
@@ -97,22 +99,22 @@ class TreeTrainer
     void computeThreshold( float& best_threshold,
         float& best_gain,
         Feature& best_feature,
-        IDataPointRange& best_left,
-        IDataPointRange& best_right,
-        const IDataPointRange& parent,
+        DataRange& best_left,
+        DataRange& best_right,
+        const DataRange& parent,
         StatisticsAggregator& statistics,
         const vector< Feature >& features ) const
     {
       best_gain = -FLT_MAX;
 
-      IDataPointRange left( parent ), right( parent );
+      DataRange left( parent ), right( parent );
 
       vector< Feature >::const_iterator fit = features.begin(),
         fend = features.end();
       for( ; fit != fend; ++fit )
       {
         Test test( *fit, best_threshold );
-        IDataPointCollection::const_iterator it = parent.start;
+        DataCollection::const_iterator it = parent.start;
         for( ; it != parent.end; ++it )
         {
           test.threshold = test.feature( *it );
@@ -121,12 +123,10 @@ class TreeTrainer
 
           StatisticsAggregator left_s = context.getStatisticsAggregator();
           StatisticsAggregator right_s = context.getStatisticsAggregator();
-
           left_s.aggregate( left );
           right_s.aggregate( right );
 
-          float gain = context.computeInformationGain( statistics, left_s, right_s );
-          if( gain > best_gain )
+          if( float gain = context.computeInformationGain( statistics, left_s, right_s ) )
           {
             best_gain = gain;
             best_threshold = test.threshold;

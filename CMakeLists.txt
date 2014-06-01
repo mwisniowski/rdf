@@ -9,13 +9,15 @@ find_package(CVT_DEBUG REQUIRED)
 
 set(RDF_HEADERS
   include/DataPoint.h
-  include/IDataPointCollection.h
-  include/IStatisticsAggregator.h
-  include/IFeature.h
+  include/DataCollection.h
   include/Forest.h
   include/ForestTrainer.h
   include/Tree.h
   include/TreeTrainer.h
+  include/Feature.h
+  include/StatisticsAggregator.h
+  include/TrainingContext.h
+  include/TrainingParameters.h
 )
 
 set(RDF_SOURCES

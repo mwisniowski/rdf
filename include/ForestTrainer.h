@@ -20,7 +20,7 @@ class ForestTrainer
     {}
 
     Forest trainForest( const TrainingParameters& params,
-        IDataPointCollection& data )
+        DataCollection& data )
     {
       Forest f( _context.numClasses );
       TreeTrainer trainer( _context );
