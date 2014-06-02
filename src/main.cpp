@@ -60,9 +60,9 @@ int main(int argc, char *argv[])
   ifstream is( argv[ 1 ] );
 
   TrainingParameters params;
-  params.maxDecisionLevels = 10;
-  params.trees = 400;
-  params.noCandidateFeatures = 8;
+  params.maxDecisionLevels = 4;
+  params.trees = 100;
+  params.noCandidateFeatures = 4;
 
   istream_iterator< DataPoint2f > start( is ), end;
   DataCollection data( start, end );
@@ -103,31 +103,70 @@ int main(int argc, char *argv[])
   cvt::IMapScoped<float> map( img );
   DataPoint2f pt;
   pt.input.resize( 2 );
-  cvt::Color color, gray( 0.5f );
+  cvt::Color color, gray( 0.5f ), mix;
 
-  for( int row = max_data; row > min_data; row-- )
+  if( context.numClasses == 2 )
   {
-    float* ptr = map.ptr();
-    pt.input[ 1 ] = static_cast<float>( row );
-    for( int column = min_data; column < max_data; column++ )
+    for( int row = max_data; row > min_data; row-- )
     {
-      pt.input[ 0 ] = static_cast<float>( column );
-      
-      const Histogram h = classifier.classify( pt );
-      pair< u_int, float > result = h.getMax();
-      if( result.first == 0 )
+      float* ptr = map.ptr();
+      pt.input[ 1 ] = static_cast<float>( row );
+      for( int column = min_data; column < max_data; column++ )
       {
-        color.mix( gray, cvt::Color::RED, ( result.second - 0.5f ) * 2 );
-      } else if (result.first == 1 )
-      {
-        color.mix( gray, cvt::Color::BLUE, ( result.second - 0.5f ) * 2  );
+        pt.input[ 0 ] = static_cast<float>( column );
+        
+        const Histogram h = classifier.classify( pt );
+        pair< u_int, float > result = h.getMax();
+        if( result.first == 0 )
+        {
+          mix = cvt::Color::RED;
+        } else
+        {
+          mix = cvt::Color::BLUE;
+        }
+        color.mix( gray, mix, ( result.second - 0.5f ) * 2.0f  );
+
+        *ptr++ = color.red();
+        *ptr++ = color.green();
+        *ptr++ = color.blue();
+        *ptr++ = color.alpha();
       }
-      *ptr++ = color.red();
-      *ptr++ = color.green();
-      *ptr++ = color.blue();
-      *ptr++ = color.alpha();
+      map++;
     }
-    map++;
+  } else if( context.numClasses == 4 )
+  {
+    for( int row = max_data; row > min_data; row-- )
+    {
+      float* ptr = map.ptr();
+      pt.input[ 1 ] = static_cast<float>( row );
+      for( int column = min_data; column < max_data; column++ )
+      {
+        pt.input[ 0 ] = static_cast<float>( column );
+        
+        const Histogram h = classifier.classify( pt );
+        pair< u_int, float > result = h.getMax();
+        if( result.first == 0 )
+        {
+          mix = cvt::Color::RED;
+        } else if (result.first == 1 )
+        {
+          mix = cvt::Color::BLUE;
+        } else if (result.first == 2 )
+        {
+          mix = cvt::Color::GREEN;
+        } else if (result.first == 3 )
+        {
+          mix = cvt::Color::YELLOW;
+        }
+        color.mix( gray, mix, 4.0f * ( result.second - 0.25f ) / 3.0f  );
+
+        *ptr++ = color.red();
+        *ptr++ = color.green();
+        *ptr++ = color.blue();
+        *ptr++ = color.alpha();
+      }
+      map++;
+    }
   }
 
   display( img, width, width );
