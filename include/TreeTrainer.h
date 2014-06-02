@@ -48,8 +48,8 @@ class TreeTrainer
         DataCollection& data ) const
     {
       deque< size_t > frontier;
-      const DataRange range( data.begin(), data.end() );
-      const Node n = createLeaf( range );
+      DataRange range( data.begin(), data.end() );
+      Node n = createLeaf( range );
       Tree tree( n );
       frontier.push_back( 0 );
 
@@ -68,13 +68,11 @@ class TreeTrainer
           Feature feature;
           DataRange left_range, right_range;
           computeThreshold( threshold, gain, feature,
-              left_range, right_range, tree.nodes[ node_idx ].data, 
-              tree.nodes[ node_idx ].statistics, features );
-
+              left_range, right_range, node.data, node.histogram, features );
           if( !context.shouldTerminate( gain ) )
           {
-            const Node left_n = createLeaf( left_range );
-            const Node right_n = createLeaf( right_range );
+            Node left_n = createLeaf( left_range );
+            Node right_n = createLeaf( right_range );
 
             tree.convertToSplit( node_idx, threshold, feature, left_n, right_n);
 
@@ -91,7 +89,7 @@ class TreeTrainer
   private:
     Node createLeaf( DataRange& range ) const
     {
-      StatisticsAggregator s = context.getStatisticsAggregator();
+      Histogram s = context.getHistogram();
       s.aggregate( range );
       return Node( s, range );
     }
@@ -102,7 +100,7 @@ class TreeTrainer
         DataRange& best_left,
         DataRange& best_right,
         const DataRange& parent,
-        StatisticsAggregator& statistics,
+        Histogram& histogram,
         const vector< Feature >& features ) const
     {
       best_gain = -FLT_MAX;
@@ -121,12 +119,14 @@ class TreeTrainer
           left.end = std::partition( parent.start, parent.end, test );
           right.start = left.end;
 
-          StatisticsAggregator left_s = context.getStatisticsAggregator();
-          StatisticsAggregator right_s = context.getStatisticsAggregator();
+          Histogram left_s = context.getHistogram();
+          Histogram right_s = context.getHistogram();
+
           left_s.aggregate( left );
           right_s.aggregate( right );
 
-          if( float gain = context.computeInformationGain( statistics, left_s, right_s ) )
+          float gain = context.computeInformationGain( histogram, left_s, right_s );
+          if( gain > best_gain )
           {
             best_gain = gain;
             best_threshold = test.threshold;

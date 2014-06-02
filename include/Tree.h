@@ -2,27 +2,28 @@
 #define TREE_H
 
 #include <iomanip>
+#include "DataCollection.h"
 #include "Feature.h"
-#include "StatisticsAggregator.h"
+#include "Histogram.h"
 
 struct Node 
 {
   Feature              feature;
-  StatisticsAggregator statistics;
-  const DataRange      data;
+  Histogram histogram;
+  DataRange      data;
   float                threshold;
   int                  childOffset;
 
-  Node( const StatisticsAggregator& statistics,
+  Node( const Histogram& histogram,
       const DataRange& range ) :
-    statistics( statistics ),
+    histogram( histogram ),
     data( range ),
     childOffset( -1 )
   {}
 
   Node( const Node& other ) :
     feature( other.feature ),
-    statistics( other.statistics ),
+    histogram( other.histogram ),
     threshold( other.threshold ),
     childOffset( other.childOffset ),
     data( other.data )
@@ -33,7 +34,7 @@ struct Node
 
   friend ostream& operator<<( ostream& os, const Node& n )
   {
-    os << n.statistics << " , " << n.childOffset;
+    os << n.histogram << " , " << n.childOffset;
     return os;
   }
 };
@@ -53,7 +54,7 @@ class Tree
     virtual ~Tree() 
     {}
 
-    const StatisticsAggregator& classify( const DataPoint2f& point ) const
+    const Histogram& classify( const DataPoint2f& point ) const
     {
       vector< Node >::const_iterator it = nodes.begin();
       while( it->childOffset > 0 )
@@ -64,8 +65,11 @@ class Tree
         } else {
           it += it->childOffset + 1;
         }
+        // it += it->childOffset + ( it->feature( point ) < it->threshold );
       }
-      return it->statistics;
+      // u_int c = it->statistics.maxClass();
+      // return pair< u_int, float >( c, it->statistics.probability( c ) );
+      return it->histogram;
     }
 
     void convertToSplit( size_t node_idx, float threshold, const Feature& feature, 

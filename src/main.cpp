@@ -2,7 +2,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <set>
 #include <algorithm>
 
 #include <cvt/gui/Window.h>
@@ -11,10 +10,10 @@
 #include <cvt/gui/Moveable.h>
 #include <cvt/gui/ImageView.h>
 #include <cvt/gui/Application.h>
+
 #include <cvt/gfx/Image.h>
 #include <cvt/gfx/IMapScoped.h>
 
-#include "optionparser.h"
 #include "DataPoint.h"
 #include "DataCollection.h"
 #include "ForestTrainer.h"
@@ -23,8 +22,34 @@
 using namespace std;
 using namespace cvt;
 
-void display( const Image& image, size_t width, size_t height );
-int countClasses( const DataCollection& data );
+void display( const Image& image, size_t width, size_t height ) {
+  Window w("RDF");
+  
+  ImageView iv;
+  iv.setSize(width, height);
+  iv.setImage(image);
+  
+  WidgetLayout wl;
+  wl.setAnchoredTopBottom(0, 0);
+  wl.setAnchoredLeftRight(0, 0);
+  w.addWidget( &iv, wl );
+  
+  w.setSize( width, height );
+  w.setVisible( true );
+  w.update();
+  
+  Application::run();
+}
+
+int countClasses( const DataCollection& data )
+{
+  std::set< u_int > classes;
+  for( size_t i = 0; i < data.size(); i++ )
+  {
+    classes.insert( data[ i ].output );
+  }
+  return classes.size();
+}
 
 int main(int argc, char *argv[])
 {
@@ -36,8 +61,8 @@ int main(int argc, char *argv[])
 
   TrainingParameters params;
   params.maxDecisionLevels = 10;
-  params.trees = 50;
-  params.noCandidateFeatures = 4;
+  params.trees = 400;
+  params.noCandidateFeatures = 8;
 
   istream_iterator< DataPoint2f > start( is ), end;
   DataCollection data( start, end );
@@ -88,8 +113,8 @@ int main(int argc, char *argv[])
     {
       pt.input[ 0 ] = static_cast<float>( column );
       
-      const StatisticsAggregator s = classifier.classify( pt );
-      pair< u_int, float > result = s.getMax();
+      const Histogram h = classifier.classify( pt );
+      pair< u_int, float > result = h.getMax();
       if( result.first == 0 )
       {
         color.mix( gray, cvt::Color::RED, ( result.second - 0.5f ) * 2 );
@@ -108,33 +133,4 @@ int main(int argc, char *argv[])
   display( img, width, width );
 
   return 0;
-}
-
-void display( const Image& image, size_t width, size_t height ) {
-  Window w("RDF");
-  
-  ImageView iv;
-  iv.setSize(width, height);
-  iv.setImage(image);
-  
-  WidgetLayout wl;
-  wl.setAnchoredTopBottom(0, 0);
-  wl.setAnchoredLeftRight(0, 0);
-  w.addWidget( &iv, wl );
-  
-  w.setSize( width, height );
-  w.setVisible( true );
-  w.update();
-  
-  Application::run();
-}
-
-int countClasses( const DataCollection& data )
-{
-  std::set< u_int > classes;
-  for( size_t i = 0; i < data.size(); i++ )
-  {
-    classes.insert( data[ i ].output );
-  }
-  return classes.size();
 }

@@ -2,9 +2,10 @@
 #define TRAINING_CONTEXT_H
 
 #include <cvt/math/Math.h>
+#include <set>
 
 #include "Feature.h"
-#include "StatisticsAggregator.h"
+#include "Histogram.h"
 
 using namespace std;
 class TrainingContext
@@ -33,14 +34,14 @@ class TrainingContext
       }
     }
 
-    StatisticsAggregator getStatisticsAggregator() const
+    Histogram getHistogram() const
     {
-      return StatisticsAggregator( numClasses );
+      return Histogram( numClasses );
     }
 
-    float computeInformationGain( StatisticsAggregator& parent_s,
-        StatisticsAggregator& left_s,
-        StatisticsAggregator& right_s ) const
+    float computeInformationGain( Histogram& parent_s,
+        Histogram& left_s,
+        Histogram& right_s ) const
     {
 
       float H_p = parent_s.getEntropy();
@@ -56,7 +57,8 @@ class TrainingContext
     bool shouldTerminate( float information_gain ) const
     {
       //TODO
-      return information_gain < 0.001f;
+      // return false;
+      return information_gain < 0.01f;
     }
 };
 

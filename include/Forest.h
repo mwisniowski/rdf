@@ -18,19 +18,19 @@ class Forest
       _trees.push_back( tree );
     }
 
-    const StatisticsAggregator classify( const DataPoint2f& point )
+    const Histogram classify( const DataPoint2f& point )
     {
       //TODO use TrainingContext
-      StatisticsAggregator statistics( _numClasses );
+      Histogram histogram( _numClasses );
 
       vector< Tree >::iterator it = _trees.begin(),
         end = _trees.end();
       for( ; it != end; ++it )
       {
-        statistics.aggregate( it->classify( point ) );
+        histogram.aggregate( it->classify( point ) );
       }
 
-      return statistics;
+      return histogram;
     }
 
   private:

@@ -2,14 +2,13 @@
 #define DATA_COLLECTION_H
 
 #include <vector>
-
 #include "DataPoint.h"
 
 typedef std::vector< DataPoint2f > DataCollection;
 
 struct DataRange
 {
-    DataCollection::iterator start,
+  DataCollection::iterator start,
     end;
 
 
