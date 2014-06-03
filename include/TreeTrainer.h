@@ -116,7 +116,7 @@ class TreeTrainer
         Test test( *fit, best_threshold );
         CDFSampler cdf( test.feature, parent );
         vector< float > candidate_thresholds;
-        cdf.test( candidate_thresholds, context.params.noCandateThresholds );
+        cdf.uniform( candidate_thresholds, context.params.noCandateThresholds );
 
         for( size_t i = 0; i < context.params.noCandateThresholds; i++ )
         {

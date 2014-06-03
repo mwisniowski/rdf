@@ -66,8 +66,8 @@ int main(int argc, char *argv[])
   ifstream is( argv[ 1 ] );
 
   TrainingParameters params;
-  params.maxDecisionLevels = 8;
-  params.trees = 400;
+  params.maxDecisionLevels = 4;
+  params.trees = 50;
   params.noCandidateFeatures = 10;
   params.noCandateThresholds = 10;
 

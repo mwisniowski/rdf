@@ -59,7 +59,7 @@ class CDFSampler
       }
     }
 
-    void test( vector< float >& thresholds, size_t size )
+    void mean( vector< float >& thresholds, size_t size )
     {
       thresholds.clear();
       thresholds.reserve( size );

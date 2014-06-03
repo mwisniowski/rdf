@@ -29,9 +29,10 @@ class TrainingContext
       float max = static_cast<float>(RAND_MAX);
       for( size_t i = 0; i < params.noCandidateFeatures; i++ )
       {
-        float a = rand() / max;
-        float b = rand() / max;
-        features.push_back( Feature( a, b ) );
+        float sample = cvt::Math::rand( 0.0f, cvt::Math::TWO_PI );
+        float x = cvt::Math::cos( sample );
+        float y = cvt::Math::sin( sample );
+        features.push_back( Feature( x, y ) );
       }
     }
 
