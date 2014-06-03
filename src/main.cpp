@@ -66,8 +66,8 @@ int main(int argc, char *argv[])
   ifstream is( argv[ 1 ] );
 
   TrainingParameters params;
-  params.maxDecisionLevels = 4;
-  params.trees = 50;
+  params.maxDecisionLevels = 15;
+  params.trees = 100;
   params.noCandidateFeatures = 10;
   params.noCandateThresholds = 10;
 
@@ -111,69 +111,38 @@ int main(int argc, char *argv[])
   DataPoint2f pt;
   pt.input.resize( 2 );
   cvt::Color color, gray( 0.5f ), mix;
+  cvt::Color colormap[] = {
+    cvt::Color::RED,
+    cvt::Color::BLUE,
+    cvt::Color::GREEN,
+    cvt::Color::YELLOW
+  };
 
-  if( context.numClasses == 2 )
+  for( int row = max_data; row > min_data; row-- )
   {
-    for( int row = max_data; row > min_data; row-- )
+    float* ptr = map.ptr();
+    pt.input[ 1 ] = static_cast<float>( row );
+    for( int column = min_data; column < max_data; column++ )
     {
-      float* ptr = map.ptr();
-      pt.input[ 1 ] = static_cast<float>( row );
-      for( int column = min_data; column < max_data; column++ )
-      {
-        pt.input[ 0 ] = static_cast<float>( column );
-        
-        const Histogram h = classifier.classify( pt );
-        pair< u_int, float > result = h.getMax();
-        if( result.first == 0 )
-        {
-          mix = cvt::Color::RED;
-        } else
-        {
-          mix = cvt::Color::BLUE;
-        }
-        color.mix( gray, mix, norm( result.second, 2 ) );
+      pt.input[ 0 ] = static_cast<float>( column );
 
-        *ptr++ = color.red();
-        *ptr++ = color.green();
-        *ptr++ = color.blue();
-        *ptr++ = color.alpha();
-      }
-      map++;
-    }
-  } else if( context.numClasses == 4 )
-  {
-    for( int row = max_data; row > min_data; row-- )
-    {
-      float* ptr = map.ptr();
-      pt.input[ 1 ] = static_cast<float>( row );
-      for( int column = min_data; column < max_data; column++ )
-      {
-        pt.input[ 0 ] = static_cast<float>( column );
-        
-        const Histogram h = classifier.classify( pt );
-        pair< u_int, float > result = h.getMax();
-        if( result.first == 0 )
-        {
-          mix = cvt::Color::RED;
-        } else if (result.first == 1 )
-        {
-          mix = cvt::Color::BLUE;
-        } else if (result.first == 2 )
-        {
-          mix = cvt::Color::GREEN;
-        } else if (result.first == 3 )
-        {
-          mix = cvt::Color::YELLOW;
-        }
-        color.mix( gray, mix, norm( result.second, 4 ) );
+      const Histogram h = classifier.classify( pt );
 
-        *ptr++ = color.red();
-        *ptr++ = color.green();
-        *ptr++ = color.blue();
-        *ptr++ = color.alpha();
+      mix = cvt::Color::BLACK;
+      float mudiness = 0.5f * h.getEntropy();
+      for( size_t i = 0; i < context.numClasses; i++ )
+      {
+        float p = (1.0f - mudiness ) * h.probability( i );
+        mix = mix + colormap[ i ] * p;
       }
-      map++;
+      mix = mix + gray * mudiness;
+      
+      *ptr++ = mix.red();
+      *ptr++ = mix.green();
+      *ptr++ = mix.blue();
+      *ptr++ = mix.alpha();
     }
+    map++;
   }
 
   display( img, width, width );

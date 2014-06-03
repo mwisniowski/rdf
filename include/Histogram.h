@@ -26,17 +26,6 @@ class Histogram
       n( other.n )
     {}
 
-    // Histogram& operator=( const Histogram& other )
-    // {
-    //   if( this != &other )
-    //   {
-    //     histogram = other.statistics;
-    //     n = other.n;
-    //   }
-    //   
-    //   return *this;
-    // }
-
     virtual ~Histogram() 
     {}
 
@@ -90,6 +79,11 @@ class Histogram
         }
       }
       return -entropy;
+    }
+
+    float probability( size_t class_index ) const
+    {
+      return histogram[ class_index ] / n;
     }
 
     friend ostream& operator<<( ostream& os, const Histogram& s )
