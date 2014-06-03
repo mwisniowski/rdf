@@ -6,17 +6,18 @@
 
 #include "Feature.h"
 #include "Histogram.h"
+#include "TrainingParameters.h"
 
 using namespace std;
 class TrainingContext
 {
   public:
     const size_t numClasses;
-    const size_t noCandidateFeatures;
+    const TrainingParameters params;
 
-    TrainingContext( size_t classes, size_t noCandidateFeatures_ ) :
+    TrainingContext( size_t classes, const TrainingParameters params_ ) :
       numClasses( classes ),
-      noCandidateFeatures( noCandidateFeatures_ )
+      params( params_ )
     {
       srand(time(0));
     }
@@ -24,9 +25,9 @@ class TrainingContext
     void getRandomFeatures( vector< Feature >& features ) const
     {
       features.clear();
-      features.reserve( noCandidateFeatures );
+      features.reserve( params.noCandidateFeatures );
       float max = static_cast<float>(RAND_MAX);
-      for( size_t i = 0; i < noCandidateFeatures; i++ )
+      for( size_t i = 0; i < params.noCandidateFeatures; i++ )
       {
         float a = rand() / max;
         float b = rand() / max;

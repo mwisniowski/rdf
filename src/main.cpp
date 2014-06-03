@@ -51,6 +51,12 @@ int countClasses( const DataCollection& data )
   return classes.size();
 }
 
+float norm( float x, size_t numClasses )
+{
+  float min = 1.0f / numClasses;
+  return ( x - min ) / ( 1.0f - min );
+}
+
 int main(int argc, char *argv[])
 {
   string file =  "~/Developer/rdf/data/supervised_classification/exp1_n2.txt";
@@ -60,15 +66,16 @@ int main(int argc, char *argv[])
   ifstream is( argv[ 1 ] );
 
   TrainingParameters params;
-  params.maxDecisionLevels = 4;
-  params.trees = 100;
-  params.noCandidateFeatures = 4;
+  params.maxDecisionLevels = 8;
+  params.trees = 400;
+  params.noCandidateFeatures = 10;
+  params.noCandateThresholds = 10;
 
   istream_iterator< DataPoint2f > start( is ), end;
   DataCollection data( start, end );
   is.close();
   
-  TrainingContext context( countClasses( data ), params.noCandidateFeatures );
+  TrainingContext context( countClasses( data ), params );
   
   // TreeTrainer trainer( context );
   // Tree classifier = trainer.trainTree( params, data );
@@ -124,7 +131,7 @@ int main(int argc, char *argv[])
         {
           mix = cvt::Color::BLUE;
         }
-        color.mix( gray, mix, ( result.second - 0.5f ) * 2.0f  );
+        color.mix( gray, mix, norm( result.second, 2 ) );
 
         *ptr++ = color.red();
         *ptr++ = color.green();
@@ -158,7 +165,7 @@ int main(int argc, char *argv[])
         {
           mix = cvt::Color::YELLOW;
         }
-        color.mix( gray, mix, 4.0f * ( result.second - 0.25f ) / 3.0f  );
+        color.mix( gray, mix, norm( result.second, 4 ) );
 
         *ptr++ = color.red();
         *ptr++ = color.green();

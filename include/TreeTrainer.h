@@ -7,6 +7,7 @@
 #include "DataCollection.h"
 #include "TrainingParameters.h"
 #include "Tree.h"
+#include "CDFSampler.h"
 
 using namespace std;
 struct Test
@@ -25,6 +26,7 @@ struct Test
     return feature( point ) < threshold;
   }
 };
+
 
 class TreeTrainer 
 {
@@ -112,10 +114,14 @@ class TreeTrainer
       for( ; fit != fend; ++fit )
       {
         Test test( *fit, best_threshold );
-        DataCollection::const_iterator it = parent.start;
-        for( ; it != parent.end; ++it )
+        CDFSampler cdf( test.feature, parent );
+        vector< float > candidate_thresholds;
+        cdf.test( candidate_thresholds, context.params.noCandateThresholds );
+
+        for( size_t i = 0; i < context.params.noCandateThresholds; i++ )
         {
-          test.threshold = test.feature( *it );
+          test.threshold = candidate_thresholds[ i ];
+
           left.end = std::partition( parent.start, parent.end, test );
           right.start = left.end;
 
