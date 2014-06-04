@@ -13,6 +13,7 @@
 
 #include <cvt/gfx/Image.h>
 #include <cvt/gfx/IMapScoped.h>
+#include <cvt/gfx/GFXEngineImage.h>
 
 #include "DataPoint.h"
 #include "DataCollection.h"
@@ -59,17 +60,23 @@ float norm( float x, size_t numClasses )
 
 int main(int argc, char *argv[])
 {
-  string file =  "~/Developer/rdf/data/supervised_classification/exp1_n2.txt";
-  if( argc > 1 ) {
-    file = argv[ 1 ];
+  TrainingParameters params = {
+    200, //trees
+    10,  //noCandidateFeatures
+    10,  //noCandidateThresholds
+    10   //maxDecisionLevels
+  };
+
+  if( argc < 2 ) {
+    cerr << "Please provide a data file";
+    return 1;
   }
   ifstream is( argv[ 1 ] );
 
-  TrainingParameters params;
-  params.maxDecisionLevels = 15;
-  params.trees = 100;
-  params.noCandidateFeatures = 10;
-  params.noCandateThresholds = 10;
+  if( argc > 2 ) params.noCandidateFeatures = atoi( argv[ 2 ] );
+  if( argc > 3 ) params.noCandateThresholds = atoi( argv[ 3 ] );
+  if( argc > 4 ) params.maxDecisionLevels = atoi( argv[ 4 ] );
+  if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
 
   istream_iterator< DataPoint2f > start( is ), end;
   DataCollection data( start, end );

@@ -30,12 +30,12 @@ include_directories(
   ${CVT_INCLUDE_DIRS}
 )
 
-ADD_EXECUTABLE( main 
+ADD_EXECUTABLE( plot 
   ${RDF_HEADERS}
   ${RDF_SOURCES}
-  src/main.cpp
+  src/plot.cpp
 )
-TARGET_LINK_LIBRARIES(
-  main
+TARGET_LINK_LIBRARIES( plot
   ${CVT_LIBRARIES}
 )
+
