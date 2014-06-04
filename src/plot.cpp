@@ -52,11 +52,11 @@ int countClasses( const DataCollection& data )
   return classes.size();
 }
 
-float norm( float x, size_t numClasses )
-{
-  float min = 1.0f / numClasses;
-  return ( x - min ) / ( 1.0f - min );
-}
+// float norm( float x, size_t numClasses )
+// {
+//   float min = 1.0f / numClasses;
+//   return ( x - min ) / ( 1.0f - min );
+// }
 
 int main(int argc, char *argv[])
 {
