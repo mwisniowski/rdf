@@ -20,6 +20,8 @@
 #include "ForestTrainer.h"
 #include "TrainingParameters.h"
 
+#include "gnuplot_i.hpp"
+
 using namespace std;
 using namespace cvt;
 
@@ -123,9 +125,10 @@ int main(int argc, char *argv[])
     }
   }
 
+  vector< double > plot_x, plot_y;
   for( size_t c = 0; c < numClasses; c++ )
   {
-    cout << c << ": ( ";
+    // cout << c << ": ( ";
 
     size_t condition_positive = 0;
     for( size_t cc = 0; cc < numClasses; cc++ )
@@ -142,7 +145,30 @@ int main(int argc, char *argv[])
 
     float fpr = ( float ) ( test_positive - confusion_matrix[ c ][ c ] ) / condition_negative;
     float tpr = ( float ) confusion_matrix[ c ][ c ] / condition_positive;
-    cout << fpr << " , " << tpr << " )" << endl;
+    // cout << fpr << " , " << tpr << " )" << endl;
+    // cout << fpr << "  " << tpr << endl;
+
+    plot_x.push_back( fpr );
+    plot_y.push_back( tpr );
+  }
+
+  try
+  {
+    Gnuplot g;
+    g.set_title("ROC");
+    g.set_xlabel("False positive rate");
+    g.set_ylabel("True positive rate");
+    g.set_grid();
+    g << "set size square";
+    g.set_xrange(0,1);
+    g.set_yrange(0,1);
+
+    g.unset_legend();
+    g.set_style("points").plot_xy( plot_x, plot_y );
+    g.set_style("lines lt -1").plot_slope(1.0,0.0,"Random");
+  } catch( GnuplotException e )
+  {
+    cout << e.what() << endl;
   }
 
   return 0;
