@@ -27,6 +27,13 @@ class Feature
     virtual ~Feature()
     {}
 
+    /**
+     * @brief Dot product of point and feature vector
+     *
+     * @param point
+     *
+     * @return 
+     */
     float operator()( const DataPoint2f& point ) const
     {
       return a * point.input[ 0 ] + b * point.input[ 1 ];

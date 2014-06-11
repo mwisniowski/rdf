@@ -6,6 +6,9 @@
 
 typedef std::vector< DataPoint2f > DataCollection;
 
+/**
+ * @brief Stores start and end iterator of DataCollection
+ */
 struct DataRange
 {
   DataCollection::iterator start,

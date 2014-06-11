@@ -29,6 +29,11 @@ class Histogram
     virtual ~Histogram() 
     {}
 
+    /**
+     * @brief Adds DataPoints from range to histogram
+     *
+     * @param range
+     */
     void aggregate( const DataRange& range )
     {
       DataCollection::const_iterator it( range.start );
@@ -39,9 +44,14 @@ class Histogram
       }
     }
 
+    /**
+     * @brief Adds per-class values from another histogram
+     *
+     * @param s
+     */
     void aggregate( const Histogram& s )
     {
-      //TODO ensure size
+      //TODO assert equal distance
       vector< float >::iterator it = histogram.begin(), 
         end = histogram.end();
       vector< float >::const_iterator sit = s.histogram.begin();
@@ -52,6 +62,12 @@ class Histogram
       n += s.n;
     }
 
+    /**
+     * @brief Returns mode of histogram with the corresponding
+     * empirical class probability
+     *
+     * @return 
+     */
     pair< u_int, float > getMax() const
     {
       float maxValue = FLT_MIN;
@@ -67,6 +83,11 @@ class Histogram
       return pair< u_int, float >( maxC, maxValue / n );
     }
 
+    /**
+     * @brief Calculates entropy of the histogram
+     *
+     * @return 
+     */
     float getEntropy() const
     {
       float entropy = 0.0f;
