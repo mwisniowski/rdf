@@ -126,31 +126,31 @@ int main(int argc, char *argv[])
   }
 
   vector< double > plot_x, plot_y;
+  float acc = 0.0f;
   for( size_t c = 0; c < numClasses; c++ )
   {
-    // cout << c << ": ( ";
+    acc += confusion_matrix[ c ][ c ];
 
     size_t condition_positive = 0;
-    for( size_t cc = 0; cc < numClasses; cc++ )
-    {
-      condition_positive += confusion_matrix[ cc ][ c ];
-    }
-    size_t condition_negative = ( folds * n ) - condition_positive;
-
     size_t test_positive = 0;
     for( size_t cc = 0; cc < numClasses; cc++ )
     {
+      condition_positive += confusion_matrix[ cc ][ c ];
       test_positive += confusion_matrix[ c ][ cc ];
     }
+    size_t condition_negative = ( folds * n ) - condition_positive;
 
     float fpr = ( float ) ( test_positive - confusion_matrix[ c ][ c ] ) / condition_negative;
     float tpr = ( float ) confusion_matrix[ c ][ c ] / condition_positive;
-    // cout << fpr << " , " << tpr << " )" << endl;
-    // cout << fpr << "  " << tpr << endl;
 
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
+
+    cout << c << ": (" << fpr << ", " << tpr << ")" << endl;
   }
+  acc /= folds * n;
+
+  cout << "Acc: " << acc << endl;
 
   try
   {
@@ -164,8 +164,9 @@ int main(int argc, char *argv[])
     g.set_yrange(0,1);
 
     g.unset_legend();
+    g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
+    g.set_style("lines lt 0").plot_slope(0.0f,acc,"Accuracy");
     g.set_style("points").plot_xy( plot_x, plot_y );
-    g.set_style("lines lt -1").plot_slope(1.0,0.0,"Random");
   } catch( GnuplotException e )
   {
     cout << e.what() << endl;
