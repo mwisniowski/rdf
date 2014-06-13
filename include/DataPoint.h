@@ -10,63 +10,67 @@
 using namespace std;
 
 template< typename I, typename O, size_t in_size > 
-class DataPoint
+struct DataPoint
 {
-public:
+  vector<I> input;
+  O         output;
+
+
   DataPoint()
   {
-    _input.reserve( in_size );
+    input.reserve( in_size );
+  }
+
+  DataPoint( vector<I>& in, O& out )
+  {
+    input = in;
+    output = out;
   }
 
   virtual ~DataPoint()
   {
   }
 
-  inline vector<I>& input() const
+  DataPoint& operator=( const DataPoint& other )
   {
-    return _input;
+    if( this != &other )
+    {
+      input = other.input;
+      output = other.output;
+    }
+    return *this;
   }
 
-  inline O& output() const
+  friend istream& operator>>( istream& is, DataPoint& point )
   {
-    return _output;
-  }
-
-  friend istream& operator>>( istream& is, DataPoint& instance )
-  {
-    string line, ignore;
-    getline( is, line );
-    istringstream iss( line );
     I input;
 
-    iss >> instance._output;
+    is >> point.output;
+    point.output -= 1;
 
+    point.input.clear();
     for (int i = 0; i < in_size; ++i)
     {
-      iss >> input;
-      instance._input.push_back( input );
+      is >> input;
+      point.input.push_back( input );
     }
 
     return is;
   }
 
-  friend ostream& operator<<( ostream& os, const DataPoint& instance )
+  friend ostream& operator<<( ostream& os, const DataPoint& point )
   {
     os << "(";
     for (int i = 0; i < in_size - 1; ++i)
     {
-      os << instance._input[ i ] << ",";
+      os << point.input[ i ] << ",";
     }
-    os << instance._input.back() << "),"; 
+    os << point.input.back() << "),"; 
 
-    os << instance._output;
+    os << point.output;
 
     return os;
   }
-
-private:
-  vector<I> _input;
-  O         _output;
 };
 
 typedef DataPoint< float, u_int, 2 > DataPoint2f;

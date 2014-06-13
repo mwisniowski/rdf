@@ -4,66 +4,83 @@
 #include <cvt/math/Math.h>
 #include <set>
 
-#include "ITrainingContext.h"
 #include "Feature.h"
-#include "StatisticsAggregator.h"
+#include "Histogram.h"
+#include "TrainingParameters.h"
 
-class TrainingContext : public ITrainingContext
+using namespace std;
+using namespace cvt::Math;
+
+class TrainingContext
 {
   public:
-    TrainingContext()
+    const size_t numClasses;
+    const TrainingParameters params;
+
+    TrainingContext( size_t classes, const TrainingParameters p ) :
+      numClasses( classes ),
+      params( p )
     {
-      srand(time(0));
+      srand( time( 0 ) );
     }
 
-    const IFeature& getRandomFeature()
+    /**
+     * @brief Get random unit vectors by sampling an angle from the unit circle
+     *
+     * @param features
+     */
+    void getRandomFeatures( vector< Feature >& features ) const
     {
-      int r = rand() % 2;
-      std::set< IFeature >::iterator it = _features.insert( Feature( r, !r ) ).first();
-      return *it;
-    }
-
-    IStatisticsAggregator* getStatisticsAggregator() const
-    {
-      return new StatisticsAggregator();
-    }
-
-    float computeInformationGain( const IStatisticsAggregator& parent,
-        const IStatisticsAggregator& left,
-        const IStatisticsAggregator& right ) const
-    {
-      float H_p = computeEntropy( parent );
-      float H_l = computeEntropy( left );
-      float H_r = computeEntropy( right );
-
-      float fraction = left.numClasses() / 
-        static_cast<float>( parent.numClasses() );
-
-      return H_p - ( fraction * H_l ) - ( ( 1.0f  - fraction ) * H_r );
-    }
-
-    bool shouldTerminate( IStatisticsAggregator& parent,
-        IStatisticsAggregator& left,
-        IStatisticsAggregator& right ) const
-    {
-      // TODO
-      return true;
-    }
-
-  private:
-    float computeEntropy( const IStatisticsAggregator& stats ) const
-    {
-      float sum = 0.0f;
-      for( size_t i = 0; i < stats.numClasses(); i++ )
+      features.clear();
+      features.reserve( params.noCandidateFeatures );
+      for( size_t i = 0; i < params.noCandidateFeatures; i++ )
       {
-        float p_c = stats.probability( i );
-        sum += p_c * cvt::Math::log( p_c );
+        float angle = rand( 0.0f, TWO_PI );
+        features.push_back( Feature( cvt::Math::cos( angle ), cvt::Math::sin( angle ) ) );
       }
-      return -sum;
     }
 
-    //TODO use as cache
-    set< IFeature > _features;
+    Histogram getHistogram() const
+    {
+      return Histogram( numClasses );
+    }
+
+    /**
+     * @brief Compute information gain by subtracting the sum of weighted child-entropies
+     * from parent entropy
+     *
+     * @param parent_s
+     * @param left_s
+     * @param right_s
+     *
+     * @return 
+     */
+    float computeInformationGain( const Histogram& parent_s,
+        const Histogram& left_s,
+        const Histogram& right_s ) const
+    {
+
+      float H_p = parent_s.getEntropy();
+      float H_l = left_s.getEntropy();
+      float H_r = right_s.getEntropy();
+
+      float fraction = left_s.n / static_cast<float>( parent_s.n );
+
+      return H_p - ( ( fraction * H_l ) + ( ( 1.0f  - fraction ) * H_r ) );
+    }
+
+    /**
+     * @brief Criterion if a leaf should be converted to split node
+     *
+     * @param information_gain
+     *
+     * @return 
+     */
+    bool shouldTerminate( float information_gain ) const
+    {
+      // TODO Magic number
+      return information_gain < 0.01f;
+    }
 };
 
 #endif

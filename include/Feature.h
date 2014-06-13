@@ -1,27 +1,43 @@
 #ifndef FEATURE_H
 #define FEATURE_H
 
-#include "IFeature.h"
+#include "DataPoint.h"
 
-class Feature : public IFeature
+class Feature
 {
+  private:
+    float a;
+    float b;
+
+
   public:
+    Feature()
+    {}
+
     Feature( float a, float b ) :
-      _a( a ),
-      _b( b )
+      a( a ),
+      b( b )
+    {}
+
+    Feature( const Feature& other ) :
+      a( other.a ),
+      b( other.b )
     {}
 
     virtual ~Feature()
     {}
 
-    float operator()( DataPoint2f& point ) const
+    /**
+     * @brief Dot product of point and feature vector
+     *
+     * @param point
+     *
+     * @return 
+     */
+    float operator()( const DataPoint2f& point ) const
     {
-      return _a * point.input()[ 0 ] + _b * point.input()[ 1 ];
+      return a * point.input[ 0 ] + b * point.input[ 1 ];
     }
-
-  private:
-    float _a;
-    float _b;
 };
 
 #endif
