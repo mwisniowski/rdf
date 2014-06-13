@@ -8,18 +8,18 @@
 #include "Histogram.h"
 #include "TrainingParameters.h"
 
+#define POOL_SIZE 720
+
 using namespace std;
 using namespace cvt::Math;
 
 class TrainingContext
 {
   public:
-    const size_t numClasses;
     const TrainingParameters params;
     const vector< Feature > featurePool;
 
-    TrainingContext( size_t classes, const TrainingParameters p ) :
-      numClasses( classes ),
+    TrainingContext( const TrainingParameters p ) :
       params( p ),
       featurePool( createFeaturePool() )
     {
@@ -30,7 +30,8 @@ class TrainingContext
     vector< Feature > createFeaturePool()
     {
       // size_t pool_size = params.noCandidateFeatures * pow( 2, params.maxDecisionLevels );
-      size_t pool_size = 720;
+      // TODO magic number
+      size_t pool_size = POOL_SIZE;
       vector< Feature > features;
       features.reserve( pool_size );
       for( size_t i = 0; i < pool_size; i++ )
@@ -66,7 +67,7 @@ class TrainingContext
 
     Histogram getHistogram() const
     {
-      return Histogram( numClasses );
+      return Histogram();
     }
 
     /**

@@ -42,16 +42,6 @@ void display( const Image& image, size_t width, size_t height ) {
   Application::run();
 }
 
-int countClasses( const DataCollection& data )
-{
-  std::set< u_int > classes;
-  for( size_t i = 0; i < data.size(); i++ )
-  {
-    classes.insert( data[ i ].output );
-  }
-  return classes.size();
-}
-
 // float norm( float x, size_t numClasses )
 // {
 //   float min = 1.0f / numClasses;
@@ -61,7 +51,7 @@ int countClasses( const DataCollection& data )
 int main(int argc, char *argv[])
 {
   TrainingParameters params = {
-    200, //trees
+    100, //trees
     10,  //noCandidateFeatures
     10,  //noCandidateThresholds
     10   //maxDecisionLevels
@@ -82,7 +72,7 @@ int main(int argc, char *argv[])
   DataCollection data( start, end );
   is.close();
   
-  TrainingContext context( countClasses( data ), params );
+  TrainingContext context( params );
   
   // TreeTrainer trainer( context );
   // Tree classifier = trainer.trainTree( params, data );
@@ -137,7 +127,7 @@ int main(int argc, char *argv[])
 
       mix = cvt::Color::BLACK;
       float mudiness = 0.5f * h.getEntropy();
-      for( size_t i = 0; i < context.numClasses; i++ )
+      for( size_t i = 0; i < h.numClasses(); i++ )
       {
         float p = (1.0f - mudiness ) * h.probability( i );
         mix = mix + colormap[ i ] * p;

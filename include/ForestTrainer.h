@@ -22,7 +22,7 @@ class ForestTrainer
     Forest trainForest( const TrainingParameters& params,
         DataCollection& data )
     {
-      Forest f( _context.numClasses );
+      Forest f;
       TreeTrainer trainer( _context );
       for( size_t i=0; i < params.trees; i++ )
       {

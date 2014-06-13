@@ -111,10 +111,10 @@ int main(int argc, char *argv[])
     }
 
     DataCollection test_data( partition_map[ f ].start, partition_map[ f ].end );
-    Histogram test_data_distribution( numClasses );
+    Histogram test_data_distribution;
     test_data_distribution.aggregate( DataRange( test_data.begin(), test_data.end() ) );
 
-    TrainingContext context( numClasses, params );
+    TrainingContext context( params );
     ForestTrainer trainer( context );
     Forest classifier = trainer.trainForest( params, training_data );
     
