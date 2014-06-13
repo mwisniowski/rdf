@@ -158,15 +158,22 @@ int main(int argc, char *argv[])
     g.set_title("ROC");
     g.set_xlabel("False positive rate");
     g.set_ylabel("True positive rate");
-    g.set_grid();
     g << "set size square";
+
+    g << "set xtics .1";
+    g << "set ytics .1";
+    g << "set mxtics 2";
+    g << "set mytics 2";
     g.set_xrange(0,1);
     g.set_yrange(0,1);
+    g.set_grid();
 
     g.unset_legend();
     g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
     g.set_style("lines lt 0").plot_slope(0.0f,acc,"Accuracy");
     g.set_style("points").plot_xy( plot_x, plot_y );
+
+    getchar();
   } catch( GnuplotException e )
   {
     cout << e.what() << endl;
