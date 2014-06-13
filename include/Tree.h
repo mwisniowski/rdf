@@ -8,11 +8,11 @@
 
 struct Node 
 {
-  Feature              feature;
-  Histogram histogram;
-  DataRange      data;
-  float                threshold;
-  int                  childOffset;
+  Feature     feature;
+  Histogram   histogram;
+  DataRange   data;
+  float       threshold;
+  int         childOffset;
 
   Node( const Histogram& histogram,
       const DataRange& range ) :

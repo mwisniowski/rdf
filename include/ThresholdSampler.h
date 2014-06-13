@@ -57,7 +57,7 @@ class ThresholdSampler
       thresholds.reserve( size );
       for( size_t i = 0; i < size; i++ )
       {
-        size_t index = ceilf( n * i / static_cast<float>( size ) ) - 1;
+        size_t index = cvt::Math::max( ceilf( n * i / static_cast<float>( size ) ) - 1, 0.0f );
         thresholds.push_back( feature( *( range.start + index ) ) );
       }
     }
