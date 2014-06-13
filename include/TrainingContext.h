@@ -16,13 +16,32 @@ class TrainingContext
   public:
     const size_t numClasses;
     const TrainingParameters params;
+    const vector< Feature > featurePool;
 
     TrainingContext( size_t classes, const TrainingParameters p ) :
       numClasses( classes ),
-      params( p )
+      params( p ),
+      featurePool( createFeaturePool() )
     {
       srand( time( 0 ) );
     }
+
+  private:
+    vector< Feature > createFeaturePool()
+    {
+      // size_t pool_size = params.noCandidateFeatures * pow( 2, params.maxDecisionLevels );
+      size_t pool_size = 720;
+      vector< Feature > features;
+      features.reserve( pool_size );
+      for( size_t i = 0; i < pool_size; i++ )
+      {
+        float angle = rand( 0.0f, TWO_PI );
+        features.push_back( Feature( cvt::Math::cos( angle ), cvt::Math::sin( angle ) ) );
+      }
+      return features;
+    }
+
+  public:
 
     /**
      * @brief Get random unit vectors by sampling an angle from the unit circle
@@ -31,12 +50,17 @@ class TrainingContext
      */
     void getRandomFeatures( vector< Feature >& features ) const
     {
+      vector< size_t > indices( featurePool.size() );
+      for( size_t i = 0; i < indices.size(); i++ )
+      {
+        indices[ i ] = i;
+      }
+      random_shuffle( indices.begin(), indices.end() );
+
       features.clear();
-      features.reserve( params.noCandidateFeatures );
       for( size_t i = 0; i < params.noCandidateFeatures; i++ )
       {
-        float angle = rand( 0.0f, TWO_PI );
-        features.push_back( Feature( cvt::Math::cos( angle ), cvt::Math::sin( angle ) ) );
+        features.push_back( featurePool[ indices[ i ] ] ); 
       }
     }
 
