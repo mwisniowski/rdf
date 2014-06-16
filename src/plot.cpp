@@ -16,7 +16,7 @@
 #include <cvt/gfx/GFXEngineImage.h>
 
 #include "DataPoint.h"
-#include "DataCollection.h"
+#include "DataRange.h"
 #include "ForestTrainer.h"
 #include "TrainingParameters.h"
 

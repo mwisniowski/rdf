@@ -16,8 +16,8 @@ using namespace std;
  */
 struct Test
 {
-  const Feature feature;
-  float threshold;
+  const Feature   feature;
+  float           threshold;
 
 
   Test( const Feature& f, float t ) :

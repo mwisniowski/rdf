@@ -3,7 +3,7 @@
 
 #include <cvt/math/Math.h>
 #include <map>
-#include "DataCollection.h"
+#include "DataRange.h"
 
 class Histogram
 {
@@ -32,9 +32,9 @@ class Histogram
      *
      * @param range
      */
-    void aggregate( const DataRange& range )
+    void aggregate( const DataRange2f& range )
     {
-      DataCollection::const_iterator it( range.start );
+      DataRange2f::const_iterator it( range.start );
       for( ; it != range.end; ++it )
       {
         if( numClasses() <= it->output )

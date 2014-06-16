@@ -9,7 +9,7 @@
 
 using namespace std;
 
-template< typename I, typename O, size_t in_size > 
+template< typename I, typename O, size_t d > 
 struct DataPoint
 {
   vector<I> input;
@@ -18,7 +18,7 @@ struct DataPoint
 
   DataPoint()
   {
-    input.reserve( in_size );
+    input.reserve( d );
   }
 
   DataPoint( vector<I>& in, O& out )
@@ -49,7 +49,7 @@ struct DataPoint
     point.output -= 1;
 
     point.input.clear();
-    for (int i = 0; i < in_size; ++i)
+    for (int i = 0; i < d; ++i)
     {
       is >> input;
       point.input.push_back( input );
@@ -61,7 +61,7 @@ struct DataPoint
   friend ostream& operator<<( ostream& os, const DataPoint& point )
   {
     os << "(";
-    for (int i = 0; i < in_size - 1; ++i)
+    for (int i = 0; i < d - 1; ++i)
     {
       os << point.input[ i ] << ",";
     }
@@ -73,6 +73,6 @@ struct DataPoint
   }
 };
 
-typedef DataPoint< float, u_int, 2 > DataPoint2f;
+// typedef DataPoint< float, u_int, 2 > DataPoint2f;
 
 #endif

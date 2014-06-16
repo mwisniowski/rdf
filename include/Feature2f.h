@@ -3,7 +3,9 @@
 
 #include "DataPoint.h"
 
-class Feature
+typedef u_int class_type;
+
+class Feature2f
 {
   private:
     float a;
@@ -11,20 +13,20 @@ class Feature
 
 
   public:
-    Feature()
+    Feature2f()
     {}
 
-    Feature( float a, float b ) :
+    Feature2f( float a, float b ) :
       a( a ),
       b( b )
     {}
 
-    Feature( const Feature& other ) :
+    Feature2f( const Feature2f& other ) :
       a( other.a ),
       b( other.b )
     {}
 
-    virtual ~Feature()
+    virtual ~Feature2f()
     {}
 
     /**
@@ -34,7 +36,7 @@ class Feature
      *
      * @return 
      */
-    float operator()( const DataPoint2f& point ) const
+    float operator()( const DataPoint< float, class_type, 2 >& point ) const
     {
       return a * point.input[ 0 ] + b * point.input[ 1 ];
     }

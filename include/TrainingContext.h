@@ -4,7 +4,7 @@
 #include <cvt/math/Math.h>
 #include <set>
 
-#include "Feature.h"
+#include "Feature2f.h"
 #include "Histogram.h"
 #include "TrainingParameters.h"
 
@@ -16,8 +16,8 @@ using namespace cvt::Math;
 class TrainingContext
 {
   public:
-    const TrainingParameters params;
-    const vector< Feature > featurePool;
+    const TrainingParameters   params;
+    const vector< Feature2f >    featurePool;
 
     TrainingContext( const TrainingParameters p ) :
       params( p ),
@@ -27,29 +27,67 @@ class TrainingContext
     }
 
   private:
-    vector< Feature > createFeaturePool()
+    vector< Feature2f > createFeaturePool()
     {
       // size_t pool_size = params.noCandidateFeatures * pow( 2, params.maxDecisionLevels );
       // TODO magic number
       size_t pool_size = POOL_SIZE;
-      vector< Feature > features;
+      vector< Feature2f > features;
       features.reserve( pool_size );
+      vector< float > rv;
       for( size_t i = 0; i < pool_size; i++ )
       {
-        float angle = rand( 0.0f, TWO_PI );
-        features.push_back( Feature( cvt::Math::cos( angle ), cvt::Math::sin( angle ) ) );
+        // float angle = rand( 0.0f, TWO_PI );
+        gaussianVector( rv, 2 );
+        features.push_back( Feature2f( rv[ 0 ], rv[ 1 ] ) );
       }
       return features;
     }
 
   public:
 
+
+    /**
+     * @brief Generate a random gaussian distributed vector using the Marsaglia Polar Method
+     *
+     * @param gv
+     * @param dimensions
+     */
+    void gaussianVector( vector< float > gv, size_t dimensions )
+    {
+      gv.clear();
+      for( size_t i = 0; i < dimensions; i+=2 )
+      {
+        float u, v, s;
+        do {
+          u = randf( -1.0f, 1.0f );
+          v = randf( -1.0f, 1.0f );
+          s = u * u + v * v;
+        } while ( s >= 1 )
+
+        gv.push_back( u * sqrtf( -2 * log2( s ) / s ) );
+        gv.push_back( v * sqrtf( -2 * log2( s ) / s ) );
+      }
+
+      if( dimensions % 2 == 1 )
+      {
+        float u, v, s;
+        do {
+          u = randf( -1.0f, 1.0f );
+          v = randf( -1.0f, 1.0f );
+          s = u * u + v * v;
+        } while ( s >= 1 )
+
+        gv.push_back( u * sqrtf( -2 * log2( s ) / s ) );
+      }
+    }
+
     /**
      * @brief Get random unit vectors by sampling an angle from the unit circle
      *
      * @param features
      */
-    void getRandomFeatures( vector< Feature >& features ) const
+    void getRandomFeatures( vector< Feature2f >& features ) const
     {
       vector< size_t > indices( featurePool.size() );
       for( size_t i = 0; i < indices.size(); i++ )

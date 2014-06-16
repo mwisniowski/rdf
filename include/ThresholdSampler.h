@@ -10,9 +10,9 @@ using namespace cvt::Math;
 class ThresholdSampler
 { 
   private:
-    const Feature feature;
-    const size_t n;
-    const DataRange range;
+    const Feature     feature;
+    const size_t      n;
+    const DataRange   range;
  
   public:
     ThresholdSampler( const Feature& f, const DataRange& r ) :

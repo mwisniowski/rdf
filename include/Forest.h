@@ -14,16 +14,16 @@ class Forest
 
     void add( const Tree& tree )
     {
-      _trees.push_back( tree );
+      trees.push_back( tree );
     }
 
-    const Histogram classify( const DataPoint2f& point )
+    const Histogram classify( const DataRange2f::point_type& point )
     {
       //TODO use TrainingContext
       Histogram histogram;
 
-      vector< Tree >::iterator it = _trees.begin(),
-        end = _trees.end();
+      vector< Tree >::iterator it = trees.begin(),
+        end = trees.end();
       for( ; it != end; ++it )
       {
         histogram.aggregate( it->classify( point ) );
@@ -33,8 +33,8 @@ class Forest
     }
 
   private:
-    vector< Tree > _trees;
-    size_t _numClasses;
+    vector< Tree > trees;
+    size_t numClasses;
 };
 
 #endif

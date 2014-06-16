@@ -9,9 +9,9 @@ find_package(CVT_DEBUG REQUIRED)
 
 set(RDF_HEADERS
   include/DataPoint.h
-  include/DataCollection.h
+  include/DataRange.h
   include/Histogram.h
-  include/Feature.h
+  include/Feature2f.h
   include/Forest.h
   include/ForestTrainer.h
   include/Tree.h

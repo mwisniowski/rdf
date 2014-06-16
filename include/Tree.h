@@ -2,20 +2,21 @@
 #define TREE_H
 
 #include <iomanip>
-#include "DataCollection.h"
-#include "Feature.h"
+#include "DataRange.h"
+#include "Feature2f.h"
 #include "Histogram.h"
 
+template< typename I, typename O, size_t d >
 struct Node 
 {
-  Feature     feature;
-  Histogram   histogram;
-  DataRange   data;
-  float       threshold;
-  int         childOffset;
+  Feature2f     feature;
+  Histogram              histogram;
+  DataRange< I, O, d >   data;
+  float                  threshold;
+  int                    childOffset;
 
   Node( const Histogram& histogram,
-      const DataRange& range ) :
+      const DataRange< I, O, d >& range ) :
     histogram( histogram ),
     data( range ),
     childOffset( -1 )
@@ -39,14 +40,15 @@ struct Node
   }
 };
 
+template< typename I, typename O, size_t d >
 class Tree 
 {
   public:
-    vector< Node > nodes;
+    vector< Node< I, O, d > > nodes;
 
 
   public:
-    Tree( const Node& root ) 
+    Tree( const Node< I, O, d >& root ) 
     {
       nodes.push_back( root );
     }
@@ -54,9 +56,9 @@ class Tree
     virtual ~Tree() 
     {}
 
-    const Histogram& classify( const DataPoint2f& point ) const
+    const Histogram& classify( const DataPoint< I, O, d >& point ) const
     {
-      vector< Node >::const_iterator it = nodes.begin();
+      typename vector< Node< I, O, d > >::const_iterator it = nodes.begin();
       while( it->childOffset > 0 )
       {
         if( it->feature( point ) < it->threshold )
@@ -65,17 +67,14 @@ class Tree
         } else {
           it += it->childOffset + 1;
         }
-        // it += it->childOffset + ( it->feature( point ) < it->threshold );
       }
-      // u_int c = it->statistics.maxClass();
-      // return pair< u_int, float >( c, it->statistics.probability( c ) );
       return it->histogram;
     }
 
-    void convertToSplit( size_t node_idx, float threshold, const Feature& feature, 
-        const Node& left, const Node& right )
+    void convertToSplit( size_t node_idx, float threshold, const Feature< I, O, d >& feature, 
+        const Node< I, O, d >& left, const Node< I, O, d >& right )
     {
-      Node& node = nodes.at( node_idx );
+      Node< I, O, d >& node = nodes.at( node_idx );
       node.threshold = threshold;
       node.feature = feature;
       node.childOffset = nodes.size() - node_idx;

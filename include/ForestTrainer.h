@@ -9,11 +9,11 @@
 class ForestTrainer 
 {
   private:
-    const TrainingContext _context;
+    const TrainingContext context;
 
   public:
     ForestTrainer( const TrainingContext& context ) :
-      _context( context )
+      context( context )
     {}
 
     virtual ~ForestTrainer() 
@@ -23,7 +23,7 @@ class ForestTrainer
         DataCollection& data )
     {
       Forest f;
-      TreeTrainer trainer( _context );
+      TreeTrainer trainer( context );
       for( size_t i=0; i < params.trees; i++ )
       {
         f.add( trainer.trainTree( params, data ) );
