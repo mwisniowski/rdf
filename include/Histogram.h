@@ -35,7 +35,7 @@ class Histogram: public IStatistics< DataPoint2f, Histogram >
      */
     void aggregate( const DataRange< DataPoint2f >& range )
     {
-      DataRange2f::const_iterator it( range.start );
+      DataRange< DataPoint2f >::const_iterator it( range.start );
       for( ; it != range.end; ++it )
       {
         if( numClasses() <= it->output )

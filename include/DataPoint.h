@@ -73,6 +73,4 @@ struct DataPoint
   }
 };
 
-// typedef DataPoint< float, u_int, 2 > DataPoint2f;
-
 #endif

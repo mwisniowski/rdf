@@ -23,6 +23,9 @@
 using namespace std;
 using namespace cvt;
 
+typedef DataPoint< float, u_int, 2 > DataPoint2f;
+typedef Feature< 2 > Feature2;
+
 void display( const Image& image, size_t width, size_t height ) {
   Window w("RDF");
   
@@ -50,7 +53,6 @@ void display( const Image& image, size_t width, size_t height ) {
 
 int main(int argc, char *argv[])
 {
-  typedef DataPoint< float, u_int, 2 > DataPoint2f;
   TrainingParameters params = {
     100, //trees
     10,  //noCandidateFeatures
@@ -80,8 +82,8 @@ int main(int argc, char *argv[])
   // Tree classifier = trainer.trainTree( params, data );
   // cout << classifier;
   
-  ForestTrainer< DataPoint2f, Feature, Histogram > trainer( context );
-  Forest< DataPoint2f, Feature, Histogram > classifier = trainer.trainForest( params, range );
+  ForestTrainer< DataPoint2f, Feature2, Histogram > trainer( context );
+  Forest< DataPoint2f, Feature2, Histogram > classifier = trainer.trainForest( params, range );
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;

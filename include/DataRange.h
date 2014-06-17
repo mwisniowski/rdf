@@ -31,6 +31,4 @@ struct DataRange
   {}
 };
 
-typedef DataRange< DataPoint< float, u_int, 2 > > DataRange2f;
-
 #endif

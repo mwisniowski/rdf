@@ -5,14 +5,15 @@
 
 using namespace std;
 
-class Feature : public IFeature< DataPoint< float, u_int, 2 > >
+template< size_t d >
+class Feature : public IFeature< DataPoint< float, u_int, d > >
 {
   private:
     vector< float > vector;
 
   public:
     Feature() :
-      vector( 2, 0.0f )
+      vector( d, 0.0f )
     {
     }
 
@@ -34,10 +35,10 @@ class Feature : public IFeature< DataPoint< float, u_int, 2 > >
      *
      * @return 
      */
-    float operator()( const DataPoint< float, u_int, 2 >& point ) const
+    float operator()( const DataPoint< float, u_int, d >& point ) const
     {
       float sum = 0;
-      for( size_t i = 0; i < 2; i++ )
+      for( size_t i = 0; i < d; i++ )
       {
         sum += vector[ i ] * point.input[ i ];
       }

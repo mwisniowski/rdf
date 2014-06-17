@@ -14,10 +14,10 @@
 using namespace std;
 using namespace cvt::Math;
 
-class TrainingContext : public ITrainingContext< Feature, Histogram >
+class TrainingContext : public ITrainingContext< Feature< 2 >, Histogram >
 {
   public:
-    const vector< Feature >   featurePool;
+    const vector< Feature< 2 > >   featurePool;
 
     TrainingContext( const TrainingParameters p ) :
       ITrainingContext( p ),
@@ -27,19 +27,19 @@ class TrainingContext : public ITrainingContext< Feature, Histogram >
     }
 
   private:
-    vector< Feature > createFeaturePool()
+    vector< Feature< 2 > > createFeaturePool()
     {
       // size_t pool_size = params.noCandidateFeatures * pow( 2, params.maxDecisionLevels );
       // TODO magic number
       size_t pool_size = POOL_SIZE;
-      vector< Feature > features;
+      vector< Feature< 2 > > features;
       features.reserve( pool_size );
       vector< float > rv;
       for( size_t i = 0; i < pool_size; i++ )
       {
         // float angle = rand( 0.0f, TWO_PI );
         gaussianVector( rv, 2 );
-        features.push_back( Feature( rv ) );
+        features.push_back( Feature< 2 >( rv ) );
       }
       return features;
     }
@@ -53,7 +53,7 @@ class TrainingContext : public ITrainingContext< Feature, Histogram >
      * @param gv
      * @param dimensions
      */
-    void gaussianVector( vector< float > gv, size_t dimensions )
+    void gaussianVector( vector< float >& gv, size_t dimensions )
     {
       gv.clear();
       for( size_t i = 0; i < dimensions; i+=2 )
@@ -87,7 +87,7 @@ class TrainingContext : public ITrainingContext< Feature, Histogram >
      *
      * @param features
      */
-    void getRandomFeatures( vector< Feature >& features ) const
+    void getRandomFeatures( vector< Feature< 2 > >& features ) const
     {
       vector< size_t > indices( featurePool.size() );
       for( size_t i = 0; i < indices.size(); i++ )
