@@ -4,7 +4,7 @@
 #include <deque>
 
 #include "TrainingContext.h"
-#include "DataCollection.h"
+#include "DataRange.h"
 #include "TrainingParameters.h"
 #include "Tree.h"
 #include "ThresholdSampler.h"
@@ -14,32 +14,34 @@ using namespace std;
 /**
  * @brief Simple helper class to perform a binary test
  */
+template< typename D, typename F >
 struct Test
 {
-  const Feature   feature;
-  float           threshold;
+  const F   feature;
+  float     threshold;
 
 
-  Test( const Feature& f, float t ) :
+  Test( const F& f, float t ) :
     feature( f ),
     threshold( t )
   {}
 
-  bool operator()( const DataPoint2f& point ) const
+  bool operator()( const D& point ) const
   {
     return feature( point ) < threshold;
   }
 };
 
+template< typename D, typename F, typename S >
 class TreeTrainer 
 {
   private:
-    const TrainingContext context;
+    const ITrainingContext< F, S >& context;
 
 
   public:
-    TreeTrainer( const TrainingContext& context ) :
-      context( context ) 
+    TreeTrainer( const ITrainingContext< F, S >& c ) :
+      context( c ) 
     {}
 
     TreeTrainer( const TreeTrainer& other ) :
@@ -59,39 +61,38 @@ class TreeTrainer
      *
      * @return 
      */
-    Tree trainTree( const TrainingParameters& params, 
-        DataCollection& data ) const
+    Tree< D, F, S > trainTree( const TrainingParameters& params, 
+        DataRange< D >& range ) const
     {
       deque< size_t > frontier;
-      DataRange range( data.begin(), data.end() );
-      Node n = createLeaf( range );
-      Tree tree( n );
+      Node< D, F, S > n = createLeaf( range );
+      Tree< D, F, S > tree( n );
       frontier.push_back( 0 );
 
-      vector< Feature > features;
+      vector< F > features;
       // At every tree level expand all frontier nodes
-      for( size_t d = 0; d < params.maxDecisionLevels; d++ )
+      for( size_t depth = 0; depth < params.maxDecisionLevels; depth++ )
       {
         size_t current_size = frontier.size();
         for( size_t i = 0; i < current_size; i++ )
         {
           context.getRandomFeatures( features );
           size_t node_idx = frontier.front();
-          Node& node = tree.nodes[ node_idx ];
+          Node< D, F, S >& node = tree.nodes[ node_idx ];
 
           float threshold;
           float gain;
-          Feature feature;
-          DataRange left_range, right_range;
+          F feature;
+          DataRange< D > left_range, right_range;
           computeThreshold( threshold, gain, feature,
-              left_range, right_range, node.data, node.histogram, features );
+              left_range, right_range, node.data, node.statistics, features );
 
           // If information gain high enough convert leaf to split node
           // and add children to frontier queue
           if( !context.shouldTerminate( gain ) )
           {
-            Node left_n = createLeaf( left_range );
-            Node right_n = createLeaf( right_range );
+            Node< D, F, S > left_n = createLeaf( left_range );
+            Node< D, F, S > right_n = createLeaf( right_range );
 
             tree.convertToSplit( node_idx, threshold, feature, left_n, right_n);
 
@@ -106,11 +107,11 @@ class TreeTrainer
     }
 
   private:
-    Node createLeaf( DataRange& range ) const
+    Node< D, F, S > createLeaf( DataRange< D >& range ) const
     {
-      Histogram s = context.getHistogram();
+      S s = context.getStatisticsAggregator();
       s.aggregate( range );
-      return Node( s, range );
+      return Node< D, F, S >( s, range );
     }
 
     /**
@@ -129,27 +130,27 @@ class TreeTrainer
      */
     void computeThreshold( float& best_threshold,
         float& best_gain,
-        Feature& best_feature,
-        DataRange& best_left,
-        DataRange& best_right,
-        const DataRange& parent,
-        const Histogram& parent_s,
-        const vector< Feature >& features ) const
+        F& best_feature,
+        DataRange< D >& best_left,
+        DataRange< D >& best_right,
+        const DataRange< D >& parent,
+        const S& parent_s,
+        const vector< F >& features ) const
     {
       best_gain = -FLT_MAX;
 
-      DataRange left( parent ), right( parent );
+      DataRange< D > left( parent ), right( parent );
 
-      vector< Feature >::const_iterator it = features.begin(),
+      typename vector< F >::const_iterator it = features.begin(),
         end = features.end();
       for( ; it != end; ++it )
       {
         // randomly sample thresholds
         vector< float > candidate_thresholds;
-        ThresholdSampler sampler( *it, parent );
+        ThresholdSampler< D, F > sampler( *it, parent );
         sampler.uniform( candidate_thresholds, context.params.noCandateThresholds );
 
-        Test test( *it, best_threshold );
+        Test< D, F > test( *it, best_threshold );
         for( size_t i = 0; i < context.params.noCandateThresholds; i++ )
         {
           test.threshold = candidate_thresholds[ i ];
@@ -158,9 +159,9 @@ class TreeTrainer
           left.end = std::partition( parent.start, parent.end, test );
           right.start = left.end;
 
-          Histogram left_s = context.getHistogram();
+          S left_s = context.getStatisticsAggregator();
           left_s.aggregate( left );
-          Histogram right_s = context.getHistogram();
+          S right_s = context.getStatisticsAggregator();
           right_s.aggregate( right );
 
           float gain = context.computeInformationGain( parent_s, left_s, right_s );
@@ -175,7 +176,7 @@ class TreeTrainer
 
       best_left.start = parent.start;
       best_left.end = std::partition( parent.start, parent.end, 
-          Test( best_feature, best_threshold ) );
+          Test< D, F >( best_feature, best_threshold ) );
       best_right.start = best_left.end;
       best_right.end = parent.end;
     }

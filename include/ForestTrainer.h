@@ -6,27 +6,28 @@
 #include "TrainingParameters.h"
 #include "TreeTrainer.h"
 
+template< typename D, typename F, typename S >
 class ForestTrainer 
 {
   private:
-    const TrainingContext context;
+    const ITrainingContext< F, S >& context;
 
   public:
-    ForestTrainer( const TrainingContext& context ) :
-      context( context )
+    ForestTrainer( const ITrainingContext< F, S >& c ) :
+      context( c )
     {}
 
     virtual ~ForestTrainer() 
     {}
 
-    Forest trainForest( const TrainingParameters& params,
-        DataCollection& data )
+    Forest< D, F, S > trainForest( const TrainingParameters& params,
+        DataRange< D >& range )
     {
-      Forest f;
-      TreeTrainer trainer( context );
+      Forest< D, F, S > f( context );
+      TreeTrainer< D, F, S > trainer( context );
       for( size_t i=0; i < params.trees; i++ )
       {
-        f.add( trainer.trainTree( params, data ) );
+        f.add( trainer.trainTree( params, range ) );
       }
 
       return f;

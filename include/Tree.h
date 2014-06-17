@@ -3,28 +3,28 @@
 
 #include <iomanip>
 #include "DataRange.h"
-#include "Feature2f.h"
+#include "Feature.h"
 #include "Histogram.h"
 
-template< typename I, typename O, size_t d >
+template< typename D, typename F, typename S >
 struct Node 
 {
-  Feature2f     feature;
-  Histogram              histogram;
-  DataRange< I, O, d >   data;
-  float                  threshold;
-  int                    childOffset;
+  F                feature;
+  S                statistics;
+  DataRange< D >   data;
+  float            threshold;
+  int              childOffset;
 
-  Node( const Histogram& histogram,
-      const DataRange< I, O, d >& range ) :
-    histogram( histogram ),
+  Node( const S& s,
+      const DataRange< D >& range ) :
+    statistics( s ),
     data( range ),
     childOffset( -1 )
   {}
 
   Node( const Node& other ) :
     feature( other.feature ),
-    histogram( other.histogram ),
+    statistics( other.statistics ),
     threshold( other.threshold ),
     childOffset( other.childOffset ),
     data( other.data )
@@ -40,15 +40,15 @@ struct Node
   }
 };
 
-template< typename I, typename O, size_t d >
+template< typename D, typename F, typename S >
 class Tree 
 {
   public:
-    vector< Node< I, O, d > > nodes;
+    vector< Node< D, F, S > > nodes;
 
 
   public:
-    Tree( const Node< I, O, d >& root ) 
+    Tree( const Node< D, F, S >& root ) 
     {
       nodes.push_back( root );
     }
@@ -56,9 +56,9 @@ class Tree
     virtual ~Tree() 
     {}
 
-    const Histogram& classify( const DataPoint< I, O, d >& point ) const
+    const S& classify( const D& point ) const
     {
-      typename vector< Node< I, O, d > >::const_iterator it = nodes.begin();
+      typename vector< Node< D, F, S > >::const_iterator it = nodes.begin();
       while( it->childOffset > 0 )
       {
         if( it->feature( point ) < it->threshold )
@@ -68,13 +68,13 @@ class Tree
           it += it->childOffset + 1;
         }
       }
-      return it->histogram;
+      return it->statistics;
     }
 
-    void convertToSplit( size_t node_idx, float threshold, const Feature< I, O, d >& feature, 
-        const Node< I, O, d >& left, const Node< I, O, d >& right )
+    void convertToSplit( size_t node_idx, float threshold, const F& feature, 
+        const Node< D, F, S >& left, const Node< D, F, S >& right )
     {
-      Node< I, O, d >& node = nodes.at( node_idx );
+      Node< D, F, S >& node = nodes.at( node_idx );
       node.threshold = threshold;
       node.feature = feature;
       node.childOffset = nodes.size() - node_idx;

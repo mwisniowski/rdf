@@ -7,13 +7,12 @@
 /**
  * @brief Stores start and end iterator of typename vector< DataPoint< I, O, s > >
  */
-template< typename I, typename O, size_t d >
+template< typename D >
 struct DataRange
 {
-  typedef DataPoint< I, O, d > point_type;
-  typedef vector< point_type > collection;
-  typedef typename collection::iterator iterator;
-  typedef typename collection::const_iterator const_iterator;
+  typedef vector< D >                           collection;
+  typedef typename collection::iterator         iterator;
+  typedef typename collection::const_iterator   const_iterator;
 
   iterator start,
            end;
@@ -32,6 +31,6 @@ struct DataRange
   {}
 };
 
-typedef DataRange< float, u_int, 2 > DataRange2f;
+typedef DataRange< DataPoint< float, u_int, 2 > > DataRange2f;
 
 #endif

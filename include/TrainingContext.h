@@ -4,42 +4,42 @@
 #include <cvt/math/Math.h>
 #include <set>
 
-#include "Feature2f.h"
+#include "Feature.h"
 #include "Histogram.h"
 #include "TrainingParameters.h"
+#include "ITrainingContext.h"
 
 #define POOL_SIZE 720
 
 using namespace std;
 using namespace cvt::Math;
 
-class TrainingContext
+class TrainingContext : public ITrainingContext< Feature, Histogram >
 {
   public:
-    const TrainingParameters   params;
-    const vector< Feature2f >    featurePool;
+    const vector< Feature >   featurePool;
 
     TrainingContext( const TrainingParameters p ) :
-      params( p ),
+      ITrainingContext( p ),
       featurePool( createFeaturePool() )
     {
       srand( time( 0 ) );
     }
 
   private:
-    vector< Feature2f > createFeaturePool()
+    vector< Feature > createFeaturePool()
     {
       // size_t pool_size = params.noCandidateFeatures * pow( 2, params.maxDecisionLevels );
       // TODO magic number
       size_t pool_size = POOL_SIZE;
-      vector< Feature2f > features;
+      vector< Feature > features;
       features.reserve( pool_size );
       vector< float > rv;
       for( size_t i = 0; i < pool_size; i++ )
       {
         // float angle = rand( 0.0f, TWO_PI );
         gaussianVector( rv, 2 );
-        features.push_back( Feature2f( rv[ 0 ], rv[ 1 ] ) );
+        features.push_back( Feature( rv ) );
       }
       return features;
     }
@@ -60,25 +60,25 @@ class TrainingContext
       {
         float u, v, s;
         do {
-          u = randf( -1.0f, 1.0f );
-          v = randf( -1.0f, 1.0f );
+          u = rand( -1.0f, 1.0f );
+          v = rand( -1.0f, 1.0f );
           s = u * u + v * v;
-        } while ( s >= 1 )
+        } while ( s >= 1 );
 
-        gv.push_back( u * sqrtf( -2 * log2( s ) / s ) );
-        gv.push_back( v * sqrtf( -2 * log2( s ) / s ) );
+        gv.push_back( u * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
+        gv.push_back( v * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
       }
 
       if( dimensions % 2 == 1 )
       {
         float u, v, s;
         do {
-          u = randf( -1.0f, 1.0f );
-          v = randf( -1.0f, 1.0f );
+          u = rand( -1.0f, 1.0f );
+          v = rand( -1.0f, 1.0f );
           s = u * u + v * v;
-        } while ( s >= 1 )
+        } while ( s >= 1 );
 
-        gv.push_back( u * sqrtf( -2 * log2( s ) / s ) );
+        gv.push_back( u * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
       }
     }
 
@@ -87,7 +87,7 @@ class TrainingContext
      *
      * @param features
      */
-    void getRandomFeatures( vector< Feature2f >& features ) const
+    void getRandomFeatures( vector< Feature >& features ) const
     {
       vector< size_t > indices( featurePool.size() );
       for( size_t i = 0; i < indices.size(); i++ )
@@ -103,7 +103,7 @@ class TrainingContext
       }
     }
 
-    Histogram getHistogram() const
+    Histogram getStatisticsAggregator() const
     {
       return Histogram();
     }

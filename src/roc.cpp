@@ -44,8 +44,9 @@ void display( const Image& image, size_t width, size_t height ) {
   Application::run();
 }
 
-int countClasses( const DataCollection& data )
+int countClasses( const DataRange2f::collection& data )
 {
+  typedef DataPoint< float, u_int, 2 > DataPoint2f;
   std::set< u_int > classes;
   for( size_t i = 0; i < data.size(); i++ )
   {
@@ -77,17 +78,17 @@ int main(int argc, char *argv[])
   if( argc > 6 ) folds = atoi( argv[ 6 ] );
 
   istream_iterator< DataPoint2f > start( is ), end;
-  DataCollection data( start, end );
+  DataRange2f::collection data( start, end );
   is.close();
   std::random_shuffle( data.begin(), data.end() );
   size_t n = static_cast< float >( cvt::Math::round( data.size() / static_cast<float>( folds  ) ) );
   size_t numClasses = countClasses( data );
 
-  vector< DataRange > partition_map;
+  vector< DataRange2f > partition_map;
   for( size_t f = 0; f < folds; f++ )
   {
-    DataCollection::iterator it = data.begin() + f * n;
-    partition_map.push_back( DataRange( it, it + n ) );
+    DataRange2f::iterator it = data.begin() + f * n;
+    partition_map.push_back( DataRange2f( it, it + n ) );
   }
 
   vector< vector< size_t > > confusion_matrix;
@@ -99,7 +100,7 @@ int main(int argc, char *argv[])
   float divisor = static_cast<float>( n ) / folds;
   for( size_t f = 0; f < folds; f++ )
   {
-    DataCollection training_data;
+    DataRange2f::collection training_data;
     for( size_t ff = 0; ff < folds; ff++ )
     {
       if( ff != f )
@@ -109,19 +110,20 @@ int main(int argc, char *argv[])
             partition_map[ ff ].end );
       }
     }
+    DataRange2f training_range( training_data.begin(), training_data.end() );
 
-    DataCollection test_data( partition_map[ f ].start, partition_map[ f ].end );
+    DataRange2f::collection test_data( partition_map[ f ].start, partition_map[ f ].end );
     Histogram test_data_distribution;
-    test_data_distribution.aggregate( DataRange( test_data.begin(), test_data.end() ) );
+    test_data_distribution.aggregate( DataRange2f( test_data.begin(), test_data.end() ) );
 
     TrainingContext context( params );
-    ForestTrainer trainer( context );
-    Forest classifier = trainer.trainForest( params, training_data );
+    ForestTrainer< DataPoint2f, Feature, Histogram > trainer( context );
+    Forest< DataPoint2f, Feature, Histogram > classifier = trainer.trainForest( params, training_range );
     
     for( size_t i = 0; i < n; i++ )
     {
       const Histogram h = classifier.classify( test_data[ i ] );
-      confusion_matrix[ test_data[ i ].output ][ h.getMax().first ]++;
+      confusion_matrix[ test_data[ i ].output ][ h.getMode().first ]++;
     }
   }
 

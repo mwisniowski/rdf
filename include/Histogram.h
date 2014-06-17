@@ -2,10 +2,11 @@
 #define AGGREGATOR_H
 
 #include <cvt/math/Math.h>
-#include <map>
 #include "DataRange.h"
+#include "IStatistics.h"
 
-class Histogram
+typedef DataPoint< float, u_int, 2 > DataPoint2f;
+class Histogram: public IStatistics< DataPoint2f, Histogram >
 {
   public:
     size_t n;
@@ -32,7 +33,7 @@ class Histogram
      *
      * @param range
      */
-    void aggregate( const DataRange2f& range )
+    void aggregate( const DataRange< DataPoint2f >& range )
     {
       DataRange2f::const_iterator it( range.start );
       for( ; it != range.end; ++it )
@@ -73,7 +74,7 @@ class Histogram
      *
      * @return 
      */
-    pair< u_int, float > getMax() const
+    pair< u_int, float > getMode() const
     {
       float maxValue = FLT_MIN;
       u_int maxC = 0;
@@ -106,7 +107,7 @@ class Histogram
       return -entropy;
     }
 
-    float probability( size_t class_index ) const
+    float probability( u_int class_index ) const
     {
       if( class_index >= numClasses() )
       {

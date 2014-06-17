@@ -50,6 +50,7 @@ void display( const Image& image, size_t width, size_t height ) {
 
 int main(int argc, char *argv[])
 {
+  typedef DataPoint< float, u_int, 2 > DataPoint2f;
   TrainingParameters params = {
     100, //trees
     10,  //noCandidateFeatures
@@ -69,7 +70,8 @@ int main(int argc, char *argv[])
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
 
   istream_iterator< DataPoint2f > start( is ), end;
-  DataCollection data( start, end );
+  DataRange< DataPoint2f >::collection data( start, end );
+  DataRange< DataPoint2f > range( data.begin(), data.end() );
   is.close();
   
   TrainingContext context( params );
@@ -78,13 +80,13 @@ int main(int argc, char *argv[])
   // Tree classifier = trainer.trainTree( params, data );
   // cout << classifier;
   
-  ForestTrainer trainer( context );
-  Forest classifier = trainer.trainForest( params, data );
+  ForestTrainer< DataPoint2f, Feature, Histogram > trainer( context );
+  Forest< DataPoint2f, Feature, Histogram > classifier = trainer.trainForest( params, range );
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;
 
-  DataCollection::const_iterator it = data.begin();
+  DataRange< DataPoint2f >::const_iterator it = data.begin();
   for( ; it != data.end(); ++it )
   {
     for( size_t i = 0; i < it->input.size(); i++ )
@@ -123,7 +125,7 @@ int main(int argc, char *argv[])
     {
       pt.input[ 0 ] = static_cast<float>( column );
 
-      const Histogram h = classifier.classify( pt );
+      const Histogram& h = classifier.classify( pt );
 
       mix = cvt::Color::BLACK;
       float mudiness = 0.5f * h.getEntropy();
