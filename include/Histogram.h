@@ -5,8 +5,7 @@
 #include "DataRange.h"
 #include "IStatistics.h"
 
-typedef DataPoint< float, u_int, 2 > DataPoint2f;
-class Histogram: public IStatistics< DataPoint2f, Histogram >
+class Histogram: public IStatistics< DataPoint< float, char, 2 >, Histogram >
 {
   public:
     size_t n;
@@ -33,10 +32,10 @@ class Histogram: public IStatistics< DataPoint2f, Histogram >
      *
      * @param range
      */
-    void aggregate( const DataRange< DataPoint2f >& range )
+    void aggregate( const DataRange< DataPoint< float, char, 2 > >& range )
     {
-      DataRange< DataPoint2f >::const_iterator it( range.start );
-      for( ; it != range.end; ++it )
+      DataRange< DataPoint< float, char, 2 > >::const_iterator it( range.begin() );
+      for( ; it != range.end(); ++it )
       {
         if( numClasses() <= it->output )
         {

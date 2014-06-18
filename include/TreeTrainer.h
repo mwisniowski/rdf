@@ -3,9 +3,8 @@
 
 #include <deque>
 
-#include "TrainingContext.h"
+#include "ITrainingContext.h"
 #include "DataRange.h"
-#include "TrainingParameters.h"
 #include "Tree.h"
 #include "ThresholdSampler.h"
 
@@ -139,8 +138,6 @@ class TreeTrainer
     {
       best_gain = -FLT_MAX;
 
-      DataRange< D > left( parent ), right( parent );
-
       typename vector< F >::const_iterator it = features.begin(),
         end = features.end();
       for( ; it != end; ++it )
@@ -156,8 +153,9 @@ class TreeTrainer
           test.threshold = candidate_thresholds[ i ];
 
           // partition data for current threshold and evaluate gain
-          left.end = std::partition( parent.start, parent.end, test );
-          right.start = left.end;
+          typename DataRange< D >::iterator pivot = std::partition( parent.begin(), parent.end(), test );
+          DataRange< D > left( parent.begin(), pivot ),
+            right( pivot, parent.end() );
 
           S left_s = context.getStatisticsAggregator();
           left_s.aggregate( left );
@@ -174,11 +172,10 @@ class TreeTrainer
         }
       }
 
-      best_left.start = parent.start;
-      best_left.end = std::partition( parent.start, parent.end, 
+      typename DataRange< D >::iterator pivot = std::partition( parent.begin(), parent.end(), 
           Test< D, F >( best_feature, best_threshold ) );
-      best_right.start = best_left.end;
-      best_right.end = parent.end;
+      best_left = DataRange< D >( parent.begin(), pivot );
+      best_right = DataRange< D >( pivot, parent.end() );
     }
 };
 

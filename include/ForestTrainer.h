@@ -1,9 +1,7 @@
 #ifndef FOREST_TRAINER_H
 #define FOREST_TRAINER_H
 
-#include "TrainingContext.h"
 #include "Forest.h"
-#include "TrainingParameters.h"
 #include "TreeTrainer.h"
 
 template< typename D, typename F, typename S >

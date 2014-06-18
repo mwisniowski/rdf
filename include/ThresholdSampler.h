@@ -3,7 +3,6 @@
 
 #include <cvt/math/Math.h>
 
-#include "Feature.h"
 #include "DataRange.h"
 
 using namespace cvt::Math;
@@ -20,7 +19,7 @@ class ThresholdSampler
     ThresholdSampler( const F& f, const DataRange< D >& r ) :
       feature( f ),
       range( r ),
-      n( std::distance( r.start, r.end ) )
+      n( std::distance( r.begin(), r.end() ) )
     {
     }
 
@@ -33,14 +32,14 @@ class ThresholdSampler
      */
     void cdf( vector< float >& thresholds, size_t size )
     {
-      std::sort( range.start, range.end, *this );
+      std::sort( range.begin(), range.end()(), *this );
 
       thresholds.clear();
       thresholds.reserve( size );
       for( size_t i = 0; i < size; i++ )
       {
         size_t index = mix( static_cast<size_t>( 0 ), n-1, rand( 0.0f, 1.0f ) );
-        thresholds.push_back( feature( *( range.start + index ) ) );
+        thresholds.push_back( feature( *( range.begin() + index ) ) );
       }
     }
 
@@ -53,14 +52,14 @@ class ThresholdSampler
      */
     void quantiles( vector< float >& thresholds, size_t size )
     {
-      std::sort( range.start, range.end, *this );
+      std::sort( range.begin(), range.end(), *this );
 
       thresholds.clear();
       thresholds.reserve( size );
       for( size_t i = 0; i < size; i++ )
       {
         size_t index = cvt::Math::max( ceilf( n * i / static_cast<float>( size ) ) - 1, 0.0f );
-        thresholds.push_back( feature( *( range.start + index ) ) );
+        thresholds.push_back( feature( *( range.begin() + index ) ) );
       }
     }
 
@@ -92,7 +91,7 @@ class ThresholdSampler
      */
     void mean( vector< float >& thresholds, size_t size )
     {
-      std::sort( range.start, range.end, *this );
+      std::sort( range.begin(), range.end(), *this );
 
       thresholds.clear();
       thresholds.reserve( size );
@@ -100,7 +99,7 @@ class ThresholdSampler
       {
         size_t a = mix( static_cast<size_t>( 0 ), n-1, rand( 0.0f, 1.0f ) ),
               b = mix( static_cast<size_t>( 0 ), n-1, rand( 0.0f, 1.0f ) );
-        float middle = ( feature( *( range.start + a ) ) + feature( *( range.start + b ) ) ) / 2.0f;
+        float middle = ( feature( *( range.begin() + a ) ) + feature( *( range.begin() + b ) ) ) / 2.0f;
         thresholds.push_back( middle );
       }
     }
@@ -131,8 +130,8 @@ class ThresholdSampler
       min = FLT_MAX;
       max = FLT_MIN;
 
-      typename DataRange< D >::const_iterator it = range.start;
-      for( ; it != range.end; ++it )
+      typename DataRange< D >::const_iterator it = range.begin();
+      for( ; it != range.end(); ++it )
       {
         float response = feature( *it );
         if( response < min )

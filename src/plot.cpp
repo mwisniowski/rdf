@@ -15,16 +15,11 @@
 #include <cvt/gfx/IMapScoped.h>
 #include <cvt/gfx/GFXEngineImage.h>
 
-#include "DataPoint.h"
-#include "DataRange.h"
+#include "ClassificationContext.h"
 #include "ForestTrainer.h"
-#include "TrainingParameters.h"
 
 using namespace std;
 using namespace cvt;
-
-typedef DataPoint< float, u_int, 2 > DataPoint2f;
-typedef Feature< 2 > Feature2;
 
 void display( const Image& image, size_t width, size_t height ) {
   Window w("RDF");
@@ -44,12 +39,6 @@ void display( const Image& image, size_t width, size_t height ) {
   
   Application::run();
 }
-
-// float norm( float x, size_t numClasses )
-// {
-//   float min = 1.0f / numClasses;
-//   return ( x - min ) / ( 1.0f - min );
-// }
 
 int main(int argc, char *argv[])
 {
@@ -71,24 +60,29 @@ int main(int argc, char *argv[])
   if( argc > 4 ) params.maxDecisionLevels = atoi( argv[ 4 ] );
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
 
-  istream_iterator< DataPoint2f > start( is ), end;
-  DataRange< DataPoint2f >::collection data( start, end );
-  DataRange< DataPoint2f > range( data.begin(), data.end() );
+  
+  ClassificationContext context( params );
+  
+  istream_iterator< ClassificationContext::DataType > start( is ), end;
+  DataRange< ClassificationContext::DataType >::collection data( start, end );
+  DataRange< ClassificationContext::DataType > range( data.begin(), data.end() );
   is.close();
-  
-  TrainingContext context( params );
-  
+
   // TreeTrainer trainer( context );
   // Tree classifier = trainer.trainTree( params, data );
   // cout << classifier;
   
-  ForestTrainer< DataPoint2f, Feature2, Histogram > trainer( context );
-  Forest< DataPoint2f, Feature2, Histogram > classifier = trainer.trainForest( params, range );
+  ForestTrainer< ClassificationContext::DataType, 
+    ClassificationContext::FeatureType, 
+    ClassificationContext::StatisticsType > trainer( context );
+  Forest< ClassificationContext::DataType, 
+    ClassificationContext::FeatureType, 
+    ClassificationContext::StatisticsType > classifier = trainer.trainForest( params, range );
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;
 
-  DataRange< DataPoint2f >::const_iterator it = data.begin();
+  DataRange< ClassificationContext::DataType >::const_iterator it = range.begin();
   for( ; it != data.end(); ++it )
   {
     for( size_t i = 0; i < it->input.size(); i++ )
@@ -109,7 +103,7 @@ int main(int argc, char *argv[])
   cvt::Image img;
   img.reallocate( width, width, cvt::IFormat::RGBA_FLOAT );
   cvt::IMapScoped<float> map( img );
-  DataPoint2f pt;
+  ClassificationContext::DataType pt;
   pt.input.resize( 2 );
   cvt::Color color, gray( 0.5f ), mix;
   cvt::Color colormap[] = {
@@ -127,7 +121,7 @@ int main(int argc, char *argv[])
     {
       pt.input[ 0 ] = static_cast<float>( column );
 
-      const Histogram& h = classifier.classify( pt );
+      const ClassificationContext::StatisticsType& h = classifier.classify( pt );
 
       mix = cvt::Color::BLACK;
       float mudiness = 0.5f * h.getEntropy();

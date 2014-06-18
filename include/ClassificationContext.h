@@ -4,22 +4,26 @@
 #include <cvt/math/Math.h>
 #include <set>
 
+#include "ITrainingContext.h"
 #include "Feature.h"
 #include "Histogram.h"
 #include "TrainingParameters.h"
-#include "ITrainingContext.h"
 
-#define POOL_SIZE 720
+#define POOL_SIZE 360
 
 using namespace std;
 using namespace cvt::Math;
 
-class TrainingContext : public ITrainingContext< Feature< 2 >, Histogram >
+class ClassificationContext : public ITrainingContext< Feature< 2 >, Histogram >
 {
   public:
+    typedef DataPoint< float, char, 2 > DataType;
+    typedef Feature< 2 > FeatureType;
+    typedef Histogram StatisticsType;
+
     const vector< Feature< 2 > >   featurePool;
 
-    TrainingContext( const TrainingParameters p ) :
+    ClassificationContext( const TrainingParameters p ) :
       ITrainingContext( p ),
       featurePool( createFeaturePool() )
     {

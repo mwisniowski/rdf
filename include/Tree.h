@@ -3,8 +3,6 @@
 
 #include <iomanip>
 #include "DataRange.h"
-#include "Feature.h"
-#include "Histogram.h"
 
 template< typename D, typename F, typename S >
 struct Node 

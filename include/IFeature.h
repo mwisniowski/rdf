@@ -1,8 +1,6 @@
 #ifndef I_FEATURE_H
 #define I_FEATURE_H
 
-#include "DataPoint.h"
-
 template< typename D >
 class IFeature 
 {

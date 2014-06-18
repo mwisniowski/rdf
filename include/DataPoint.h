@@ -16,9 +16,9 @@ struct DataPoint
   O         output;
 
 
-  DataPoint()
+  DataPoint() :
+    input( d, I( 0 ) )
   {
-    input.reserve( d );
   }
 
   DataPoint( vector<I>& in, O& out )

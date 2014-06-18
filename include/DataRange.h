@@ -8,27 +8,41 @@
  * @brief Stores start and end iterator of typename vector< DataPoint< I, O, s > >
  */
 template< typename D >
-struct DataRange
+class DataRange
 {
-  typedef vector< D >                           collection;
-  typedef typename collection::iterator         iterator;
-  typedef typename collection::const_iterator   const_iterator;
+  public:
+    typedef vector< D >                           collection;
+    typedef typename collection::iterator         iterator;
+    typedef typename collection::const_iterator   const_iterator;
 
-  iterator start,
-           end;
 
-  DataRange() 
-  {}
+  private:
+    iterator from, to;
 
-  DataRange( const iterator& start_, const iterator& end_ ) :
-    start( start_ ),
-    end( end_ )
-  {}
 
-  DataRange( const DataRange& other ) :
-    start( other.start ),
-    end( other.end )
-  {}
+  public:
+    DataRange() 
+    {}
+
+    DataRange( const iterator& begin, const iterator& end ) :
+      from( begin ),
+      to( end )
+    {}
+
+    DataRange( const DataRange& other ) :
+      from( other.from ),
+      to( other.to )
+    {}
+
+    iterator begin() const
+    {
+      return from;
+    }
+
+    iterator end() const
+    {
+      return to;
+    }
 };
 
 #endif

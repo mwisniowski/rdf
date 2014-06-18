@@ -14,13 +14,13 @@ set(RDF_HEADERS
   include/Histogram.h
   include/IFeature.h
   include/Feature.h
+  include/ITrainingContext.h
+  include/ClassificationContext.h
   include/Forest.h
   include/ForestTrainer.h
   include/Tree.h
   include/TreeTrainer.h
   include/ThresholdSampler.h
-  include/ITrainingContext.h
-  include/TrainingContext.h
 )
 
 set(RDF_SOURCES
