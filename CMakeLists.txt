@@ -7,23 +7,9 @@ find_package(CVT_DEBUG REQUIRED)
 ## Build ##
 ###########
 
-set(RDF_HEADERS
-  include/Interfaces.h
-  include/DataPoint.h
-  include/DataRange.h
-  include/Histogram.h
-  include/Feature.h
-  include/ClassificationContext.h
-  include/Forest.h
-  include/ForestTrainer.h
-  include/Tree.h
-  include/TreeTrainer.h
-  include/ThresholdSampler.h
-)
-
-set(RDF_SOURCES
-
-)
+# set(RDF_SOURCES
+#
+# )
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -33,8 +19,6 @@ include_directories(
 )
 
 ADD_EXECUTABLE( plot 
-  ${RDF_HEADERS}
-  ${RDF_SOURCES}
   src/plot.cpp
 )
 TARGET_LINK_LIBRARIES( plot
@@ -42,10 +26,15 @@ TARGET_LINK_LIBRARIES( plot
 )
 
 ADD_EXECUTABLE( roc
-  ${RDF_HEADERS}
-  ${RDF_SOURCES}
   src/roc.cpp
 )
 TARGET_LINK_LIBRARIES( roc
+  ${CVT_LIBRARIES}
+)
+
+ADD_EXECUTABLE( image
+  src/image.cpp
+)
+TARGET_LINK_LIBRARIES( image
   ${CVT_LIBRARIES}
 )
