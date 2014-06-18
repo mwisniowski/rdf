@@ -68,8 +68,12 @@ int main(int argc, char *argv[])
   DataRange< ClassificationContext::DataType > range( data.begin(), data.end() );
   is.close();
 
-  // TreeTrainer trainer( context );
-  // Tree classifier = trainer.trainTree( params, data );
+  // TreeTrainer< ClassificationContext::DataType, 
+  //   ClassificationContext::FeatureType, 
+  //   ClassificationContext::StatisticsType > trainer( context );
+  // Tree< ClassificationContext::DataType, 
+  //   ClassificationContext::FeatureType, 
+  //   ClassificationContext::StatisticsType > classifier = trainer.trainTree( params, range );
   // cout << classifier;
   
   ForestTrainer< ClassificationContext::DataType, 

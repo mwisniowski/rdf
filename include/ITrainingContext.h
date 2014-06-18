@@ -3,8 +3,6 @@
 
 #include <vector>
 #include "TrainingParameters.h"
-#include "IFeature.h"
-#include "Histogram.h"
 
 using namespace std;
 

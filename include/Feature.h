@@ -7,7 +7,7 @@
 using namespace std;
 
 template< size_t d >
-class Feature : public IFeature< DataPoint< float, char, d > >
+class Feature : public IFeature< DataPoint< float, u_int, d > >
 {
   private:
     vector< float > vector;
@@ -36,7 +36,7 @@ class Feature : public IFeature< DataPoint< float, char, d > >
      *
      * @return 
      */
-    float operator()( const DataPoint< float, char, d >& point ) const
+    float operator()( const DataPoint< float, u_int, d >& point ) const
     {
       float sum = 0;
       for( size_t i = 0; i < d; i++ )

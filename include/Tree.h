@@ -33,7 +33,7 @@ struct Node
 
   friend ostream& operator<<( ostream& os, const Node& n )
   {
-    os << n.histogram << " , " << n.childOffset;
+    os << n.statistics << " , " << n.childOffset;
     return os;
   }
 };
