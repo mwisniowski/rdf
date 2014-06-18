@@ -3,7 +3,7 @@
 
 #include <cvt/math/Math.h>
 #include "DataRange.h"
-#include "IStatistics.h"
+#include "Interfaces.h"
 
 typedef DataPoint< float, u_int, 2 > DataPoint2f;
 

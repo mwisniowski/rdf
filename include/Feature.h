@@ -1,7 +1,7 @@
 #ifndef FEATURE2F_H
 #define FEATURE2F_H
 
-#include "IFeature.h"
+#include "Interfaces.h"
 #include "DataPoint.h"
 
 using namespace std;

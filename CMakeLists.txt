@@ -8,13 +8,11 @@ find_package(CVT_DEBUG REQUIRED)
 ###########
 
 set(RDF_HEADERS
+  include/Interfaces.h
   include/DataPoint.h
   include/DataRange.h
-  include/IStatistics.h
   include/Histogram.h
-  include/IFeature.h
   include/Feature.h
-  include/ITrainingContext.h
   include/ClassificationContext.h
   include/Forest.h
   include/ForestTrainer.h

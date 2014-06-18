@@ -1,10 +1,16 @@
-#ifndef I_TRAINING_CONTEXT_H
-#define I_TRAINING_CONTEXT_H
+#ifndef INTERFACES_H
+#define INTERFACES_H
 
 #include <vector>
 #include "TrainingParameters.h"
+#include "DataRange.h"
 
-using namespace std;
+template< typename D >
+class IFeature 
+{
+  public:
+    virtual float operator()( const D& point ) const =0;
+};
 
 template< typename F, typename S >
 class ITrainingContext
@@ -16,7 +22,7 @@ class ITrainingContext
       params( p )
     {}
 
-    virtual void getRandomFeatures( vector< F >& features ) const =0;
+    virtual void getRandomFeatures( std::vector< F >& features ) const =0;
 
     virtual S getStatisticsAggregator() const =0;
 
@@ -26,5 +32,18 @@ class ITrainingContext
 
     virtual bool shouldTerminate( float information_gain ) const =0;
 };
+
+template< typename D, typename S >
+class IStatistics 
+{
+  public:
+    virtual void aggregate( const DataRange< D >& range ) =0;
+
+    virtual void aggregate( const S& s ) =0;
+
+    virtual float getEntropy() const =0;
+};
+
+
 
 #endif

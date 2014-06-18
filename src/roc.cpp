@@ -3,6 +3,7 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <set>
 
 #include <cvt/gui/Window.h>
 #include <cvt/gui/Button.h>

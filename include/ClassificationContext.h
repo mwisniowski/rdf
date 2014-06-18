@@ -2,17 +2,12 @@
 #define TRAINING_CONTEXT_H
 
 #include <cvt/math/Math.h>
-#include <set>
 
-#include "ITrainingContext.h"
+#include "Interfaces.h"
 #include "Feature.h"
 #include "Histogram.h"
-#include "TrainingParameters.h"
 
 #define POOL_SIZE 360
-
-using namespace std;
-using namespace cvt::Math;
 
 class ClassificationContext : public ITrainingContext< Feature< 2 >, Histogram >
 {
@@ -64,8 +59,8 @@ class ClassificationContext : public ITrainingContext< Feature< 2 >, Histogram >
       {
         float u, v, s;
         do {
-          u = rand( -1.0f, 1.0f );
-          v = rand( -1.0f, 1.0f );
+          u = cvt::Math::rand( -1.0f, 1.0f );
+          v = cvt::Math::rand( -1.0f, 1.0f );
           s = u * u + v * v;
         } while ( s >= 1 );
 
@@ -77,8 +72,8 @@ class ClassificationContext : public ITrainingContext< Feature< 2 >, Histogram >
       {
         float u, v, s;
         do {
-          u = rand( -1.0f, 1.0f );
-          v = rand( -1.0f, 1.0f );
+          u = cvt::Math::rand( -1.0f, 1.0f );
+          v = cvt::Math::rand( -1.0f, 1.0f );
           s = u * u + v * v;
         } while ( s >= 1 );
 

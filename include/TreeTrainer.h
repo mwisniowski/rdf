@@ -3,7 +3,7 @@
 
 #include <deque>
 
-#include "ITrainingContext.h"
+#include "Interfaces.h"
 #include "DataRange.h"
 #include "Tree.h"
 #include "ThresholdSampler.h"

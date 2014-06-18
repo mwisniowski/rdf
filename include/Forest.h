@@ -2,7 +2,7 @@
 #define FOREST_H
 
 #include "Tree.h"
-#include "ITrainingContext.h"
+#include "Interfaces.h"
 
 using namespace std;
 
