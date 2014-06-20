@@ -12,7 +12,7 @@
 class ClassificationContext : public ITrainingContext< Feature< 2 >, Histogram >
 {
   public:
-    typedef DataPoint< float, u_int, 2 > DataType;
+    typedef DataPoint< float, size_t, 2 > DataType;
     typedef Feature< 2 > FeatureType;
     typedef Histogram StatisticsType;
 
