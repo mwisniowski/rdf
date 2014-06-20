@@ -20,6 +20,7 @@ struct DataPoint
 
     DataPoint() :
       input( d, I( 0 ) ),
+      output( O( 0 ) ),
       id( getId() )
     {
     }
@@ -28,6 +29,13 @@ struct DataPoint
       input( in ),
       output( out ),
       id( getId() )
+    {
+    }
+
+    DataPoint( const DataPoint& other ) :
+      input( other.input ),
+      output( other.output ),
+      id( other.id )
     {
     }
 
@@ -41,6 +49,7 @@ struct DataPoint
       {
         input = other.input;
         output = other.output;
+        id = other.id;
       }
       return *this;
     }
@@ -58,6 +67,8 @@ struct DataPoint
         is >> input;
         point.input.push_back( input );
       }
+
+      point.id = getId();
 
       return is;
     }
