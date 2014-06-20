@@ -1,0 +1,3 @@
+[submodule "data/sherwood"]
+	path = data/sherwood
+	url = git@github.com:mwisniowski/rdf_sherwood.git
