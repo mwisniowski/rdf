@@ -5,7 +5,7 @@
 #include "DataRange.h"
 #include "Interfaces.h"
 
-typedef DataPoint< float, u_int, 2 > DataPoint2f;
+typedef DataPoint< float, size_t, 2 > DataPoint2f;
 
 class Histogram: public IStatistics< DataPoint2f, Histogram >
 {

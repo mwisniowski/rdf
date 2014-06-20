@@ -1,29 +1,28 @@
 #ifndef FEATURE2F_H
 #define FEATURE2F_H
 
+#include <vector>
 #include "Interfaces.h"
 #include "DataPoint.h"
 
-using namespace std;
-
 template< size_t d >
-class Feature : public IFeature< DataPoint< float, u_int, d > >
+class Feature : public IFeature< DataPoint< float, size_t, d > >
 {
   private:
-    vector< float > vector;
+    std::vector< float > v;
 
   public:
     Feature() :
-      vector( d, 0.0f )
+      v( d, 0.0f )
     {
     }
 
-    Feature( std::vector< float >& v ) :
-      vector( v )
+    Feature( const std::vector< float >& vec ) :
+      v( vec )
     {}
 
     Feature( const Feature& other ) :
-      vector( other.vector )
+      v( other.v )
     {}
 
     virtual ~Feature()
@@ -36,12 +35,12 @@ class Feature : public IFeature< DataPoint< float, u_int, d > >
      *
      * @return 
      */
-    float operator()( const DataPoint< float, u_int, d >& point ) const
+    float operator()( const DataPoint< float, size_t, d >& point ) const
     {
       float sum = 0;
       for( size_t i = 0; i < d; i++ )
       {
-        sum += vector[ i ] * point.input[ i ];
+        sum += v[ i ] * point.input[ i ];
       }
       return sum;
     }
