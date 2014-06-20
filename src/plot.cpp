@@ -60,13 +60,12 @@ int main(int argc, char *argv[])
   if( argc > 4 ) params.maxDecisionLevels = atoi( argv[ 4 ] );
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
 
-  
-  ClassificationContext context( params );
-  
   istream_iterator< ClassificationContext::DataType > start( is ), end;
   DataRange< ClassificationContext::DataType >::collection data( start, end );
   DataRange< ClassificationContext::DataType > range( data.begin(), data.end() );
   is.close();
+
+  ClassificationContext context( params, range );
 
   // TreeTrainer< ClassificationContext::DataType, 
   //   ClassificationContext::FeatureType, 

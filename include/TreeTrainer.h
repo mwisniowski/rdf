@@ -13,21 +13,23 @@ using namespace std;
 /**
  * @brief Simple helper class to perform a binary test
  */
-template< typename D, typename F >
+template< typename D, typename F, typename S >
 struct Test
 {
   const F   feature;
   float     threshold;
+  const ITrainingContext< D, F, S >& context;
 
 
-  Test( const F& f, float t ) :
+  Test( const F& f, float t, const ITrainingContext< D, F, S >& c ) :
     feature( f ),
-    threshold( t )
+    threshold( t ),
+    context( c )
   {}
 
   bool operator()( const D& point ) const
   {
-    return feature( point ) < threshold;
+    return context.lookup( feature, point ) < threshold;
   }
 };
 
@@ -35,11 +37,11 @@ template< typename D, typename F, typename S >
 class TreeTrainer 
 {
   private:
-    const ITrainingContext< F, S >& context;
+    const ITrainingContext< D, F, S >& context;
 
 
   public:
-    TreeTrainer( const ITrainingContext< F, S >& c ) :
+    TreeTrainer( const ITrainingContext< D, F, S >& c ) :
       context( c ) 
     {}
 
@@ -147,7 +149,7 @@ class TreeTrainer
         ThresholdSampler< D, F > sampler( *it, parent );
         sampler.uniform( candidate_thresholds, context.params.noCandateThresholds );
 
-        Test< D, F > test( *it, best_threshold );
+        Test< D, F, S > test( *it, best_threshold, context );
         for( size_t i = 0; i < context.params.noCandateThresholds; i++ )
         {
           test.threshold = candidate_thresholds[ i ];
@@ -173,7 +175,7 @@ class TreeTrainer
       }
 
       typename DataRange< D >::iterator pivot = std::partition( parent.begin(), parent.end(), 
-          Test< D, F >( best_feature, best_threshold ) );
+          Test< D, F, S >( best_feature, best_threshold, context ) );
       best_left = DataRange< D >( parent.begin(), pivot );
       best_right = DataRange< D >( pivot, parent.end() );
     }

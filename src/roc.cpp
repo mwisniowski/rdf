@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
     ClassificationContext::StatisticsType test_data_distribution;
     test_data_distribution.aggregate( DataRange< ClassificationContext::DataType >( test_data.begin(), test_data.end() ) );
 
-    ClassificationContext context( params );
+    ClassificationContext context( params, training_range );
     ForestTrainer< ClassificationContext::DataType, 
       ClassificationContext::FeatureType, 
       ClassificationContext::StatisticsType > trainer( context );

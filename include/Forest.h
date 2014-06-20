@@ -12,10 +12,10 @@ class Forest
   private:
     vector< Tree< D, F, S > >         trees;
     size_t                            numClasses;
-    const ITrainingContext< F, S >&   context;
+    const ITrainingContext< D, F, S >&   context;
 
   public:
-    Forest( const ITrainingContext< F, S >& c ) :
+    Forest( const ITrainingContext< D, F, S >& c ) :
       context( c )
     {}
 

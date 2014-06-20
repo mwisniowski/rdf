@@ -9,7 +9,7 @@
 
 #define POOL_SIZE 360
 
-class ClassificationContext : public ITrainingContext< Feature< 2 >, Histogram >
+class ClassificationContext : public ITrainingContext< DataPoint< float, size_t, 2 >, Feature< 2 >, Histogram >
 {
   public:
     typedef DataPoint< float, size_t, 2 > DataType;
@@ -17,10 +17,12 @@ class ClassificationContext : public ITrainingContext< Feature< 2 >, Histogram >
     typedef Histogram StatisticsType;
 
     const vector< Feature< 2 > >   featurePool;
+    const vector< vector< float > > table;
 
-    ClassificationContext( const TrainingParameters p ) :
+    ClassificationContext( const TrainingParameters p, const DataRange< DataType >& range ) :
       ITrainingContext( p ),
-      featurePool( createFeaturePool() )
+      featurePool( createFeaturePool() ),
+      table( createTable( range ) )
     {
       srand( time( 0 ) );
     }
@@ -43,9 +45,23 @@ class ClassificationContext : public ITrainingContext< Feature< 2 >, Histogram >
       return features;
     }
 
+    vector< vector< float > > createTable( const DataRange< DataType >& range )
+    {
+      size_t n = std::distance( range.begin(), range.end() );
+      std::vector< std::vector< float > > table;
+      for( size_t i = 0; i < POOL_SIZE; i++ )
+      {
+        table.push_back( std::vector< float >(n) );
+        DataRange< DataType >::const_iterator it = range.begin();
+        for( size_t j = 0; j < n; j++, ++it )
+        {
+          table[i][j] = featurePool[ i ]( *it );
+        }
+      }
+      return table;
+    }
+
   public:
-
-
     /**
      * @brief Generate a random gaussian distributed vector using the Marsaglia Polar Method
      *
@@ -81,12 +97,17 @@ class ClassificationContext : public ITrainingContext< Feature< 2 >, Histogram >
       }
     }
 
+    float lookup( const FeatureType& f, const DataType& p ) const
+    {
+      return table[ f.id ][ p.id ];
+    }
+
     /**
      * @brief Get random unit vectors by sampling an angle from the unit circle
      *
      * @param features
      */
-    void getRandomFeatures( vector< Feature< 2 > >& features ) const
+    void getRandomFeatures( vector< FeatureType >& features ) const
     {
       vector< size_t > indices( featurePool.size() );
       for( size_t i = 0; i < indices.size(); i++ )

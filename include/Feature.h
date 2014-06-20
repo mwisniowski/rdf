@@ -12,17 +12,22 @@ class Feature : public IFeature< DataPoint< float, size_t, d > >
     std::vector< float > v;
 
   public:
+    size_t id;
+
     Feature() :
-      v( d, 0.0f )
+      v( d, 0.0f ),
+      id( getId() )
     {
     }
 
     Feature( const std::vector< float >& vec ) :
-      v( vec )
+      v( vec ),
+      id( getId() )
     {}
 
     Feature( const Feature& other ) :
-      v( other.v )
+      v( other.v ),
+      id( other.id )
     {}
 
     virtual ~Feature()
@@ -43,6 +48,13 @@ class Feature : public IFeature< DataPoint< float, size_t, d > >
         sum += v[ i ] * point.input[ i ];
       }
       return sum;
+    }
+
+  private:
+    static size_t getId()
+    {
+      static size_t id( 0 );
+      return id++;
     }
 };
 

@@ -8,10 +8,10 @@ template< typename D, typename F, typename S >
 class ForestTrainer 
 {
   private:
-    const ITrainingContext< F, S >& context;
+    const ITrainingContext< D, F, S >& context;
 
   public:
-    ForestTrainer( const ITrainingContext< F, S >& c ) :
+    ForestTrainer( const ITrainingContext< D, F, S >& c ) :
       context( c )
     {}
 

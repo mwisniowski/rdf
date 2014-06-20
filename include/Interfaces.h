@@ -12,7 +12,7 @@ class IFeature
     virtual float operator()( const D& point ) const =0;
 };
 
-template< typename F, typename S >
+template< typename D, typename F, typename S >
 class ITrainingContext
 {
   public:
@@ -23,6 +23,8 @@ class ITrainingContext
     {}
 
     virtual void getRandomFeatures( std::vector< F >& features ) const =0;
+
+    virtual float lookup( const F& feature, const D& point ) const =0;
 
     virtual S getStatisticsAggregator() const =0;
 
