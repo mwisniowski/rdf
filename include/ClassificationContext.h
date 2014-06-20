@@ -2,6 +2,7 @@
 #define TRAINING_CONTEXT_H
 
 #include <cvt/math/Math.h>
+#include <map>
 
 #include "Interfaces.h"
 #include "Feature.h"
@@ -12,12 +13,15 @@
 class ClassificationContext : public ITrainingContext< DataPoint< float, size_t, 2 >, Feature< 2 >, Histogram >
 {
   public:
-    typedef DataPoint< float, size_t, 2 > DataType;
-    typedef Feature< 2 > FeatureType;
-    typedef Histogram StatisticsType;
+    typedef DataPoint< float, size_t, 2 >  DataType;
+    typedef Feature< 2 >                   FeatureType;
+    typedef Histogram                      StatisticsType;
 
-    const vector< Feature< 2 > >   featurePool;
-    const vector< vector< float > > table;
+    typedef std::map< size_t, float >     row_type;
+    typedef std::map< size_t, row_type >  table_type;
+
+    const vector< Feature< 2 > >  featurePool;
+    const table_type              table;
 
     ClassificationContext( const TrainingParameters p, const DataRange< DataType >& range ) :
       ITrainingContext( p ),
@@ -45,19 +49,33 @@ class ClassificationContext : public ITrainingContext< DataPoint< float, size_t,
       return features;
     }
 
-    vector< vector< float > > createTable( const DataRange< DataType >& range )
+    table_type createTable( const DataRange< DataType >& range )
     {
-      size_t n = std::distance( range.begin(), range.end() );
-      std::vector< std::vector< float > > table;
-      for( size_t i = 0; i < POOL_SIZE; i++ )
+      // size_t n = std::distance( range.begin(), range.end() );
+      // std::vector< std::vector< float > > table;
+      // for( size_t i = 0; i < POOL_SIZE; i++ )
+      // {
+      //   table.push_back( std::vector< float >( n ) );
+      //   DataRange< DataType >::const_iterator it = range.begin();
+      //   for( size_t j = 0; j < n; j++, ++it )
+      //   {
+      //     table[i][j] = featurePool[ i ]( *it );
+      //   }
+      // }
+
+      table_type table;
+      std::vector< FeatureType >::const_iterator fit = featurePool.begin(),
+        fend = featurePool.end();
+      for( ; fit != fend; ++fit )
       {
-        table.push_back( std::vector< float >(n) );
+        table_type::iterator mit = table.insert( std::pair< size_t, row_type >( fit->id, row_type() ) ).first;
         DataRange< DataType >::const_iterator it = range.begin();
-        for( size_t j = 0; j < n; j++, ++it )
+        for( ; it != range.end(); ++it )
         {
-          table[i][j] = featurePool[ i ]( *it );
+          mit->second.insert( std::pair< size_t, float >( it->id, (*fit)( *it ) ) );
         }
       }
+
       return table;
     }
 
@@ -99,7 +117,7 @@ class ClassificationContext : public ITrainingContext< DataPoint< float, size_t,
 
     float lookup( const FeatureType& f, const DataType& p ) const
     {
-      return table[ f.id ][ p.id ];
+      return table.at( f.id ).at( p.id );
     }
 
     /**

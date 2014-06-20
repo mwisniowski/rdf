@@ -2,10 +2,13 @@
 #define AGGREGATOR_H
 
 #include <cvt/math/Math.h>
+#include <map>
+
 #include "DataRange.h"
 #include "Interfaces.h"
 
-typedef DataPoint< float, size_t, 2 > DataPoint2f;
+typedef size_t class_type;
+typedef DataPoint< float, class_type, 2 > DataPoint2f;
 
 class Histogram: public IStatistics< DataPoint2f, Histogram >
 {
@@ -13,7 +16,8 @@ class Histogram: public IStatistics< DataPoint2f, Histogram >
     size_t n;
 
   private:
-    vector< size_t > histogram;
+    typedef std::map< class_type, size_t >  histogram_type;
+    histogram_type                          histogram;
 
 
   public:
@@ -38,12 +42,10 @@ class Histogram: public IStatistics< DataPoint2f, Histogram >
     {
       DataRange< DataPoint2f >::const_iterator it( range.begin() );
       for( ; it != range.end(); ++it )
-      {
-        if( numClasses() <= it->output )
-        {
-          histogram.resize( it->output + 1, 0.0f );
-        }
-        histogram[ it->output ]++;
+      { 
+        histogram_type::iterator hit = 
+          histogram.insert( pair< class_type, size_t >( it->output, 0 ) ).first;
+        hit->second++;
         n++;
       }
     }
@@ -55,16 +57,15 @@ class Histogram: public IStatistics< DataPoint2f, Histogram >
      */
     void aggregate( const Histogram& s )
     {
-      if( s.numClasses() > numClasses() )
-      {
-        histogram.resize( s.numClasses(), 0.0f );
-      }
-      vector< size_t >::iterator it = histogram.begin();
-      vector< size_t >::const_iterator sit = s.histogram.begin(),
+      histogram_type::const_iterator sit = s.histogram.begin(),
         send = s.histogram.end();
-      for( ; sit != send; ++it, ++sit )
+      for( ; sit != send; ++sit )
       {
-        ( *it ) += ( *sit );
+        pair< histogram_type::iterator, bool > result = histogram.insert( *sit );
+        if( !result.second )
+        {
+          result.first->second += sit->second;
+        }
       }
       n += s.n;
     }
@@ -75,16 +76,18 @@ class Histogram: public IStatistics< DataPoint2f, Histogram >
      *
      * @return 
      */
-    pair< u_int, float > getMode() const
+    pair< class_type, float > getMode() const
     {
       float maxValue = FLT_MIN;
-      u_int maxC = 0;
-      for( size_t i = 0; i < numClasses(); i++ )
+      class_type maxC;
+      histogram_type::const_iterator it = histogram.begin(),
+        end = histogram.end();
+      for( ; it != end; ++it )
       {
-        if( histogram[ i ] > maxValue )
+        if( it->second > maxValue )
         {
-          maxValue = histogram[ i ];
-          maxC = i;
+          maxValue = it->second;
+          maxC = it->first;
         }
       }
       return pair< u_int, float >( maxC, maxValue / n );
@@ -98,23 +101,26 @@ class Histogram: public IStatistics< DataPoint2f, Histogram >
     float getEntropy() const
     {
       float entropy = 0.0f;
-      for( size_t i = 0; i < numClasses(); i++ )
+      histogram_type::const_iterator it = histogram.begin(),
+        end = histogram.end();
+
+      for( ; it != end; ++it )
       {
-        if( float p_i = static_cast<float>( histogram[ i ] ) / n )
-        {
-          entropy += p_i * cvt::Math::log2( p_i );
-        }
+        float p_i = static_cast<float>( it->second ) / n; 
+        entropy += p_i * cvt::Math::log2( p_i );
       }
       return -entropy;
     }
 
-    float probability( u_int class_index ) const
+    float probability( class_type class_index ) const
     {
-      if( class_index >= numClasses() )
+      histogram_type::const_iterator it = histogram.find( class_index );
+      if( it == histogram.end() )
       {
         return 0.0f;
+      } else {
+        return static_cast<float>( it->second ) / n;
       }
-      return static_cast<float>( histogram[ class_index ] ) / n;
     }
 
     size_t numClasses() const
@@ -125,9 +131,11 @@ class Histogram: public IStatistics< DataPoint2f, Histogram >
     friend ostream& operator<<( ostream& os, const Histogram& s )
     {
       os << s.n << ": { ";
-      for( size_t i = 0; i < s.numClasses(); i++ )
+      histogram_type::const_iterator it = s.histogram.begin(),
+        end = s.histogram.end();
+      for( ; it != end; ++it )
       {
-        os << "(" << i << "," << s.histogram[ i ] << ") ";
+        os << "(" << it->first << "," << it->second << ") ";
       }
       os << "}";
 

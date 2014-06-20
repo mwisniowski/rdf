@@ -5,8 +5,10 @@
 #include "Interfaces.h"
 #include "DataPoint.h"
 
+typedef size_t class_type;
+
 template< size_t d >
-class Feature : public IFeature< DataPoint< float, size_t, d > >
+class Feature : public IFeature< DataPoint< float, class_type, d > >
 {
   private:
     std::vector< float > v;
@@ -40,7 +42,7 @@ class Feature : public IFeature< DataPoint< float, size_t, d > >
      *
      * @return 
      */
-    float operator()( const DataPoint< float, size_t, d >& point ) const
+    float operator()( const DataPoint< float, class_type, d >& point ) const
     {
       float sum = 0;
       for( size_t i = 0; i < d; i++ )
@@ -48,6 +50,16 @@ class Feature : public IFeature< DataPoint< float, size_t, d > >
         sum += v[ i ] * point.input[ i ];
       }
       return sum;
+    }
+
+    Feature& operator=( const Feature& other )
+    {
+      if( this != &other )
+      {
+        v = other.v;
+        id = other.id;
+      }
+      return *this;
     }
 
   private:

@@ -45,7 +45,7 @@ void display( const Image& image, size_t width, size_t height ) {
 
 int countClasses( const DataRange< ClassificationContext::DataType >::collection& data )
 {
-  std::set< u_int > classes;
+  std::set< size_t > classes;
   for( size_t i = 0; i < data.size(); i++ )
   {
     classes.insert( data[ i ].output );

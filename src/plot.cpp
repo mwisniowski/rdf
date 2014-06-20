@@ -2,6 +2,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <set>
 #include <algorithm>
 
 #include <cvt/gui/Window.h>
@@ -40,6 +41,16 @@ void display( const Image& image, size_t width, size_t height ) {
   Application::run();
 }
 
+int countClasses( const DataRange< ClassificationContext::DataType >::collection& data )
+{
+  std::set< size_t > classes;
+  for( size_t i = 0; i < data.size(); i++ )
+  {
+    classes.insert( data[ i ].output );
+  }
+  return classes.size();
+}
+
 int main(int argc, char *argv[])
 {
   TrainingParameters params = {
@@ -64,6 +75,7 @@ int main(int argc, char *argv[])
   DataRange< ClassificationContext::DataType >::collection data( start, end );
   DataRange< ClassificationContext::DataType > range( data.begin(), data.end() );
   is.close();
+  size_t numClasses = countClasses( data );
 
   ClassificationContext context( params, range );
 
@@ -128,7 +140,7 @@ int main(int argc, char *argv[])
 
       mix = cvt::Color::BLACK;
       float mudiness = 0.5f * h.getEntropy();
-      for( size_t i = 0; i < h.numClasses(); i++ )
+      for( size_t i = 0; i < numClasses; i++ )
       {
         float p = (1.0f - mudiness ) * h.probability( i );
         mix = mix + colormap[ i ] * p;
