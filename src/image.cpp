@@ -1,9 +1,9 @@
-#include <plugins/iloader/PPM/PPMLoader.cpp>
-#include <plugins/isaver/PNG/PNGSaver.cpp>
+#include <cvt/gfx/Image.h>
 
 int main(int argc, char *argv[])
 {
-  cvt::PPMLoader loader;
   cvt::Image i;
-  loader.load( i, argv[ 1 ] );
+  i.load( argv[ 1 ] );
+
+  i.save( "test.png" );
 }
