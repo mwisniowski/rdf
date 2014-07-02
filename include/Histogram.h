@@ -33,6 +33,16 @@ class Histogram: public IStatistics< DataPoint2f, Histogram >
     virtual ~Histogram() 
     {}
 
+    Histogram& operator=( const Histogram& other )
+    {
+      if( this != &other )
+      {
+        n = other.n;
+        histogram = other.histogram;
+      }
+      return *this;
+    }
+
     /**
      * @brief Adds DataPoints from range to histogram
      *

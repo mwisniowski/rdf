@@ -31,6 +31,16 @@ class ClassificationContext : public ITrainingContext< DataPoint< float, size_t,
       srand( time( 0 ) );
     }
 
+    ClassificationContext( const ClassificationContext& other ) :
+      ITrainingContext( other.params ),
+      featurePool( other.featurePool ),
+      table( other.table )
+    {}
+
+   virtual ~ClassificationContext()
+   {
+   }
+
   private:
     vector< Feature< 2 > > createFeaturePool()
     {

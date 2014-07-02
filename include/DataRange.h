@@ -34,6 +34,16 @@ class DataRange
       to( other.to )
     {}
 
+    DataRange& operator=( const DataRange& other )
+    {
+      if( this != &other )
+      {
+        from = other.from;
+        to = other.to;
+      }
+      return *this;
+    }
+
     iterator begin() const
     {
       return from;
