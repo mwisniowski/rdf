@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
       float mudiness = 0.5f * h.getEntropy();
       for( size_t i = 0; i < numClasses; i++ )
       {
-        float p = (1.0f - mudiness ) * h.probability( i + 1 );
+        float p = ( 1.0f - mudiness ) * h.probability( i + 1 );
         mix = mix + colormap[ i ] * p;
       }
       mix = mix + gray * mudiness;
