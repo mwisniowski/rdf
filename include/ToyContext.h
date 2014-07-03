@@ -1,29 +1,28 @@
-#ifndef TRAINING_CONTEXT_H
-#define TRAINING_CONTEXT_H
+#ifndef TOY_CONTEXT_H
+#define TOY_CONTEXT_H
 
 #include <cvt/math/Math.h>
 #include <map>
 
-#include "Interfaces.h"
-#include "Feature.h"
-#include "Histogram.h"
+#include "ToyCommon.h"
+#include "ToyFeature.h"
 
 #define POOL_SIZE 360
 
-class ClassificationContext : public ITrainingContext< DataPoint< float, size_t, 2 >, Feature< 2 >, Histogram >
+class ToyContext : public ITrainingContext< DataType, FeatureType, StatisticsType >
 {
+  private:
+    // typedef std::map< size_t, float >     row_type;
+    // typedef std::map< size_t, row_type >  table_type;
+    typedef std::vector< float > row_type;
+    typedef std::vector< row_type > table_type;
+    typedef std::vector< FeatureType > pool_type;
+
   public:
-    typedef DataPoint< float, size_t, 2 >  DataType;
-    typedef Feature< 2 >                   FeatureType;
-    typedef Histogram                      StatisticsType;
+    const pool_type  featurePool;
+    const table_type             table;
 
-    typedef std::map< size_t, float >     row_type;
-    typedef std::map< size_t, row_type >  table_type;
-
-    const vector< Feature< 2 > >  featurePool;
-    const table_type              table;
-
-    ClassificationContext( const TrainingParameters p, const DataRange< DataType >& range ) :
+    ToyContext( const TrainingParameters p, const DataRange< DataType >& range ) :
       ITrainingContext( p ),
       featurePool( createFeaturePool() ),
       table( createTable( range ) )
@@ -31,65 +30,69 @@ class ClassificationContext : public ITrainingContext< DataPoint< float, size_t,
       srand( time( 0 ) );
     }
 
-    ClassificationContext( const ClassificationContext& other ) :
+    ToyContext( const ToyContext& other ) :
       ITrainingContext( other.params ),
       featurePool( other.featurePool ),
       table( other.table )
     {}
 
-   virtual ~ClassificationContext()
+   virtual ~ToyContext()
    {
    }
 
   private:
-    vector< Feature< 2 > > createFeaturePool()
+    vector< FeatureType > createFeaturePool()
     {
-      // size_t pool_size = params.noCandidateFeatures * pow( 2, params.maxDecisionLevels );
       // TODO magic number
       size_t pool_size = POOL_SIZE;
-      vector< Feature< 2 > > features;
+      vector< FeatureType > features;
       features.reserve( pool_size );
       vector< float > rv;
-      for( size_t i = 0; i < pool_size; i++ )
+      for( size_t id = 0; id < pool_size; id++ )
       {
         // float angle = rand( 0.0f, TWO_PI );
         gaussianVector( rv, 2 );
-        features.push_back( Feature< 2 >( rv ) );
+        FeatureType f( rv );
+        f.id = id;
+        features.push_back( f );
       }
       return features;
     }
 
     table_type createTable( const DataRange< DataType >& range )
     {
-      // size_t n = std::distance( range.begin(), range.end() );
-      // std::vector< std::vector< float > > table;
-      // for( size_t i = 0; i < POOL_SIZE; i++ )
+      // table_type table;
+      // std::vector< FeatureType >::const_iterator fit = featurePool.begin(),
+      //   fend = featurePool.end();
+      // for( ; fit != fend; ++fit )
       // {
-      //   table.push_back( std::vector< float >( n ) );
+      //   table_type::iterator mit = table.insert( std::pair< size_t, row_type >( fit->id, row_type() ) ).first;
       //   DataRange< DataType >::const_iterator it = range.begin();
-      //   for( size_t j = 0; j < n; j++, ++it )
+      //   for( ; it != range.end(); ++it )
       //   {
-      //     table[i][j] = featurePool[ i ]( *it );
+      //     mit->second.insert( std::pair< size_t, float >( it->id, (*fit)( *it ) ) );
       //   }
       // }
 
-      table_type table;
-      std::vector< FeatureType >::const_iterator fit = featurePool.begin(),
-        fend = featurePool.end();
-      for( ; fit != fend; ++fit )
+      table_type table( std::distance( range.begin(), range.end() ) );
+
+      table_type::iterator tit = table.begin();
+      DataRange< DataType >::iterator dit = range.begin();
+      size_t id = 0;
+      for( ; dit != range.end(); ++dit, ++tit )
       {
-        table_type::iterator mit = table.insert( std::pair< size_t, row_type >( fit->id, row_type() ) ).first;
-        DataRange< DataType >::const_iterator it = range.begin();
-        for( ; it != range.end(); ++it )
+        dit->id = id++;
+        pool_type::const_iterator pit = featurePool.begin(),
+          end = featurePool.end();
+        for( ; pit != end; ++pit )
         {
-          mit->second.insert( std::pair< size_t, float >( it->id, (*fit)( *it ) ) );
+          tit->push_back( ( *pit )( *dit ) );
         }
       }
 
       return table;
     }
 
-  public:
     /**
      * @brief Generate a random gaussian distributed vector using the Marsaglia Polar Method
      *
@@ -125,9 +128,10 @@ class ClassificationContext : public ITrainingContext< DataPoint< float, size_t,
       }
     }
 
+  public:
     float lookup( const FeatureType& f, const DataType& p ) const
     {
-      return table.at( f.id ).at( p.id );
+      return table.at( p.id ).at( f.id );
     }
 
     /**
@@ -151,9 +155,9 @@ class ClassificationContext : public ITrainingContext< DataPoint< float, size_t,
       }
     }
 
-    Histogram getStatisticsAggregator() const
+    StatisticsType getStatisticsAggregator() const
     {
-      return Histogram();
+      return StatisticsType();
     }
 
     /**
@@ -166,9 +170,9 @@ class ClassificationContext : public ITrainingContext< DataPoint< float, size_t,
      *
      * @return 
      */
-    float computeInformationGain( const Histogram& parent_s,
-        const Histogram& left_s,
-        const Histogram& right_s ) const
+    float computeInformationGain( const StatisticsType& parent_s,
+        const StatisticsType& left_s,
+        const StatisticsType& right_s ) const
     {
 
       float H_p = parent_s.getEntropy();

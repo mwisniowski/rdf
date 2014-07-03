@@ -12,7 +12,6 @@ using namespace std;
 template< typename I, typename O, size_t d > 
 struct DataPoint
 {
-
   public:
     vector<I> input;
     O         output;
@@ -20,15 +19,13 @@ struct DataPoint
 
     DataPoint() :
       input( d, I( 0 ) ),
-      output( O( 0 ) ),
-      id( getId() )
+      output( O( 0 ) )
     {
     }
 
     DataPoint( const vector<I>& in, const O& out ) :
       input( in ),
-      output( out ),
-      id( getId() )
+      output( out )
     {
     }
 
@@ -67,8 +64,6 @@ struct DataPoint
         point.input.push_back( input );
       }
 
-      point.id = getId();
-
       return is;
     }
 
@@ -89,13 +84,6 @@ struct DataPoint
     bool operator==( const DataPoint& other )
     {
       return input == other.input && output == other.output;
-    }
-    
-  private:
-    static size_t getId()
-    {
-      static size_t id( 0 );
-      return id++;
     }
 };
 

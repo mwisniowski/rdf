@@ -16,7 +16,7 @@
 #include <cvt/gfx/IMapScoped.h>
 #include <cvt/gfx/GFXEngineImage.h>
 
-#include "ClassificationContext.h"
+#include "ToyContext.h"
 #include "ForestTrainer.h"
 
 using namespace std;
@@ -41,7 +41,7 @@ void display( const Image& image, size_t width, size_t height ) {
   Application::run();
 }
 
-int countClasses( const DataRange< ClassificationContext::DataType >::collection& data )
+int countClasses( const DataRange< DataType >::collection& data )
 {
   std::set< size_t > classes;
   for( size_t i = 0; i < data.size(); i++ )
@@ -61,43 +61,48 @@ int main(int argc, char *argv[])
   };
 
   if( argc < 2 ) {
-    cerr << "Please provide a data file";
+    cerr << "Please provide a data file" << endl;
     return 1;
   }
   ifstream is( argv[ 1 ] );
+  if( !is.good() )
+  {
+    cerr << "Could not find data file!" << endl;
+    return 1;
+  }
 
   if( argc > 2 ) params.noCandidateFeatures = atoi( argv[ 2 ] );
   if( argc > 3 ) params.noCandateThresholds = atoi( argv[ 3 ] );
   if( argc > 4 ) params.maxDecisionLevels = atoi( argv[ 4 ] );
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
 
-  istream_iterator< ClassificationContext::DataType > start( is ), end;
-  DataRange< ClassificationContext::DataType >::collection data( start, end );
-  DataRange< ClassificationContext::DataType > range( data.begin(), data.end() );
+  istream_iterator< DataType > start( is ), end;
+  DataRange< DataType >::collection data( start, end );
+  DataRange< DataType > range( data.begin(), data.end() );
   is.close();
   size_t numClasses = countClasses( data );
 
-  ClassificationContext context( params, range );
+  ToyContext context( params, range );
 
-  // TreeTrainer< ClassificationContext::DataType, 
-  //   ClassificationContext::FeatureType, 
-  //   ClassificationContext::StatisticsType > trainer( context );
-  // Tree< ClassificationContext::DataType, 
-  //   ClassificationContext::FeatureType, 
-  //   ClassificationContext::StatisticsType > classifier = trainer.trainTree( params, range );
+  // TreeTrainer< DataType, 
+  //   FeatureType, 
+  //   StatisticsType > trainer( context );
+  // Tree< DataType, 
+  //   FeatureType, 
+  //   StatisticsType > classifier = trainer.trainTree( params, range );
   // cout << classifier;
   
-  ForestTrainer< ClassificationContext::DataType, 
-    ClassificationContext::FeatureType, 
-    ClassificationContext::StatisticsType > trainer( context );
-  Forest< ClassificationContext::DataType, 
-    ClassificationContext::FeatureType, 
-    ClassificationContext::StatisticsType > classifier = trainer.trainForest( params, range );
+  ForestTrainer< DataType, 
+    FeatureType, 
+    StatisticsType > trainer( context );
+  Forest< DataType, 
+    FeatureType, 
+    StatisticsType > classifier = trainer.trainForest( params, range );
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;
 
-  DataRange< ClassificationContext::DataType >::const_iterator it = range.begin();
+  DataRange< DataType >::const_iterator it = range.begin();
   for( ; it != data.end(); ++it )
   {
     for( size_t i = 0; i < it->input.size(); i++ )
@@ -118,7 +123,7 @@ int main(int argc, char *argv[])
   cvt::Image img;
   img.reallocate( width, width, cvt::IFormat::RGBA_FLOAT );
   cvt::IMapScoped<float> map( img );
-  ClassificationContext::DataType pt;
+  DataType pt;
   pt.input.resize( 2 );
   cvt::Color color, gray( 0.5f ), mix;
   cvt::Color colormap[] = {
@@ -136,7 +141,7 @@ int main(int argc, char *argv[])
     {
       pt.input[ 0 ] = static_cast<float>( column );
 
-      const ClassificationContext::StatisticsType& h = classifier.classify( pt );
+      const StatisticsType& h = classifier.classify( pt );
 
       mix = cvt::Color::BLACK;
       float mudiness = 0.5f * h.getEntropy();

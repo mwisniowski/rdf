@@ -16,7 +16,7 @@
 #include <cvt/gfx/IMapScoped.h>
 #include <cvt/gfx/GFXEngineImage.h>
 
-#include "ClassificationContext.h"
+#include "ToyContext.h"
 #include "ForestTrainer.h"
 
 #include "gnuplot_i.hpp"
@@ -43,7 +43,7 @@ void display( const Image& image, size_t width, size_t height ) {
   Application::run();
 }
 
-int countClasses( const DataRange< ClassificationContext::DataType >::collection& data )
+int countClasses( const DataRange< DataType >::collection& data )
 {
   std::set< size_t > classes;
   for( size_t i = 0; i < data.size(); i++ )
@@ -75,18 +75,18 @@ int main(int argc, char *argv[])
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
   if( argc > 6 ) folds = atoi( argv[ 6 ] );
 
-  istream_iterator< ClassificationContext::DataType > start( is ), end;
-  DataRange< ClassificationContext::DataType >::collection data( start, end );
+  istream_iterator< DataType > start( is ), end;
+  DataRange< DataType >::collection data( start, end );
   is.close();
   std::random_shuffle( data.begin(), data.end() );
   size_t n = static_cast< float >( cvt::Math::round( data.size() / static_cast<float>( folds  ) ) );
   size_t numClasses = countClasses( data );
 
-  vector< DataRange< ClassificationContext::DataType > > partition_map;
+  vector< DataRange< DataType > > partition_map;
   for( size_t f = 0; f < folds; f++ )
   {
-    DataRange< ClassificationContext::DataType >::iterator it = data.begin() + f * n;
-    partition_map.push_back( DataRange< ClassificationContext::DataType >( it, it + n ) );
+    DataRange< DataType >::iterator it = data.begin() + f * n;
+    partition_map.push_back( DataRange< DataType >( it, it + n ) );
   }
 
   vector< vector< size_t > > confusion_matrix;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
   float divisor = static_cast<float>( n ) / folds;
   for( size_t f = 0; f < folds; f++ )
   {
-    DataRange< ClassificationContext::DataType >::collection training_data;
+    DataRange< DataType >::collection training_data;
     for( size_t ff = 0; ff < folds; ff++ )
     {
       if( ff != f )
@@ -108,23 +108,23 @@ int main(int argc, char *argv[])
             partition_map[ ff ].end() );
       }
     }
-    DataRange< ClassificationContext::DataType > training_range( training_data.begin(), training_data.end() );
+    DataRange< DataType > training_range( training_data.begin(), training_data.end() );
 
-    DataRange< ClassificationContext::DataType >::collection test_data( partition_map[ f ].begin(), partition_map[ f ].end() );
-    ClassificationContext::StatisticsType test_data_distribution;
-    test_data_distribution.aggregate( DataRange< ClassificationContext::DataType >( test_data.begin(), test_data.end() ) );
+    DataRange< DataType >::collection test_data( partition_map[ f ].begin(), partition_map[ f ].end() );
+    StatisticsType test_data_distribution;
+    test_data_distribution.aggregate( DataRange< DataType >( test_data.begin(), test_data.end() ) );
 
-    ClassificationContext context( params, training_range );
-    ForestTrainer< ClassificationContext::DataType, 
-      ClassificationContext::FeatureType, 
-      ClassificationContext::StatisticsType > trainer( context );
-    Forest< ClassificationContext::DataType, 
-      ClassificationContext::FeatureType, 
-      ClassificationContext::StatisticsType > classifier = trainer.trainForest( params, training_range );
+    ToyContext context( params, training_range );
+    ForestTrainer< DataType, 
+      FeatureType, 
+      StatisticsType > trainer( context );
+    Forest< DataType, 
+      FeatureType, 
+      StatisticsType > classifier = trainer.trainForest( params, training_range );
     
     for( size_t i = 0; i < n; i++ )
     {
-      const ClassificationContext::StatisticsType h = classifier.classify( test_data[ i ] );
+      const StatisticsType h = classifier.classify( test_data[ i ] );
       confusion_matrix[ test_data[ i ].output - 1 ][ h.getMode().first - 1 ]++;
     }
   }

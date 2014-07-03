@@ -10,9 +10,9 @@ template< typename D, typename F, typename S >
 class Forest 
 {
   private:
-    vector< Tree< D, F, S > >         trees;
-    size_t                            numClasses;
-    const ITrainingContext< D, F, S >&   context;
+    vector< Tree< D, F, S > >           trees;
+    size_t                              numClasses;
+    const ITrainingContext< D, F, S >&  context;
 
   public:
     Forest( const ITrainingContext< D, F, S >& c ) :

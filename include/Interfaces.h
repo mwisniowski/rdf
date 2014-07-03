@@ -9,6 +9,17 @@ template< typename D >
 class IFeature 
 {
   public:
+    size_t id;
+
+    IFeature& operator=( const IFeature& other )
+    {
+      if( this != &other )
+      {
+        id = other.id;
+      }
+      return *this;
+    }
+
     virtual float operator()( const D& point ) const =0;
 };
 
