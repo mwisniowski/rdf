@@ -34,7 +34,7 @@ class Forest
         end = trees.end();
       for( ; it != end; ++it )
       {
-        s.aggregate( it->classify( point ) );
+        s += it->classify( point );
       }
 
       return s;

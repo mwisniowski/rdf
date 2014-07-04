@@ -111,7 +111,7 @@ class TreeTrainer
     Node< D, F, S > createLeaf( DataRange< D >& range ) const
     {
       S s = context.getStatisticsAggregator();
-      s.aggregate( range );
+      s += range;
       return Node< D, F, S >( s, range );
     }
 
@@ -160,9 +160,9 @@ class TreeTrainer
             right( pivot, parent.end() );
 
           S left_s = context.getStatisticsAggregator();
-          left_s.aggregate( left );
           S right_s = context.getStatisticsAggregator();
-          right_s.aggregate( right );
+          left_s += left;
+          right_s += right;
 
           float gain = context.computeInformationGain( parent_s, left_s, right_s );
           if( gain > best_gain )

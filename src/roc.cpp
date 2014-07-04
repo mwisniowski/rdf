@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
 
     DataRange< DataType >::collection test_data( partition_map[ f ].begin(), partition_map[ f ].end() );
     StatisticsType test_data_distribution;
-    test_data_distribution.aggregate( DataRange< DataType >( test_data.begin(), test_data.end() ) );
+    test_data_distribution += DataRange< DataType >( test_data.begin(), test_data.end() );
 
     ToyContext context( params, training_range );
     ForestTrainer< DataType, 

@@ -18,7 +18,6 @@ class ImageFeature : public IFeature< DataType >
 
   public:
     ImageFeature()
-      // super()
     {}
 
     ImageFeature( const ImageFeature& other ) :

@@ -48,8 +48,10 @@ class Histogram: public IStatistics< D, Histogram< class_type, D > >
      * @brief Adds DataPoints from range to histogram
      *
      * @param range
+     *
+     * @return 
      */
-    void aggregate( const DataRange< D >& range )
+    Histogram& operator+=( const DataRange< D >& range )
     {
       typename DataRange< D >::const_iterator it( range.begin() );
       for( ; it != range.end(); ++it )
@@ -66,26 +68,23 @@ class Histogram: public IStatistics< D, Histogram< class_type, D > >
         histogram[ index ]++;
         n++;
       }
+      return *this;
     }
 
-    /**
-     * @brief Adds per-class values from another histogram
-     *
-     * @param s
-     */
-    void aggregate( const Histogram& s )
+    Histogram& operator+=( const Histogram& h )
     {
       histogram.resize( classes.size(), 0 );
 
-      typename histogram_type::const_iterator sit = s.histogram.begin(),
-        send = s.histogram.end();
+      typename histogram_type::const_iterator sit = h.histogram.begin(),
+        send = h.histogram.end();
       typename histogram_type::iterator it = histogram.begin();
 
       for( ; sit != send; ++sit, ++it )
       {
         ( *it ) += ( *sit );
       }
-      n += s.n;
+      n += h.n;
+      return *this;
     }
 
     /**

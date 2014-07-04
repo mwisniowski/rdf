@@ -50,9 +50,9 @@ template< typename D, typename S >
 class IStatistics 
 {
   public:
-    virtual void aggregate( const DataRange< D >& range ) =0;
+    virtual S& operator+=( const DataRange< D >& range ) =0;
 
-    virtual void aggregate( const S& s ) =0;
+    virtual S& operator+=( const S& s ) =0;
 
     virtual float getEntropy() const =0;
 };

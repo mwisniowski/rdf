@@ -10,7 +10,7 @@
 class ImageFeature;
 
 typedef size_t                             class_type;
-typedef DataPoint< float, class_type, 1 >  DataType;
+typedef DataPoint< float, class_type, 3 >  DataType;
 typedef ImageFeature                       FeatureType;
 typedef Histogram< class_type, DataType >  StatisticsType;
 

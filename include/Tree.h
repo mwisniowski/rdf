@@ -13,8 +13,7 @@ struct Node
   float            threshold;
   int              childOffset;
 
-  Node( const S& s,
-      const DataRange< D >& range ) :
+  Node( const S& s, const DataRange< D >& range ) :
     statistics( s ),
     data( range ),
     childOffset( -1 )
@@ -30,6 +29,18 @@ struct Node
 
   virtual ~Node() 
   {}
+
+  Node& operator=( const Node& other )
+  {
+    if( this != &other )
+    {
+      feature = other.feature;
+      statistics = other.statistics;
+      data = other.data;
+      threshold = other.threshold;
+      childOffset = other.childOffset;
+    }
+  }
 
   friend ostream& operator<<( ostream& os, const Node& n )
   {
