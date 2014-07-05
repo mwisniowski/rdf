@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
       StatisticsType > trainer( context );
     Forest< DataType, 
       FeatureType, 
-      StatisticsType > classifier = trainer.trainForest( params, training_range );
+      StatisticsType > classifier = trainer.trainForest( training_range );
     
     for( size_t i = 0; i < n; i++ )
     {

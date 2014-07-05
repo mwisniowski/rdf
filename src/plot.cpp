@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
     StatisticsType > trainer( context );
   Forest< DataType, 
     FeatureType, 
-    StatisticsType > classifier = trainer.trainForest( params, range );
+    StatisticsType > classifier = trainer.trainForest( range );
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;

@@ -6,12 +6,16 @@
 #include "Interfaces.h"
 #include "DataPoint.h"
 #include "Histogram.h"
+#include "ForestTrainer.h"
 
 class ImageFeature;
 
-typedef size_t                             class_type;
-typedef DataPoint< float, class_type, 3 >  DataType;
-typedef ImageFeature                       FeatureType;
-typedef Histogram< class_type, DataType >  StatisticsType;
+typedef cvt::String                             class_type;
+typedef DataPoint< cvt::Image, class_type, 3 >  DataType;
+typedef ImageFeature                            FeatureType;
+typedef Histogram< class_type, DataType >       StatisticsType;
+
+typedef ForestTrainer< DataType, FeatureType, StatisticsType > TrainerType;
+typedef Forest< DataType, FeatureType, StatisticsType > ClassifierType;
 
 #endif

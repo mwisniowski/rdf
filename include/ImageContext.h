@@ -117,7 +117,7 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
      */
     float computeInformationGain( const StatisticsType& parent_s,
         const StatisticsType& left_s,
-        const StatisticsType& right_s )
+        const StatisticsType& right_s ) const
     {
       float H_p = parent_s.getEntropy();
       float H_l = left_s.getEntropy();
