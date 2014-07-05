@@ -12,8 +12,6 @@
 class ToyContext : public ITrainingContext< DataType, FeatureType, StatisticsType >
 {
   private:
-    // typedef std::map< size_t, float >     row_type;
-    // typedef std::map< size_t, row_type >  table_type;
     typedef std::vector< float > row_type;
     typedef std::vector< row_type > table_type;
     typedef std::vector< FeatureType > pool_type;
@@ -50,7 +48,6 @@ class ToyContext : public ITrainingContext< DataType, FeatureType, StatisticsTyp
       vector< float > rv;
       for( size_t id = 0; id < pool_size; id++ )
       {
-        // float angle = rand( 0.0f, TWO_PI );
         gaussianVector( rv, 2 );
         FeatureType f( rv );
         f.id = id;
@@ -61,19 +58,6 @@ class ToyContext : public ITrainingContext< DataType, FeatureType, StatisticsTyp
 
     table_type createTable( const DataRange< DataType >& range )
     {
-      // table_type table;
-      // std::vector< FeatureType >::const_iterator fit = featurePool.begin(),
-      //   fend = featurePool.end();
-      // for( ; fit != fend; ++fit )
-      // {
-      //   table_type::iterator mit = table.insert( std::pair< size_t, row_type >( fit->id, row_type() ) ).first;
-      //   DataRange< DataType >::const_iterator it = range.begin();
-      //   for( ; it != range.end(); ++it )
-      //   {
-      //     mit->second.insert( std::pair< size_t, float >( it->id, (*fit)( *it ) ) );
-      //   }
-      // }
-
       table_type table( std::distance( range.begin(), range.end() ) );
 
       table_type::iterator tit = table.begin();

@@ -13,8 +13,9 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
 {
   private:
     typedef ITrainingContext< DataType, FeatureType, StatisticsType >  super;
-    typedef std::map< size_t, float >                                  row_type;
-    typedef std::map< size_t, row_type >                               table_type;
+    typedef std::vector< float > row_type;
+    typedef std::vector< row_type > table_type;
+    typedef std::vector< FeatureType > pool_type;
 
   public:
     const vector< FeatureType >  featurePool;
@@ -57,16 +58,19 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
 
     table_type createTable( const DataRange< DataType >& range )
     {
-      table_type table;
-      std::vector< FeatureType >::const_iterator fit = featurePool.begin(),
-        fend = featurePool.end();
-      for( ; fit != fend; ++fit )
+      table_type table( std::distance( range.begin(), range.end() ) );
+
+      table_type::iterator tit = table.begin();
+      DataRange< DataType >::iterator dit = range.begin();
+      size_t id = 0;
+      for( ; dit != range.end(); ++dit, ++tit )
       {
-        table_type::iterator mit = table.insert( std::pair< size_t, row_type >( fit->id, row_type() ) ).first;
-        DataRange< DataType >::const_iterator it = range.begin();
-        for( ; it != range.end(); ++it )
+        dit->id = id++;
+        pool_type::const_iterator pit = featurePool.begin(),
+          end = featurePool.end();
+        for( ; pit != end; ++pit )
         {
-          mit->second.insert( std::pair< size_t, float >( it->id, (*fit)( *it ) ) );
+          tit->push_back( ( *pit )( *dit ) );
         }
       }
 
