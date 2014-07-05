@@ -8,6 +8,17 @@
 #include "ForestTrainer.h"
 
 using namespace cvt;
+const std::string currentDateTime() {
+    time_t     now = time(0);
+    struct tm  tstruct;
+    char       buf[80];
+    tstruct = *localtime(&now);
+    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+    // for more information about date/time format
+    strftime(buf, sizeof(buf), "%Y-%m-%d.%X: ", &tstruct);
+
+    return buf;
+}
 
 void getData( DataRange< DataType >::collection& data, String& path )
 {
@@ -59,16 +70,19 @@ int main(int argc, char *argv[])
 
   DataRange< DataType >::collection data;
   String path( argv[ 1 ] );
-  cout << "Loading data" << endl;
+  cout << currentDateTime() << "Loading data" << endl;
   getData( data, path );
-  cout << "Data loaded" << endl;
+  cout << currentDateTime() << "Data loaded" << endl;
   DataRange< DataType > range( data.begin(), data.end() );
 
-  cout << "Initializing context (builds lookup table)" << endl;
+  cout << currentDateTime() << "Initializing context (builds lookup table)" << endl;
   ImageContext context( params, range );
-  cout << "Initialized context" << endl;
+  cout << currentDateTime() << "Initialized context" << endl;
   TrainerType trainer( context );
-  // ClassifierType classifer = trainer.trainForest( range );
+  cout << currentDateTime() << "Initialized trainer" << endl;
+  cout << currentDateTime() << "Start training" << endl;
+  ClassifierType classifer = trainer.trainForest( range );
+  cout << currentDateTime() << "Completed training" << endl;
   
   return 0;
 }
