@@ -8,14 +8,16 @@
 #include "Histogram.h"
 #include "ForestTrainer.h"
 
+#define POOL_SIZE 3000
+#define CHANNELS 3
+
 class ImageFeature;
 
-typedef cvt::String                             class_type;
-typedef DataPoint< cvt::Image, class_type, 3 >  DataType;
-typedef ImageFeature                            FeatureType;
-typedef Histogram< class_type, DataType >       StatisticsType;
+typedef DataPoint< cvt::Image, size_t, CHANNELS >  DataType;
+typedef ImageFeature                               FeatureType;
+typedef Histogram< DataType >                      StatisticsType;
 
-typedef ForestTrainer< DataType, FeatureType, StatisticsType > TrainerType;
-typedef Forest< DataType, FeatureType, StatisticsType > ClassifierType;
+typedef ForestTrainer< DataType, FeatureType, StatisticsType >  TrainerType;
+typedef Forest< DataType, FeatureType, StatisticsType >         ClassifierType;
 
 #endif

@@ -21,6 +21,7 @@ class ImageFeature : public IFeature< DataType >
     {}
 
     ImageFeature( const ImageFeature& other ) :
+      super( other ),
       p1( other.p1 ),
       p2( other.p2 ),
       channel( other.channel )
@@ -49,7 +50,7 @@ class ImageFeature : public IFeature< DataType >
 
     float operator()( const DataType& point ) const
     {
-      cvt::Image i = point.input.at( channel );
+      cvt::Image i = point.input[ channel ];
       cvt::IMapScoped< float > map( i );
       cvt::Vector2i p( i.width() * p1.x, i.height() * p2.y ),
         q( i.width() * p2.x, i.height() * p2.y );

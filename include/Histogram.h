@@ -7,23 +7,21 @@
 #include "DataRange.h"
 #include "Interfaces.h"
 
-template< typename class_type, typename D >
-class Histogram: public IStatistics< D, Histogram< class_type, D > >
+template< typename D >
+class Histogram: public IStatistics< D, Histogram< D > >
 {
   public:
     size_t n;
 
   public:
-    typedef std::vector< class_type >  class_set_type;
     typedef std::vector< size_t >      histogram_type;
-    static class_set_type              classes;
     histogram_type                     histogram;
 
 
   public:
-    Histogram() :
-      n( 0 ),
-      histogram( classes.size(), 0 )
+    Histogram( size_t numClasses ) :
+      histogram( numClasses ),
+      n( 0 )
     {}
 
     Histogram( const Histogram& other ) :
@@ -56,16 +54,7 @@ class Histogram: public IStatistics< D, Histogram< class_type, D > >
       typename DataRange< D >::const_iterator it( range.begin() );
       for( ; it != range.end(); ++it )
       {
-        typename class_set_type::iterator cit = std::find( classes.begin(), classes.end(), it->output );
-        if( cit == classes.end() )
-        {
-          classes.push_back( it->output );
-          cit = classes.end() - 1 ;
-          histogram.push_back( 0 );
-        }
-        size_t index = std::distance( classes.begin(), cit );
-
-        histogram[ index ]++;
+        histogram[ it->output ]++;
         n++;
       }
       return *this;
@@ -73,8 +62,6 @@ class Histogram: public IStatistics< D, Histogram< class_type, D > >
 
     Histogram& operator+=( const Histogram& h )
     {
-      histogram.resize( classes.size(), 0 );
-
       typename histogram_type::const_iterator sit = h.histogram.begin(),
         send = h.histogram.end();
       typename histogram_type::iterator it = histogram.begin();
@@ -93,21 +80,21 @@ class Histogram: public IStatistics< D, Histogram< class_type, D > >
      *
      * @return 
      */
-    pair< class_type, float > getMode() const
+    pair< size_t, float > getMode() const
     {
       float maxValue = FLT_MIN;
-      class_type maxC;
+      size_t maxC;
 
       for( size_t i = 0; i < histogram.size(); i++ )
       {
         if( histogram[ i ] > maxValue )
         {
           maxValue = histogram[ i ];
-          maxC = classes[ i ];
+          maxC = i;
         }
       }
 
-      return pair< class_type, float >( maxC, maxValue / n );
+      return pair< size_t, float >( maxC, maxValue / n );
     }
 
     /**
@@ -131,21 +118,19 @@ class Histogram: public IStatistics< D, Histogram< class_type, D > >
       return -entropy;
     }
 
-    float probability( class_type class_index ) const
+    float probability( size_t class_index ) const
     {
-      typename class_set_type::iterator it = std::find( classes.begin(), classes.end(), class_index );
-      if( it == classes.end() )
+      if( !histogram[ class_index ] )
       {
         return 0.0f;
       } else {
-        size_t index = std::distance( classes.begin(), it );
-        return static_cast<float>( histogram[ index ] ) / n;
+        return static_cast<float>( histogram[ class_index ] ) / n;
       }
     }
 
     size_t numClasses() const
     {
-      return classes.size();
+      return histogram.size();
     }
 
     friend ostream& operator<<( ostream& os, const Histogram& s )
@@ -153,18 +138,14 @@ class Histogram: public IStatistics< D, Histogram< class_type, D > >
       os << s.n << ": { ";
       typename histogram_type::const_iterator it = s.histogram.begin(),
         end = s.histogram.end();
-      typename class_set_type::const_iterator cit = s.classes.begin();
-      for( ; it != end; ++it, ++cit )
+      for( size_t c = 0; it != end; ++it, c++ )
       {
-        os << "(" << *cit << "," << *it << ") ";
+        os << "(" << c << "," << *it << ") ";
       }
       os << "}";
 
       return os;
     }
 };
-
-template< typename class_type, typename D >
-typename Histogram< class_type, D >::class_set_type Histogram< class_type, D >::classes;
 
 #endif

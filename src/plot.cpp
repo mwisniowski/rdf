@@ -82,7 +82,7 @@ int main(int argc, char *argv[])
   is.close();
   size_t numClasses = countClasses( data );
 
-  ToyContext context( params, range );
+  ToyContext context( params, range, numClasses );
 
   // TreeTrainer< DataType, 
   //   FeatureType, 

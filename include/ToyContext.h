@@ -12,16 +12,20 @@
 class ToyContext : public ITrainingContext< DataType, FeatureType, StatisticsType >
 {
   private:
-    typedef std::vector< float > row_type;
-    typedef std::vector< row_type > table_type;
-    typedef std::vector< FeatureType > pool_type;
+    typedef std::vector< float >        row_type;
+    typedef std::vector< row_type >     table_type;
+    typedef std::vector< FeatureType >  pool_type;
 
   public:
-    const pool_type  featurePool;
-    const table_type             table;
+    const pool_type   featurePool;
+    const table_type  table;
+    const size_t      numClasses;
 
-    ToyContext( const TrainingParameters p, const DataRange< DataType >& range ) :
+    ToyContext( const TrainingParameters p, 
+        const DataRange< DataType >& range,
+        size_t numClasses ) :
       ITrainingContext( p ),
+      numClasses( numClasses ),
       featurePool( createFeaturePool() ),
       table( createTable( range ) )
     {
@@ -30,13 +34,14 @@ class ToyContext : public ITrainingContext< DataType, FeatureType, StatisticsTyp
 
     ToyContext( const ToyContext& other ) :
       ITrainingContext( other.params ),
+      numClasses( other.numClasses ),
       featurePool( other.featurePool ),
       table( other.table )
     {}
 
-   virtual ~ToyContext()
-   {
-   }
+    virtual ~ToyContext()
+    {
+    }
 
   private:
     vector< FeatureType > createFeaturePool()
@@ -141,7 +146,7 @@ class ToyContext : public ITrainingContext< DataType, FeatureType, StatisticsTyp
 
     StatisticsType getStatisticsAggregator() const
     {
-      return StatisticsType();
+      return StatisticsType( numClasses );
     }
 
     /**

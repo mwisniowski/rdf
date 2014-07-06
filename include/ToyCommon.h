@@ -11,6 +11,6 @@ class ToyFeature;
 typedef size_t                             class_type;
 typedef DataPoint< float, class_type, 2 >  DataType;
 typedef ToyFeature< 2 >                    FeatureType;
-typedef Histogram< class_type, DataType >  StatisticsType;
+typedef Histogram< DataType >              StatisticsType;
 
 #endif

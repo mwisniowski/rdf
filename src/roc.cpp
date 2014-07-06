@@ -111,10 +111,10 @@ int main(int argc, char *argv[])
     DataRange< DataType > training_range( training_data.begin(), training_data.end() );
 
     DataRange< DataType >::collection test_data( partition_map[ f ].begin(), partition_map[ f ].end() );
-    StatisticsType test_data_distribution;
+    StatisticsType test_data_distribution( numClasses );
     test_data_distribution += DataRange< DataType >( test_data.begin(), test_data.end() );
 
-    ToyContext context( params, training_range );
+    ToyContext context( params, training_range, numClasses );
     ForestTrainer< DataType, 
       FeatureType, 
       StatisticsType > trainer( context );

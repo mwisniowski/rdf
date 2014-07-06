@@ -6,23 +6,24 @@
 #include "ImageCommon.h"
 #include "ImageFeature.h"
 
-#define POOL_SIZE 1000
-#define CHANNELS 3
-
 class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsType >
 {
   private:
     typedef ITrainingContext< DataType, FeatureType, StatisticsType >  super;
-    typedef std::vector< float > row_type;
-    typedef std::vector< row_type > table_type;
-    typedef std::vector< FeatureType > pool_type;
+    typedef std::vector< float >                                       row_type;
+    typedef std::vector< row_type >                                    table_type;
+    typedef std::vector< FeatureType >                                 pool_type;
 
   public:
     const vector< FeatureType >  featurePool;
     const table_type             table;
+    const size_t                 numClasses;
 
-    ImageContext( const TrainingParameters& params, const DataRange< DataType >& range ) :
+    ImageContext( const TrainingParameters& params, 
+        const DataRange< DataType >& range, 
+          size_t numClasses ) :
       super( params ),
+      numClasses( numClasses ),
       featurePool( createFeaturePool() ),
       table( createTable( range ) )
     {
@@ -31,6 +32,7 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
 
     ImageContext( const ImageContext& other ) :
       super( other.params ),
+      numClasses( other.numClasses ),
       featurePool( other.featurePool ),
       table( other.table )
     {}
@@ -41,7 +43,6 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
   private:
     vector< FeatureType > createFeaturePool()
     {
-      // TODO magic number
       size_t pool_size = POOL_SIZE;
       vector< FeatureType > features;
       features.reserve( pool_size );
@@ -51,7 +52,9 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
         cvt::Point2f p1( cvt::Math::rand( 0.0f, 1.0f ), cvt::Math::rand( 0.0f, 1.0f ) );
         cvt::Point2f p2( cvt::Math::rand( 0.0f, 1.0f ), cvt::Math::rand( 0.0f, 1.0f ) );
         size_t channel = cvt::Math::rand( 0, CHANNELS ) + 0.5f;
-        features.push_back( FeatureType( p1, p2, channel ) );
+        FeatureType f( p1, p2, channel );
+        f.id = i;
+        features.push_back( f );
       }
       return features;
     }
@@ -80,7 +83,7 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
   public:
     float lookup( const FeatureType& f, const DataType& p ) const
     {
-      return table.at( f.id ).at( p.id );
+      return table[ p.id ][ f.id ];
     }
 
     /**
@@ -106,7 +109,7 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
 
     StatisticsType getStatisticsAggregator() const
     {
-      return StatisticsType();
+      return StatisticsType( numClasses );
     }
 
     /**

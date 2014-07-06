@@ -20,24 +20,31 @@ const std::string currentDateTime() {
     return buf;
 }
 
-void getData( DataRange< DataType >::collection& data, String& path )
+size_t getData( DataRange< DataType >::collection& data,
+    vector< String >& class_labels, 
+    String& path )
 {
   if( !path.hasSuffix( "/" ) )
   {
     path += "/";
   }
 
-  vector< String > class_labels;
+  class_labels.clear();
   FileSystem::ls( path, class_labels );
 
-  for( size_t i = 0; i < class_labels.size(); i++ )
+  vector< String >::iterator it = class_labels.begin();
+  for( ; it != class_labels.end(); ++it )
   {
-    String class_label = class_labels[ i ];
-    if( !class_label.hasPrefix( "000" ) )
+    if( !it->hasPrefix( "000" ) )
     {
-      continue;
+      class_labels.erase( it );
     }
-    String p( path + class_label + "/" );
+  }
+
+  size_t c = 0;
+  for( ; c < class_labels.size(); c++ )
+  {
+    String p( path + class_labels[ c ] + "/" );
     if( FileSystem::isDirectory( path ) )
     {
       vector< String > class_data;
@@ -46,43 +53,51 @@ void getData( DataRange< DataType >::collection& data, String& path )
       {
         Image i;
         i.load( class_data[ j ] );
-        vector< Image > v;
-        Image r, g, b;
-        i.decompose( r, g, b );
-        v.push_back( r );
-        v.push_back( g );
-        v.push_back( b );
-        data.push_back( DataType( v, class_label ) );
+        vector< Image > v( 3 );
+        i.decompose( v[ 0 ], v[ 1 ], v[ 2 ] );
+        data.push_back( DataType( v, c ) );
       }
     }
   }
+  return c;
 }
 
 int main(int argc, char *argv[])
 {
 
   TrainingParameters params = {
-    10, //trees
+    1, //trees
     100,  //noCandidateFeatures
     100,  //noCandidateThresholds
-    100   //maxDecisionLevels
+    15   //maxDecisionLevels
   };
 
   DataRange< DataType >::collection data;
   String path( argv[ 1 ] );
   cout << currentDateTime() << "Loading data" << endl;
-  getData( data, path );
-  cout << currentDateTime() << "Data loaded" << endl;
+  vector< String > class_labels;
+  size_t numClasses = getData( data, class_labels, path );
   DataRange< DataType > range( data.begin(), data.end() );
 
   cout << currentDateTime() << "Initializing context (builds lookup table)" << endl;
-  ImageContext context( params, range );
-  cout << currentDateTime() << "Initialized context" << endl;
+  ImageContext context( params, range, numClasses );
   TrainerType trainer( context );
-  cout << currentDateTime() << "Initialized trainer" << endl;
-  cout << currentDateTime() << "Start training" << endl;
+  cout << currentDateTime() << "Training" << endl;
   ClassifierType classifer = trainer.trainForest( range );
-  cout << currentDateTime() << "Completed training" << endl;
+
+  cout << currentDateTime() << "Classifying" << endl;
+  DataRange< DataType >::const_iterator it = data.begin(),
+    end = data.end();
+  float certainty = 0.0f;
+  for( ; it != end; ++it )
+  {
+    StatisticsType s = classifer.classify( *it );
+    pair< size_t, float > result = s.getMode();
+    certainty += result.second;
+    // cout << currentDateTime() << "(" << class_labels[ result.first ] << "," << result.second << ")" << endl;
+  }
+  cout << currentDateTime() << "Average certainty: " << certainty / std::distance( range.begin(), range.end() ) << endl;
+  cout << currentDateTime() << "Finished" << endl;
   
   return 0;
 }
