@@ -21,10 +21,11 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
 
     ImageContext( const TrainingParameters& params, 
         const DataRange< DataType >& range, 
-          size_t numClasses ) :
+          size_t numClasses,
+          size_t poolSize ) :
       super( params ),
       numClasses( numClasses ),
-      featurePool( createFeaturePool() ),
+      featurePool( createFeaturePool( poolSize ) ),
       table( createTable( range ) )
     {
       srand( time( 0 ) );
@@ -41,13 +42,12 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
     {}
 
   private:
-    vector< FeatureType > createFeaturePool()
+    vector< FeatureType > createFeaturePool( size_t poolSize )
     {
-      size_t pool_size = POOL_SIZE;
       vector< FeatureType > features;
-      features.reserve( pool_size );
+      features.reserve( poolSize );
       vector< float > rv;
-      for( size_t i = 0; i < pool_size; i++ )
+      for( size_t i = 0; i < poolSize; i++ )
       {
         cvt::Point2f p1( cvt::Math::rand( 0.0f, 1.0f ), cvt::Math::rand( 0.0f, 1.0f ) );
         cvt::Point2f p2( cvt::Math::rand( 0.0f, 1.0f ), cvt::Math::rand( 0.0f, 1.0f ) );

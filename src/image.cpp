@@ -71,12 +71,14 @@ int main(int argc, char *argv[])
     100,  //noCandidateThresholds
     15   //maxDecisionLevels
   };
+  size_t poolSize = 3000;
   float split = 0.2;
   if( argc > 2 ) params.noCandidateFeatures = atoi( argv[ 2 ] );
   if( argc > 3 ) params.noCandateThresholds = atoi( argv[ 3 ] );
   if( argc > 4 ) params.maxDecisionLevels = atoi( argv[ 4 ] );
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
-  if( argc > 6 ) split = atof( argv[ 6 ] );
+  if( argc > 6 ) poolSize = atoi( argv[ 6 ] );
+  if( argc > 7 ) split = atof( argv[ 7 ] );
 
   DataRange< DataType >::collection data;
   String path( argv[ 1 ] );
@@ -96,7 +98,7 @@ int main(int argc, char *argv[])
   }
 
   cout << currentDateTime() << "Initializing context (builds lookup table)" << endl;
-  ImageContext context( params, training_range, numClasses );
+  ImageContext context( params, training_range, numClasses, poolSize );
   TrainerType trainer( context );
   cout << currentDateTime() << "Training" << endl;
   ClassifierType classifer = trainer.trainForest( training_range );
@@ -156,14 +158,14 @@ int main(int argc, char *argv[])
     g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
     g.set_style("lines lt 0").plot_slope(0.0f,acc,"Accuracy");
     g.set_style("points").plot_xy( plot_x, plot_y );
-
-    getchar();
   } catch( GnuplotException e )
   {
     cout << e.what() << endl;
   }
 
   cout << currentDateTime() << "Finished" << endl;
+
+  getchar();
   
   return 0;
 }

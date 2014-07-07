@@ -8,7 +8,6 @@
 #include "Histogram.h"
 #include "ForestTrainer.h"
 
-#define POOL_SIZE 3000
 #define CHANNELS 3
 
 class ImageFeature;
