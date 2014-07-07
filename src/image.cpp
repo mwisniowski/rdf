@@ -1,6 +1,7 @@
 #include <cvt/gfx/Image.h>
 #include "cvt/io/FileSystem.h"
 
+#include "gnuplot_i.hpp"
 #include "ImageCommon.h"
 #include "TrainingParameters.h"
 #include "DataPoint.h"
@@ -48,7 +49,7 @@ size_t getData( DataRange< DataType >::collection& data,
     if( FileSystem::isDirectory( path ) )
     {
       vector< String > class_data;
-      FileSystem::filesWithExtension( p, class_data, "png" );
+      FileSystem::filesWithExtension( p, class_data, "ppm" );
       for( size_t j = 0; j < class_data.size(); j++ )
       {
         Image i;
@@ -64,39 +65,104 @@ size_t getData( DataRange< DataType >::collection& data,
 
 int main(int argc, char *argv[])
 {
-
   TrainingParameters params = {
     1, //trees
     100,  //noCandidateFeatures
     100,  //noCandidateThresholds
     15   //maxDecisionLevels
   };
+  float split = 0.2;
+  if( argc > 2 ) params.noCandidateFeatures = atoi( argv[ 2 ] );
+  if( argc > 3 ) params.noCandateThresholds = atoi( argv[ 3 ] );
+  if( argc > 4 ) params.maxDecisionLevels = atoi( argv[ 4 ] );
+  if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
+  if( argc > 6 ) split = atof( argv[ 6 ] );
 
   DataRange< DataType >::collection data;
   String path( argv[ 1 ] );
   cout << currentDateTime() << "Loading data" << endl;
   vector< String > class_labels;
+
+  std::random_shuffle( data.begin(), data.end() );
   size_t numClasses = getData( data, class_labels, path );
-  DataRange< DataType > range( data.begin(), data.end() );
+  size_t n = cvt::Math::round( data.size() * split );
+  DataRange< DataType > training_range( data.begin(), data.end() - n );
+  DataRange< DataType > test_range( data.end() - n, data.end() );
+
+  vector< vector< size_t > > confusion_matrix;
+  for( size_t i = 0; i < numClasses; i++ )
+  {
+    confusion_matrix.push_back( vector< size_t >( numClasses ) );
+  }
 
   cout << currentDateTime() << "Initializing context (builds lookup table)" << endl;
-  ImageContext context( params, range, numClasses );
+  ImageContext context( params, training_range, numClasses );
   TrainerType trainer( context );
   cout << currentDateTime() << "Training" << endl;
-  ClassifierType classifer = trainer.trainForest( range );
+  ClassifierType classifer = trainer.trainForest( training_range );
 
   cout << currentDateTime() << "Classifying" << endl;
-  DataRange< DataType >::const_iterator it = data.begin(),
-    end = data.end();
-  float certainty = 0.0f;
-  for( ; it != end; ++it )
+  DataRange< DataType >::const_iterator it = test_range.begin();
+  for( ; it != test_range.end(); ++it )
   {
-    StatisticsType s = classifer.classify( *it );
-    pair< size_t, float > result = s.getMode();
-    certainty += result.second;
-    // cout << currentDateTime() << "(" << class_labels[ result.first ] << "," << result.second << ")" << endl;
+    const StatisticsType s = classifer.classify( *it );
+    confusion_matrix[ it->output ][ s.getMode().first ]++;
   }
-  cout << currentDateTime() << "Average certainty: " << certainty / std::distance( range.begin(), range.end() ) << endl;
+
+  cout << "Statistics" << endl;
+  vector< double > plot_x, plot_y;
+  float acc = 0.0f;
+  for( size_t c = 0; c < numClasses; c++ )
+  {
+    acc += confusion_matrix[ c ][ c ];
+
+    size_t condition_positive = 0;
+    size_t test_positive = 0;
+    for( size_t cc = 0; cc < numClasses; cc++ )
+    {
+      condition_positive += confusion_matrix[ cc ][ c ];
+      test_positive += confusion_matrix[ c ][ cc ];
+    }
+    size_t condition_negative = n - condition_positive;
+
+    float fpr = ( float ) ( test_positive - confusion_matrix[ c ][ c ] ) / condition_negative;
+    float tpr = ( float ) confusion_matrix[ c ][ c ] / condition_positive;
+
+    plot_x.push_back( fpr );
+    plot_y.push_back( tpr );
+
+    cout << c << ": (" << fpr << ", " << tpr << ")" << endl;
+  }
+  acc /= n;
+  cout << "Accuracy: " << acc << endl;
+
+  try
+  {
+    Gnuplot g;
+    g.set_title("ROC");
+    g.set_xlabel("False positive rate");
+    g.set_ylabel("True positive rate");
+    g << "set size square";
+
+    g << "set xtics .1";
+    g << "set ytics .1";
+    g << "set mxtics 2";
+    g << "set mytics 2";
+    g.set_xrange(0,1);
+    g.set_yrange(0,1);
+    g.set_grid();
+
+    g.unset_legend();
+    g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
+    g.set_style("lines lt 0").plot_slope(0.0f,acc,"Accuracy");
+    g.set_style("points").plot_xy( plot_x, plot_y );
+
+    getchar();
+  } catch( GnuplotException e )
+  {
+    cout << e.what() << endl;
+  }
+
   cout << currentDateTime() << "Finished" << endl;
   
   return 0;

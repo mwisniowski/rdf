@@ -40,6 +40,7 @@ struct Node
       threshold = other.threshold;
       childOffset = other.childOffset;
     }
+    return *this;
   }
 
   friend ostream& operator<<( ostream& os, const Node& n )
