@@ -94,7 +94,7 @@ int main(int argc, char *argv[])
   vector< vector< size_t > > confusion_matrix;
   for( size_t i = 0; i < numClasses; i++ )
   {
-    confusion_matrix.push_back( vector< size_t >( numClasses ) );
+    confusion_matrix.push_back( vector< size_t >( numClasses, 0 ) );
   }
 
   cout << currentDateTime() << "Initializing context (builds lookup table)" << endl;
@@ -133,7 +133,7 @@ int main(int argc, char *argv[])
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    cout << c << ": (" << fpr << ", " << tpr << ")" << endl;
+    // cout << c << ": (" << fpr << ", " << tpr << ")" << endl;
   }
   acc /= n;
   cout << "Accuracy: " << acc << endl;
