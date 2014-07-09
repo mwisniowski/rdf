@@ -146,7 +146,7 @@ class TreeTrainer
       {
         // randomly sample thresholds
         vector< float > candidate_thresholds;
-        ThresholdSampler< D, F > sampler( *it, parent );
+        ThresholdSampler< D, F, S > sampler( context, *it, parent );
         sampler.uniform( candidate_thresholds, context.params.noCandateThresholds );
 
         Test< D, F, S > test( *it, best_threshold, context );

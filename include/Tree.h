@@ -7,16 +7,16 @@
 template< typename D, typename F, typename S >
 struct Node 
 {
-  F                feature;
-  S                statistics;
-  DataRange< D >   data;
-  float            threshold;
-  int              childOffset;
+  F               feature;
+  S               statistics;
+  DataRange< D >  data;
+  float           threshold;
+  size_t          childOffset;
 
   Node( const S& s, const DataRange< D >& range ) :
     statistics( s ),
     data( range ),
-    childOffset( -1 )
+    childOffset( 0 )
   {}
 
   Node( const Node& other ) :

@@ -3,20 +3,23 @@
 
 #include <cvt/math/Math.h>
 
+#include "Interfaces.h"
 #include "DataRange.h"
 
 using namespace cvt::Math;
 
-template< typename D, typename F >
+template< typename D, typename F, typename S >
 class ThresholdSampler
 { 
   private:
+    const ITrainingContext< D, F, S >& context;
     const F                feature;
     const size_t           n;
     const DataRange< D >   range;
  
   public:
-    ThresholdSampler( const F& f, const DataRange< D >& r ) :
+    ThresholdSampler( const ITrainingContext< D, F, S >& context, const F& f, const DataRange< D >& r ) :
+      context( context ),
       feature( f ),
       range( r ),
       n( std::distance( r.begin(), r.end() ) )
@@ -114,7 +117,7 @@ class ThresholdSampler
      */
     bool operator()( const D& a, const D& b )
     {
-      return feature( a ) < feature( b );
+      return context.lookup( feature, a ) < context.lookup( feature, b );
     }
 
   private:
@@ -128,12 +131,12 @@ class ThresholdSampler
     void getMinMax( float& min, float& max, const DataRange< D >& range )
     {
       min = FLT_MAX;
-      max = FLT_MIN;
+      max = -min;
 
       typename DataRange< D >::const_iterator it = range.begin();
       for( ; it != range.end(); ++it )
       {
-        float response = feature( *it );
+        float response = context.lookup( feature, *it );
         if( response < min )
         {
           min = response;
