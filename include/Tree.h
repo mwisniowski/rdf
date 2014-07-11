@@ -2,29 +2,31 @@
 #define TREE_H
 
 #include <iomanip>
-#include "DataRange.h"
+#include <vector>
+#include "Interfaces.h"
 
-template< typename D, typename F, typename S >
+using namespace std;
+template< typename F, typename S >
 struct Node 
 {
-  F               feature;
-  S               statistics;
-  DataRange< D >  data;
-  float           threshold;
-  size_t          childOffset;
+  const S           statistics;
+  vector< size_t >  data_idxs;
+  size_t            feature_idx;
+  float             threshold;
+  size_t            child_offset;
 
-  Node( const S& s, const DataRange< D >& range ) :
-    statistics( s ),
-    data( range ),
-    childOffset( 0 )
+  Node( const S& statistics, const vector< size_t >& data_idxs ) :
+    statistics( statistics ),
+    data_idxs( data_idxs ),
+    child_offset( 0 )
   {}
 
   Node( const Node& other ) :
-    feature( other.feature ),
+    feature_idx( other.feature_idx ),
     statistics( other.statistics ),
     threshold( other.threshold ),
-    childOffset( other.childOffset ),
-    data( other.data )
+    child_offset( other.child_offset ),
+    data_idxs( other.data_idxs )
   {}
 
   virtual ~Node() 
@@ -34,18 +36,18 @@ struct Node
   {
     if( this != &other )
     {
-      feature = other.feature;
+      feature_idx = other.feature_idx;
       statistics = other.statistics;
-      data = other.data;
+      data_idxs = other.data_idxs;
       threshold = other.threshold;
-      childOffset = other.childOffset;
+      child_offset = other.child_offset;
     }
     return *this;
   }
 
   friend ostream& operator<<( ostream& os, const Node& n )
   {
-    os << n.statistics << " , " << n.childOffset;
+    os << n.statistics << " , " << n.child_offset;
     return os;
   }
 };
@@ -54,13 +56,13 @@ template< typename D, typename F, typename S >
 class Tree 
 {
   public:
-    vector< Node< D, F, S > > nodes;
-
+    vector< Node< F, S > > nodes;
+    const ITrainingContext< D, F, S >& context;
 
   public:
-    Tree( const Node< D, F, S >& root ) 
+    Tree( const ITrainingContext< D, F, S >& context ) :
+      context( context )
     {
-      nodes.push_back( root );
     }
 
     virtual ~Tree() 
@@ -68,28 +70,38 @@ class Tree
 
     const S& classify( const D& point ) const
     {
-      typename vector< Node< D, F, S > >::const_iterator it = nodes.begin();
-      while( it->childOffset > 0 )
+      typename vector< Node< F, S > >::const_iterator it = nodes.begin();
+      while( it->child_offset > 0 )
       {
-        if( it->feature( point ) < it->threshold )
+        if( context.feature_pool[ it->feature_idx ]( point ) < it->threshold )
         {
-          it += it->childOffset;
+          it += it->child_offset;
         } else {
-          it += it->childOffset + 1;
+          it += it->child_offset + 1;
         }
       }
       return it->statistics;
     }
 
-    void convertToSplit( size_t node_idx, float threshold, const F& feature, 
-        const Node< D, F, S >& left, const Node< D, F, S >& right )
+    size_t convert_to_split( size_t node_idx, float threshold, size_t feature_idx, 
+        const vector< size_t >& left_data_idxs, const vector< size_t >& right_data_idxs )
     {
-      Node< D, F, S >& node = nodes.at( node_idx );
-      node.threshold = threshold;
-      node.feature = feature;
-      node.childOffset = nodes.size() - node_idx;
-      nodes.push_back( left );
-      nodes.push_back( right );
+      size_t offset = create_leaf( left_data_idxs ) - node_idx;
+      create_leaf( right_data_idxs );
+
+      nodes[ node_idx ].threshold = threshold;
+      nodes[ node_idx ].feature_idx = feature_idx;
+      nodes[ node_idx ].child_offset = offset;
+
+      return offset;
+    }
+
+    size_t create_leaf( const vector< size_t >& data_idxs )
+    {
+      S s = context.get_statistics();
+      s += data_idxs;
+      nodes.push_back( Node< F, S >( s, data_idxs ) );
+      return nodes.size() - 1;
     }
 
     friend ostream& operator<<( ostream& os, const Tree& t )
@@ -106,7 +118,7 @@ class Tree
       }
       os << nodes[ node_idx ] << endl;
 
-      int offset = nodes[ node_idx ].childOffset;
+      int offset = nodes[ node_idx ].child_offset;
       if( offset > 0 ) {
         preorder( os, node_idx + offset, level + 1 );
         preorder( os, node_idx + offset + 1, level + 1 );

@@ -4,27 +4,28 @@
 #include <cvt/math/Math.h>
 #include <map>
 
-#include "DataRange.h"
 #include "Interfaces.h"
 
-template< typename D >
-class Histogram: public IStatistics< D, Histogram< D > >
+template< typename D, typename F >
+class Histogram: public IStatistics< D, F, Histogram< D, F > >
 {
   public:
     size_t n;
 
-  public:
-    typedef std::vector< size_t >      histogram_type;
-    histogram_type                     histogram;
+  private:
+    typedef IStatistics< D, F, Histogram< D, F > >  super;
+    typedef std::vector< size_t >                   histogram_type;
+    histogram_type                                  histogram;
 
-
   public:
-    Histogram( size_t numClasses ) :
-      histogram( numClasses ),
+    Histogram( const typename super::ContextType& context ) :
+      super( context ),
+      histogram( context.num_classes ),
       n( 0 )
     {}
 
     Histogram( const Histogram& other ) :
+      super( other ),
       histogram( other.histogram ),
       n( other.n )
     {}
@@ -36,25 +37,19 @@ class Histogram: public IStatistics< D, Histogram< D > >
     {
       if( this != &other )
       {
+        this->context = other.context;
         n = other.n;
         histogram = other.histogram;
       }
       return *this;
     }
 
-    /**
-     * @brief Adds DataPoints from range to histogram
-     *
-     * @param range
-     *
-     * @return 
-     */
-    Histogram& operator+=( const DataRange< D >& range )
+    Histogram& operator+=( const vector< size_t >& data_idxs )
     {
-      typename DataRange< D >::const_iterator it( range.begin() );
-      for( ; it != range.end(); ++it )
+      vector< size_t >::const_iterator it( data_idxs.begin() );
+      for( ; it != data_idxs.end(); ++it )
       {
-        histogram[ it->output ]++;
+        histogram[ this->context.data[ *it ].output ]++;
         n++;
       }
       return *this;
@@ -80,21 +75,21 @@ class Histogram: public IStatistics< D, Histogram< D > >
      *
      * @return 
      */
-    pair< size_t, float > getMode() const
+    pair< size_t, float > get_mode() const
     {
-      float maxValue = FLT_MIN;
-      size_t maxC;
+      float max_value = FLT_MIN;
+      size_t max_c;
 
       for( size_t i = 0; i < histogram.size(); i++ )
       {
-        if( histogram[ i ] > maxValue )
+        if( histogram[ i ] > max_value )
         {
-          maxValue = histogram[ i ];
-          maxC = i;
+          max_value = histogram[ i ];
+          max_c = i;
         }
       }
 
-      return pair< size_t, float >( maxC, maxValue / n );
+      return pair< size_t, float >( max_c, max_value / n );
     }
 
     /**
@@ -102,7 +97,7 @@ class Histogram: public IStatistics< D, Histogram< D > >
      *
      * @return 
      */
-    float getEntropy() const
+    float get_entropy() const
     {
       float entropy = 0.0f;
       typename histogram_type::const_iterator it = histogram.begin(),
@@ -128,10 +123,10 @@ class Histogram: public IStatistics< D, Histogram< D > >
       }
     }
 
-    size_t numClasses() const
-    {
-      return histogram.size();
-    }
+    // size_t num_classes() const
+    // {
+    //   return histogram.size();
+    // }
 
     friend ostream& operator<<( ostream& os, const Histogram& s )
     {

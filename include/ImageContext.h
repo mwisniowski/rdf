@@ -9,107 +9,39 @@
 class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsType >
 {
   private:
-    typedef ITrainingContext< DataType, FeatureType, StatisticsType >  super;
-    typedef std::vector< float >                                       row_type;
-    typedef std::vector< row_type >                                    table_type;
-    typedef std::vector< FeatureType >                                 pool_type;
-
-  public:
-    const vector< FeatureType >  featurePool;
-    const table_type             table;
-    const size_t                 numClasses;
-
-    ImageContext( const TrainingParameters& params, 
-        const DataRange< DataType >& range, 
-          size_t numClasses,
-          size_t poolSize ) :
-      super( params ),
-      numClasses( numClasses ),
-      featurePool( createFeaturePool( poolSize ) ),
-      table( createTable( range ) )
-    {
-      srand( time( 0 ) );
-    }
-
-    ImageContext( const ImageContext& other ) :
-      super( other.params ),
-      numClasses( other.numClasses ),
-      featurePool( other.featurePool ),
-      table( other.table )
-    {}
-
-    virtual ~ImageContext() 
-    {}
+    typedef ITrainingContext< DataType, FeatureType, StatisticsType > super;
 
   private:
-    vector< FeatureType > createFeaturePool( size_t poolSize )
+    static vector< FeatureType > pool_init( size_t pool_size )
     {
       vector< FeatureType > features;
-      features.reserve( poolSize );
-      vector< float > rv;
-      for( size_t i = 0; i < poolSize; i++ )
+      features.reserve( pool_size );
+      for( size_t i = 0; i < pool_size; i++ )
       {
         cvt::Point2f p1( cvt::Math::rand( 0.0f, 1.0f ), cvt::Math::rand( 0.0f, 1.0f ) );
         cvt::Point2f p2( cvt::Math::rand( 0.0f, 1.0f ), cvt::Math::rand( 0.0f, 1.0f ) );
         size_t channel = cvt::Math::rand( 0, CHANNELS ) + 0.5f;
-        FeatureType f( p1, p2, channel );
-        f.id = i;
-        features.push_back( f );
+        features.push_back( FeatureType( p1, p2, channel ) );
       }
       return features;
     }
 
-    table_type createTable( const DataRange< DataType >& range )
+  public:
+    ImageContext( const TrainingParameters& params, 
+                  const vector< DataType >& data, 
+                  size_t num_classes,
+                  size_t pool_size ) :
+      super( params, data, pool_init, num_classes, pool_size )
     {
-      table_type table( std::distance( range.begin(), range.end() ) );
-
-      table_type::iterator tit = table.begin();
-      DataRange< DataType >::iterator dit = range.begin();
-      size_t id = 0;
-      for( ; dit != range.end(); ++dit, ++tit )
-      {
-        dit->id = id++;
-        pool_type::const_iterator pit = featurePool.begin(),
-          end = featurePool.end();
-        for( ; pit != end; ++pit )
-        {
-          tit->push_back( ( *pit )( *dit ) );
-        }
-      }
-
-      return table;
     }
+
+    virtual ~ImageContext() 
+    {}
 
   public:
-    float lookup( const FeatureType& f, const DataType& p ) const
+    StatisticsType get_statistics() const
     {
-      return table[ p.id ][ f.id ];
-    }
-
-    /**
-     * @brief Get random unit vectors by sampling an angle from the unit circle
-     *
-     * @param features
-     */
-    void getRandomFeatures( vector< FeatureType >& features ) const
-    {
-      vector< size_t > indices( featurePool.size() );
-      for( size_t i = 0; i < indices.size(); i++ )
-      {
-        indices[ i ] = i;
-      }
-      random_shuffle( indices.begin(), indices.end() );
-
-      features.clear();
-      for( size_t i = 0; i < params.noCandidateFeatures; i++ )
-      {
-        features.push_back( featurePool[ indices[ i ] ] ); 
-      }
-    }
-
-    StatisticsType getStatisticsAggregator() const
-    {
-      return StatisticsType( numClasses );
+      return StatisticsType( *this );
     }
 
     /**
@@ -122,15 +54,15 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
      *
      * @return 
      */
-    float computeInformationGain( const StatisticsType& parent_s,
-        const StatisticsType& left_s,
-        const StatisticsType& right_s ) const
+    float compute_information_gain( const StatisticsType& parent_statistics,
+        const StatisticsType& left_statistics,
+        const StatisticsType& right_statistics ) const
     {
-      float H_p = parent_s.getEntropy();
-      float H_l = left_s.getEntropy();
-      float H_r = right_s.getEntropy();
+      float H_p = parent_statistics.get_entropy();
+      float H_l = left_statistics.get_entropy();
+      float H_r = right_statistics.get_entropy();
 
-      float fraction = left_s.n / static_cast<float>( parent_s.n );
+      float fraction = left_statistics.n / static_cast<float>( parent_statistics.n );
 
       return H_p - ( ( fraction * H_l ) + ( ( 1.0f  - fraction ) * H_r ) );
     }
@@ -142,7 +74,7 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
      *
      * @return 
      */
-    bool shouldTerminate( float information_gain ) const
+    bool should_terminate( float information_gain ) const
     {
       // TODO Magic number
       return information_gain < 0.01f;

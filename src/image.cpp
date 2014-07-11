@@ -21,7 +21,7 @@ const std::string currentDateTime() {
     return buf;
 }
 
-size_t getData( DataRange< DataType >::collection& data,
+size_t getData( vector< DataType >& data,
     vector< String >& class_labels, 
     String& path )
 {
@@ -67,60 +67,59 @@ int main(int argc, char *argv[])
 {
   TrainingParameters params = {
     1, //trees
-    100,  //noCandidateFeatures
-    100,  //noCandidateThresholds
-    15   //maxDecisionLevels
+    100,  //no_candidate_features
+    100,  //no_candidate_thresholds
+    15   //max_decision_levels
   };
-  size_t poolSize = 3000;
-  float split = 0.2;
-  if( argc > 2 ) params.noCandidateFeatures = atoi( argv[ 2 ] );
-  if( argc > 3 ) params.noCandateThresholds = atoi( argv[ 3 ] );
-  if( argc > 4 ) params.maxDecisionLevels = atoi( argv[ 4 ] );
+  size_t pool_size = 3000;
+  float split = 0.3;
+  if( argc > 2 ) params.no_candidate_features = atoi( argv[ 2 ] );
+  if( argc > 3 ) params.no_candate_thresholds = atoi( argv[ 3 ] );
+  if( argc > 4 ) params.max_decision_levels = atoi( argv[ 4 ] );
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
-  if( argc > 6 ) poolSize = atoi( argv[ 6 ] );
+  if( argc > 6 ) pool_size = atoi( argv[ 6 ] );
   if( argc > 7 ) split = atof( argv[ 7 ] );
 
-  DataRange< DataType >::collection data;
+  vector< DataType > data;
   String path( argv[ 1 ] );
   cout << currentDateTime() << "Loading data" << endl;
   vector< String > class_labels;
 
   std::random_shuffle( data.begin(), data.end() );
-  size_t numClasses = getData( data, class_labels, path );
+  size_t num_classes = getData( data, class_labels, path );
   size_t n = cvt::Math::round( data.size() * split );
-  DataRange< DataType > training_range( data.begin(), data.end() - n );
-  DataRange< DataType > test_range( data.end() - n, data.end() );
+  vector< DataType > training_data( data.begin(), data.end() - n );
+  vector< DataType > testing_data( data.end() - n, data.end() );
 
   vector< vector< size_t > > confusion_matrix;
-  for( size_t i = 0; i < numClasses; i++ )
+  for( size_t i = 0; i < num_classes; i++ )
   {
-    confusion_matrix.push_back( vector< size_t >( numClasses, 0 ) );
+    confusion_matrix.push_back( vector< size_t >( num_classes, 0 ) );
   }
 
   cout << currentDateTime() << "Initializing context (builds lookup table)" << endl;
-  ImageContext context( params, training_range, numClasses, poolSize );
+  ImageContext context( params, data, num_classes, pool_size );
   TrainerType trainer( context );
   cout << currentDateTime() << "Training" << endl;
-  ClassifierType classifer = trainer.trainForest( training_range );
+  ClassifierType classifer = trainer.train();
 
   cout << currentDateTime() << "Classifying" << endl;
-  DataRange< DataType >::const_iterator it = test_range.begin();
-  for( ; it != test_range.end(); ++it )
+  for( size_t i = 0; i < testing_data.size(); i++ )
   {
-    const StatisticsType s = classifer.classify( *it );
-    confusion_matrix[ it->output ][ s.getMode().first ]++;
+    const StatisticsType s = classifer.classify( testing_data[ i ] );
+    confusion_matrix[ testing_data[ i ].output ][ s.get_mode().first ]++;
   }
 
   cout << "Statistics" << endl;
   vector< double > plot_x, plot_y;
   float acc = 0.0f;
-  for( size_t c = 0; c < numClasses; c++ )
+  for( size_t c = 0; c < num_classes; c++ )
   {
     acc += confusion_matrix[ c ][ c ];
 
     size_t condition_positive = 0;
     size_t test_positive = 0;
-    for( size_t cc = 0; cc < numClasses; cc++ )
+    for( size_t cc = 0; cc < num_classes; cc++ )
     {
       condition_positive += confusion_matrix[ cc ][ c ];
       test_positive += confusion_matrix[ c ][ cc ];
@@ -133,7 +132,7 @@ int main(int argc, char *argv[])
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    // cout << c << ": (" << fpr << ", " << tpr << ")" << endl;
+    cout << c << ": (" << fpr << ", " << tpr << ")" << endl;
   }
   acc /= n;
   cout << "Accuracy: " << acc << endl;

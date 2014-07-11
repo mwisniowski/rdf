@@ -27,10 +27,10 @@ class ImageFeature : public IFeature< DataType >
       channel( other.channel )
     {}
 
-    ImageFeature( const cvt::Point2f& p, const cvt::Point2f& q, size_t c ) :
-      p1( p ),
-      p2( q ),
-      channel( c )
+    ImageFeature( const cvt::Point2f& p1, const cvt::Point2f& p2, size_t channel ) :
+      p1( p1 ),
+      p2( p2 ),
+      channel( channel )
     {}
 
     virtual ~ImageFeature() 

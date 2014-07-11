@@ -14,7 +14,7 @@ class ImageFeature;
 
 typedef DataPoint< cvt::Image, size_t, CHANNELS >  DataType;
 typedef ImageFeature                               FeatureType;
-typedef Histogram< DataType >                      StatisticsType;
+typedef Histogram< DataType, FeatureType >         StatisticsType;
 
 typedef ForestTrainer< DataType, FeatureType, StatisticsType >  TrainerType;
 typedef Forest< DataType, FeatureType, StatisticsType >         ClassifierType;

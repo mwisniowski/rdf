@@ -15,7 +15,6 @@ struct DataPoint
   public:
     vector<I> input;
     O         output;
-    size_t    id;
 
     DataPoint() :
       input( d, I( 0 ) ),
@@ -31,8 +30,8 @@ struct DataPoint
 
     DataPoint( const DataPoint& other ) :
       input( other.input ),
-      output( other.output ),
-      id( other.id )
+      output( other.output )
+      // id( other.id )
     {
     }
 
@@ -46,7 +45,7 @@ struct DataPoint
       {
         input = other.input;
         output = other.output;
-        id = other.id;
+        // id = other.id;
       }
       return *this;
     }

@@ -11,12 +11,11 @@ class Forest
 {
   private:
     vector< Tree< D, F, S > >           trees;
-    size_t                              numClasses;
     const ITrainingContext< D, F, S >&  context;
 
   public:
-    Forest( const ITrainingContext< D, F, S >& c ) :
-      context( c )
+    Forest( const ITrainingContext< D, F, S >& context ) :
+      context( context )
     {}
 
     virtual ~Forest() {}
@@ -28,16 +27,16 @@ class Forest
 
     const S classify( const D& point )
     {
-      S s = context.getStatisticsAggregator();
+      S statistics = context.get_statistics();
 
       typename vector< Tree< D, F, S > >::iterator it = trees.begin(),
         end = trees.end();
       for( ; it != end; ++it )
       {
-        s += it->classify( point );
+        statistics += it->classify( point );
       }
 
-      return s;
+      return statistics;
     }
 
 };
