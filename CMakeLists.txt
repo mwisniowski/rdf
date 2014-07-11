@@ -18,23 +18,30 @@ include_directories(
   ${CVT_INCLUDE_DIRS}
 )
 
-ADD_EXECUTABLE( plot 
-  src/plot.cpp
+ADD_EXECUTABLE( toy_plot 
+  src/toy_plot.cpp
 )
-TARGET_LINK_LIBRARIES( plot
+TARGET_LINK_LIBRARIES( toy_plot
   ${CVT_LIBRARIES}
 )
 
-ADD_EXECUTABLE( roc
-  src/roc.cpp
+ADD_EXECUTABLE( toy_roc
+  src/toy_roc.cpp
 )
-TARGET_LINK_LIBRARIES( roc
+TARGET_LINK_LIBRARIES( toy_roc
   ${CVT_LIBRARIES}
 )
 
-ADD_EXECUTABLE( image
-  src/image.cpp
+ADD_EXECUTABLE( image_split
+  src/image_split.cpp
 )
-TARGET_LINK_LIBRARIES( image
+TARGET_LINK_LIBRARIES( image_split
+  ${CVT_LIBRARIES}
+)
+
+ADD_EXECUTABLE( image_cross
+  src/image_cross.cpp
+)
+TARGET_LINK_LIBRARIES( image_cross
   ${CVT_LIBRARIES}
 )

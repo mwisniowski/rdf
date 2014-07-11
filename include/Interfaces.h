@@ -97,18 +97,13 @@ class ITrainingContext
     static table_type create_table( const vector< F >& feature_pool, 
         const vector< D >& data )
     {
-      table_type table( std::distance( data.begin(), data.end() ) );
+      table_type table( data.size() );
 
-      table_type::iterator tit = table.begin();
-      typename DataRange< D >::const_iterator dit = data.begin();
-      size_t id = 0;
-      for( ; dit != data.end(); ++dit, ++tit )
+      for( size_t d = 0; d < data.size(); d++ )
       {
-        typename pool_type::const_iterator pit = feature_pool.begin(),
-          end = feature_pool.end();
-        for( ; pit != end; ++pit )
+        for( size_t f = 0; f < feature_pool.size(); f++ )
         {
-          tit->push_back( ( *pit )( *dit ) );
+          table[ d ].push_back( feature_pool[ f ]( data[ d ] ) );
         }
       }
 

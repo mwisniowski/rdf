@@ -65,6 +65,7 @@ size_t getData( vector< DataType >& data,
 
 int main(int argc, char *argv[])
 {
+  srand( time( NULL ) );
   TrainingParameters params = {
     1, //trees
     100,  //no_candidate_features
@@ -72,24 +73,29 @@ int main(int argc, char *argv[])
     15   //max_decision_levels
   };
   size_t pool_size = 3000;
-  float split = 0.3;
+  size_t folds = 10;
   if( argc > 2 ) params.no_candidate_features = atoi( argv[ 2 ] );
   if( argc > 3 ) params.no_candate_thresholds = atoi( argv[ 3 ] );
   if( argc > 4 ) params.max_decision_levels = atoi( argv[ 4 ] );
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
   if( argc > 6 ) pool_size = atoi( argv[ 6 ] );
-  if( argc > 7 ) split = atof( argv[ 7 ] );
+  if( argc > 7 ) folds = atoi( argv[ 7 ] );
 
   vector< DataType > data;
   String path( argv[ 1 ] );
   cout << currentDateTime() << "Loading data" << endl;
   vector< String > class_labels;
 
-  std::random_shuffle( data.begin(), data.end() );
   size_t num_classes = getData( data, class_labels, path );
-  size_t n = cvt::Math::round( data.size() * split );
-  vector< DataType > training_data( data.begin(), data.end() - n );
-  vector< DataType > testing_data( data.end() - n, data.end() );
+  std::random_shuffle( data.begin(), data.end() );
+  size_t n = data.size() / folds;
+
+  vector< vector< DataType >::iterator > partition_map;
+  for( size_t f = 0; f < folds; f++ )
+  {
+    partition_map.push_back( data.begin() + ( f * n ) );
+  }
+  partition_map.push_back( data.end() );
 
   vector< vector< size_t > > confusion_matrix;
   for( size_t i = 0; i < num_classes; i++ )
@@ -97,20 +103,37 @@ int main(int argc, char *argv[])
     confusion_matrix.push_back( vector< size_t >( num_classes, 0 ) );
   }
 
-  cout << currentDateTime() << "Initializing context (builds lookup table)" << endl;
-  ImageContext context( params, data, num_classes, pool_size );
-  TrainerType trainer( context );
-  cout << currentDateTime() << "Training" << endl;
-  ClassifierType classifer = trainer.train();
-
-  cout << currentDateTime() << "Classifying" << endl;
-  for( size_t i = 0; i < testing_data.size(); i++ )
+  float divisor = static_cast<float>( n ) / folds;
+  for( size_t f = 0; f < folds; f++ )
   {
-    const StatisticsType s = classifer.classify( testing_data[ i ] );
-    confusion_matrix[ testing_data[ i ].output ][ s.get_mode().first ]++;
+    cout << currentDateTime() << "Fold " << f + 1 << "/" << folds << endl;
+    vector< DataType > training_data;
+    for( size_t ff = 0; ff < folds; ff++ )
+    {
+      if( ff != f )
+      {
+        training_data.insert( training_data.end(), 
+            partition_map[ ff ], partition_map[ ff + 1 ] );
+      }
+    }
+
+    vector< DataType > testing_data( partition_map[ f ], partition_map[ f + 1 ] );
+
+    cout << currentDateTime() << "Initializing context (builds lookup table)" << endl;
+    ImageContext context( params, training_data, num_classes, pool_size );
+    TrainerType trainer( context );
+    cout << currentDateTime() << "Training" << endl;
+    ClassifierType classifier = trainer.train();
+    
+    cout << currentDateTime() << "Classifying" << endl;
+    for( size_t i = 0; i < n; i++ )
+    {
+      const StatisticsType s = classifier.classify( testing_data[ i ] );
+      confusion_matrix[ testing_data[ i ].output ][ s.get_mode().first ]++;
+    }
   }
 
-  cout << "Statistics" << endl;
+  cout << currentDateTime() << "Statistics" << endl;
   vector< double > plot_x, plot_y;
   float acc = 0.0f;
   for( size_t c = 0; c < num_classes; c++ )
@@ -124,17 +147,17 @@ int main(int argc, char *argv[])
       condition_positive += confusion_matrix[ cc ][ c ];
       test_positive += confusion_matrix[ c ][ cc ];
     }
-    size_t condition_negative = n - condition_positive;
+    size_t condition_negative = ( folds * n ) - condition_positive;
 
-    float fpr = ( float ) ( test_positive - confusion_matrix[ c ][ c ] ) / condition_negative;
-    float tpr = ( float ) confusion_matrix[ c ][ c ] / condition_positive;
+    float fpr = ( float ) ( test_positive - confusion_matrix[ c ][ c ] ) / static_cast< float >( condition_negative );
+    float tpr = ( float ) confusion_matrix[ c ][ c ] / static_cast< float >( condition_positive );
 
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
     cout << c << ": (" << fpr << ", " << tpr << ")" << endl;
   }
-  acc /= n;
+  acc /= folds * n;
   cout << "Accuracy: " << acc << endl;
 
   try

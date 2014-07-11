@@ -9,7 +9,7 @@ using namespace std;
 template< typename F, typename S >
 struct Node 
 {
-  const S           statistics;
+  S                 statistics;
   vector< size_t >  data_idxs;
   size_t            feature_idx;
   float             threshold;
