@@ -13,11 +13,10 @@ class ThresholdSampler
   private:
     const ITrainingContext< D, F, S >&  context;
     const size_t                        feature_idx;
-    // const size_t                        n;
-    const vector< size_t >              data_idxs;
+    const std::vector< size_t >         data_idxs;
  
   public:
-    ThresholdSampler( const ITrainingContext< D, F, S >& context, size_t feature_idx, const vector< size_t >& data_idxs ) :
+    ThresholdSampler( const ITrainingContext< D, F, S >& context, size_t feature_idx, const std::vector< size_t >& data_idxs ) :
       context( context ),
       feature_idx( feature_idx ),
       data_idxs( data_idxs )
@@ -71,7 +70,7 @@ class ThresholdSampler
      * @param thresholds
      * @param size
      */
-    void uniform( vector< float >& thresholds, size_t size )
+    void uniform( std::vector< float >& thresholds, size_t size )
     {
       thresholds.clear();
       thresholds.reserve( size );

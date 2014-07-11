@@ -3,7 +3,6 @@
 
 #include <vector>
 #include "TrainingParameters.h"
-#include "DataRange.h"
 
 template< typename D >
 class IFeature 
@@ -39,7 +38,7 @@ class ITrainingContext
     virtual bool should_terminate( float information_gain ) const =0;
 
   protected:
-    typedef vector< F > (*pool_init_fn)( size_t pool_size );
+    typedef std::vector< F > (*pool_init_fn)( size_t pool_size );
 
   /**
    * End implementing here
@@ -51,40 +50,38 @@ class ITrainingContext
     typedef std::vector< F >         pool_type;
 
   public:
-    const TrainingParameters  params;
-    const vector< F >         feature_pool;
-    const vector< D >         data;
-    const table_type          table;
-    const size_t              num_classes;
-    const vector< size_t >    data_idxs;
+    const TrainingParameters     params;
+    const std::vector< F >       feature_pool;
+    const std::vector< D >       data;
+    const table_type             table;
+    const size_t                 num_classes;
 
   public:
     ITrainingContext( const TrainingParameters& params,
-        const vector< D >& data,
+        const std::vector< D >& data,
         pool_init_fn pool_init,
-        size_t num_classes,
-        size_t pool_size ) :
+        size_t num_classes ) :
       params( params ),
       num_classes( num_classes ),
       data( data ),
-      data_idxs( ascending_idxs( data.size() ) ),
-      feature_pool( pool_init( pool_size ) ),
+      feature_pool( pool_init( params.pool_size ) ),
       table( create_table( feature_pool, data ) )
     {
-      srand( time( 0 ) );
     }
 
     ITrainingContext( const ITrainingContext& other ) :
-      num_classes( other.num_classes ),
+      params( other.params ),
       feature_pool( other.feature_pool ),
-      table( other.table )
+      data( other.data ),
+      table( other.table ),
+      num_classes( other.num_classes )
     {}
 
 
   private:
-    static vector< size_t > ascending_idxs( size_t size )
+    static std::vector< size_t > ascending_idxs( size_t size )
     {
-      vector< size_t > idxs;
+      std::vector< size_t > idxs;
       idxs.reserve( size );
       for( size_t i = 0; i < size; i++ )
       {
@@ -94,8 +91,8 @@ class ITrainingContext
       return idxs;
     }
 
-    static table_type create_table( const vector< F >& feature_pool, 
-        const vector< D >& data )
+    static table_type create_table( const std::vector< F >& feature_pool,
+        const std::vector< D >& data )
     {
       table_type table( data.size() );
 
@@ -116,9 +113,9 @@ class ITrainingContext
       return table[ data_idx ][ feature_idx ];
     }
 
-    void get_random_features( vector< size_t >& random_feature_idxs ) const
+    void get_random_features( std::vector< size_t >& random_feature_idxs ) const
     {
-      vector< size_t > feature_idxs = ascending_idxs( feature_pool.size() );
+      std::vector< size_t > feature_idxs = ascending_idxs( feature_pool.size() );
       random_shuffle( feature_idxs.begin(), feature_idxs.end() );
 
       random_feature_idxs.clear();
@@ -126,6 +123,11 @@ class ITrainingContext
       {
         random_feature_idxs.push_back( feature_idxs[ i ] ); 
       }
+    }
+
+    std::vector< size_t > get_data_idxs() const
+    {
+      return ascending_idxs( data.size() );
     }
 };
 
@@ -144,7 +146,10 @@ class IStatistics
       context( other.context )
     {}
 
-    virtual S& operator+=( const vector< size_t >& data_idxs ) =0;
+    virtual ~IStatistics()
+    {}
+
+    virtual S& operator+=( const std::vector< size_t >& data_idxs ) =0;
 
     virtual S& operator+=( const S& s ) =0;
 };

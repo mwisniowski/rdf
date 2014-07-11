@@ -21,123 +21,106 @@
 
 #include "gnuplot_i.hpp"
 
-using namespace std;
-using namespace cvt;
-
-void display( const Image& image, size_t width, size_t height ) {
-  Window w("RDF");
-  
-  ImageView iv;
-  iv.setSize(width, height);
-  iv.setImage(image);
-  
-  WidgetLayout wl;
-  wl.setAnchoredTopBottom(0, 0);
-  wl.setAnchoredLeftRight(0, 0);
-  w.addWidget( &iv, wl );
-  
-  w.setSize( width, height );
-  w.setVisible( true );
-  w.update();
-  
-  Application::run();
-}
-
-int countClasses( const DataRange< DataType >::collection& data )
+void get_data( std::vector< DataType >& data, std::vector< char >& class_labels, const char path[] )
 {
-  std::set< size_t > classes;
-  for( size_t i = 0; i < data.size(); i++ )
+  std::ifstream is( path );
+  std::string line;
+  while( std::getline( is, line ) )
   {
-    classes.insert( data[ i ].output );
+    std::istringstream iss( line );
+    std::vector< float > v( 2 );
+    char c;
+    if( !( iss >> c >> v[ 0 ] >> v[ 1 ] ) )
+    {
+      break;
+    }
+    std::vector< char >::iterator it = std::find( class_labels.begin(), class_labels.end(), c );
+    if( it == class_labels.end() )
+    {
+      class_labels.push_back( c );
+      it = class_labels.end() - 1;
+    }
+    size_t idx = std::distance( class_labels.begin(), it );
+    data.push_back( DataType( v, idx ) );
   }
-  return classes.size();
+  is.close();
 }
 
 int main(int argc, char *argv[])
 {
+  srand( time( NULL ) );
   TrainingParameters params = {
     200, //trees
     10,  //noCandidateFeatures
     10,  //noCandidateThresholds
-    10   //maxDecisionLevels
+    10,   //maxDecisionLevels
+    1000
   };
   size_t folds = 10;
 
   if( argc < 2 ) {
-    cerr << "Please provide a data file";
+    std::cerr << "Please provide a data file" << std::endl;
     return 1;
   }
-  ifstream is( argv[ 1 ] );
 
-  if( argc > 2 ) params.noCandidateFeatures = atoi( argv[ 2 ] );
-  if( argc > 3 ) params.noCandateThresholds = atoi( argv[ 3 ] );
-  if( argc > 4 ) params.maxDecisionLevels = atoi( argv[ 4 ] );
+  if( argc > 2 ) params.no_candidate_features = atoi( argv[ 2 ] );
+  if( argc > 3 ) params.no_candate_thresholds = atoi( argv[ 3 ] );
+  if( argc > 4 ) params.max_decision_levels = atoi( argv[ 4 ] );
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
-  if( argc > 6 ) folds = atoi( argv[ 6 ] );
+  if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
+  if( argc > 7 ) folds = atoi( argv[ 7 ] );
 
-  istream_iterator< DataType > start( is ), end;
-  DataRange< DataType >::collection data( start, end );
-  is.close();
+  std::vector< DataType > data;
+  std::vector< char > class_labels;
+  get_data( data, class_labels, argv[ 1 ] );
+  size_t num_classes = class_labels.size();
+
   std::random_shuffle( data.begin(), data.end() );
-  size_t n = static_cast< float >( cvt::Math::round( data.size() / static_cast<float>( folds  ) ) );
-  size_t numClasses = countClasses( data );
-
-  vector< DataRange< DataType > > partition_map;
+  size_t n = data.size() / folds;
+  std::vector< std::vector< DataType >::iterator > partition_map;
   for( size_t f = 0; f < folds; f++ )
   {
-    DataRange< DataType >::iterator it = data.begin() + f * n;
-    partition_map.push_back( DataRange< DataType >( it, it + n ) );
+    partition_map.push_back( data.begin() + ( f * n ) );
   }
+  partition_map.push_back( data.end() );
 
-  vector< vector< size_t > > confusion_matrix;
-  for( size_t i = 0; i < numClasses; i++ )
+  std::vector< std::vector< size_t > > confusion_matrix;
+  for( size_t i = 0; i < num_classes; i++ )
   {
-    confusion_matrix.push_back( vector< size_t >( numClasses ) );
+    confusion_matrix.push_back( std::vector< size_t >( num_classes, 0 ) );
   }
 
   float divisor = static_cast<float>( n ) / folds;
   for( size_t f = 0; f < folds; f++ )
   {
-    DataRange< DataType >::collection training_data;
-    for( size_t ff = 0; ff < folds; ff++ )
-    {
-      if( ff != f )
-      {
-        training_data.insert( training_data.end(), 
-            partition_map[ ff ].begin(),
-            partition_map[ ff ].end() );
-      }
-    }
-    DataRange< DataType > training_range( training_data.begin(), training_data.end() );
+    std::cout << "Fold " << f + 1 << "/" << folds << std::endl;
 
-    DataRange< DataType >::collection test_data( partition_map[ f ].begin(), partition_map[ f ].end() );
-    StatisticsType test_data_distribution( numClasses );
-    test_data_distribution += DataRange< DataType >( test_data.begin(), test_data.end() );
+    std::vector< DataType > training_data( partition_map[ 0 ], partition_map[ f ] );
+    training_data.insert( training_data.end(), partition_map[ f + 1 ], partition_map.back() );
+    std::vector< DataType > testing_data( partition_map[ f ], partition_map[ f + 1 ] );
 
-    ToyContext context( params, training_range, numClasses );
-    ForestTrainer< DataType, 
-      FeatureType, 
-      StatisticsType > trainer( context );
-    Forest< DataType, 
-      FeatureType, 
-      StatisticsType > classifier = trainer.trainForest( training_range );
+    std::vector< DataType > test_data( partition_map[ f ], partition_map[ f + 1 ] );
+
+    ToyContext context( params, training_data, num_classes );
+    TrainerType trainer( context );
+    ClassifierType classifier = trainer.train();
     
     for( size_t i = 0; i < n; i++ )
     {
       const StatisticsType h = classifier.classify( test_data[ i ] );
-      confusion_matrix[ test_data[ i - 1 ].output ][ h.getMode().first - 1 ]++;
+      confusion_matrix[ test_data[ i ].output ][ h.get_mode().first ]++;
     }
   }
 
-  vector< double > plot_x, plot_y;
+  std::vector< double > plot_x, plot_y;
   float acc = 0.0f;
-  for( size_t c = 0; c < numClasses; c++ )
+  for( size_t c = 0; c < num_classes; c++ )
   {
     acc += confusion_matrix[ c ][ c ];
 
     size_t condition_positive = 0;
     size_t test_positive = 0;
-    for( size_t cc = 0; cc < numClasses; cc++ )
+    for( size_t cc = 0; cc < num_classes; cc++ )
     {
       condition_positive += confusion_matrix[ cc ][ c ];
       test_positive += confusion_matrix[ c ][ cc ];
@@ -150,11 +133,11 @@ int main(int argc, char *argv[])
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    cout << c << ": (" << fpr << ", " << tpr << ")" << endl;
+    std::cout << c << ": (" << fpr << ", " << tpr << ")" << std::endl;
   }
   acc /= folds * n;
 
-  cout << "Acc: " << acc << endl;
+  std::cout << "Acc: " << acc << std::endl;
 
   try
   {
@@ -176,12 +159,11 @@ int main(int argc, char *argv[])
     g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
     g.set_style("lines lt 0").plot_slope(0.0f,acc,"Accuracy");
     g.set_style("points").plot_xy( plot_x, plot_y );
-
-    getchar();
   } catch( GnuplotException e )
   {
-    cout << e.what() << endl;
+    std::cout << e.what() << std::endl;
   }
 
+  getchar();
   return 0;
 }

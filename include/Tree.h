@@ -5,17 +5,16 @@
 #include <vector>
 #include "Interfaces.h"
 
-using namespace std;
 template< typename F, typename S >
 struct Node 
 {
   S                 statistics;
-  vector< size_t >  data_idxs;
+  std::vector< size_t >  data_idxs;
   size_t            feature_idx;
   float             threshold;
   size_t            child_offset;
 
-  Node( const S& statistics, const vector< size_t >& data_idxs ) :
+  Node( const S& statistics, const std::vector< size_t >& data_idxs ) :
     statistics( statistics ),
     data_idxs( data_idxs ),
     child_offset( 0 )
@@ -45,7 +44,7 @@ struct Node
     return *this;
   }
 
-  friend ostream& operator<<( ostream& os, const Node& n )
+  friend std::ostream& operator<<( std::ostream& os, const Node& n )
   {
     os << n.statistics << " , " << n.child_offset;
     return os;
@@ -56,7 +55,7 @@ template< typename D, typename F, typename S >
 class Tree 
 {
   public:
-    vector< Node< F, S > > nodes;
+    std::vector< Node< F, S > > nodes;
     const ITrainingContext< D, F, S >& context;
 
   public:
@@ -70,7 +69,7 @@ class Tree
 
     const S& classify( const D& point ) const
     {
-      typename vector< Node< F, S > >::const_iterator it = nodes.begin();
+      typename std::vector< Node< F, S > >::const_iterator it = nodes.begin();
       while( it->child_offset > 0 )
       {
         if( context.feature_pool[ it->feature_idx ]( point ) < it->threshold )
@@ -84,7 +83,7 @@ class Tree
     }
 
     size_t convert_to_split( size_t node_idx, float threshold, size_t feature_idx, 
-        const vector< size_t >& left_data_idxs, const vector< size_t >& right_data_idxs )
+        const std::vector< size_t >& left_data_idxs, const std::vector< size_t >& right_data_idxs )
     {
       size_t offset = create_leaf( left_data_idxs ) - node_idx;
       create_leaf( right_data_idxs );
@@ -96,7 +95,7 @@ class Tree
       return offset;
     }
 
-    size_t create_leaf( const vector< size_t >& data_idxs )
+    size_t create_leaf( const std::vector< size_t >& data_idxs )
     {
       S s = context.get_statistics();
       s += data_idxs;
@@ -104,19 +103,19 @@ class Tree
       return nodes.size() - 1;
     }
 
-    friend ostream& operator<<( ostream& os, const Tree& t )
+    friend std::ostream& operator<<( std::ostream& os, const Tree& t )
     {
       return t.preorder( os, 0, 0 );
     }
 
   private:
-    ostream& preorder( ostream& os, size_t node_idx, int level ) const
+    std::ostream& preorder( std::ostream& os, size_t node_idx, int level ) const
     {
       if( level )
       {
         os << std::setw( 4 * level ) << ' ';
       }
-      os << nodes[ node_idx ] << endl;
+      os << nodes[ node_idx ] << std::endl;
 
       int offset = nodes[ node_idx ].child_offset;
       if( offset > 0 ) {

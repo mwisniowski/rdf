@@ -44,9 +44,9 @@ class Histogram: public IStatistics< D, F, Histogram< D, F > >
       return *this;
     }
 
-    Histogram& operator+=( const vector< size_t >& data_idxs )
+    Histogram& operator+=( const std::vector< size_t >& data_idxs )
     {
-      vector< size_t >::const_iterator it( data_idxs.begin() );
+      std::vector< size_t >::const_iterator it( data_idxs.begin() );
       for( ; it != data_idxs.end(); ++it )
       {
         histogram[ this->context.data[ *it ].output ]++;
@@ -75,7 +75,7 @@ class Histogram: public IStatistics< D, F, Histogram< D, F > >
      *
      * @return 
      */
-    pair< size_t, float > get_mode() const
+    std::pair< size_t, float > get_mode() const
     {
       float max_value = FLT_MIN;
       size_t max_c;
@@ -89,7 +89,7 @@ class Histogram: public IStatistics< D, F, Histogram< D, F > >
         }
       }
 
-      return pair< size_t, float >( max_c, max_value / n );
+      return std::pair< size_t, float >( max_c, max_value / n );
     }
 
     /**
@@ -128,7 +128,7 @@ class Histogram: public IStatistics< D, F, Histogram< D, F > >
     //   return histogram.size();
     // }
 
-    friend ostream& operator<<( ostream& os, const Histogram& s )
+    friend std::ostream& operator<<( std::ostream& os, const Histogram& s )
     {
       os << s.n << ": { ";
       typename histogram_type::const_iterator it = s.histogram.begin(),

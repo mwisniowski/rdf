@@ -12,9 +12,9 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
     typedef ITrainingContext< DataType, FeatureType, StatisticsType > super;
 
   private:
-    static vector< FeatureType > pool_init( size_t pool_size )
+    static std::vector< FeatureType > pool_init( size_t pool_size )
     {
-      vector< FeatureType > features;
+      std::vector< FeatureType > features;
       features.reserve( pool_size );
       for( size_t i = 0; i < pool_size; i++ )
       {
@@ -28,17 +28,15 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
 
   public:
     ImageContext( const TrainingParameters& params, 
-                  const vector< DataType >& data, 
-                  size_t num_classes,
-                  size_t pool_size ) :
-      super( params, data, pool_init, num_classes, pool_size )
+                  const std::vector< DataType >& data, 
+                  size_t num_classes ) :
+      super( params, data, pool_init, num_classes )
     {
     }
 
     virtual ~ImageContext() 
     {}
 
-  public:
     StatisticsType get_statistics() const
     {
       return StatisticsType( *this );

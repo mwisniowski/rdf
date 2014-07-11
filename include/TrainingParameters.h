@@ -7,6 +7,7 @@ struct TrainingParameters
   unsigned int no_candidate_features;
   unsigned int no_candate_thresholds;
   unsigned int max_decision_levels;
+  unsigned int pool_size;
 };
 
 #endif

@@ -1,9 +1,4 @@
-#include <iterator>
-#include <iostream>
 #include <fstream>
-#include <vector>
-#include <set>
-#include <algorithm>
 
 #include <cvt/gui/Window.h>
 #include <cvt/gui/Button.h>
@@ -19,17 +14,14 @@
 #include "ToyContext.h"
 #include "ForestTrainer.h"
 
-using namespace std;
-using namespace cvt;
-
-void display( const Image& image, size_t width, size_t height ) {
-  Window w("RDF");
+void display( const cvt::Image& image, size_t width, size_t height ) {
+  cvt::Window w("RDF");
   
-  ImageView iv;
+  cvt::ImageView iv;
   iv.setSize(width, height);
   iv.setImage(image);
   
-  WidgetLayout wl;
+  cvt::WidgetLayout wl;
   wl.setAnchoredTopBottom(0, 0);
   wl.setAnchoredLeftRight(0, 0);
   w.addWidget( &iv, wl );
@@ -38,51 +30,62 @@ void display( const Image& image, size_t width, size_t height ) {
   w.setVisible( true );
   w.update();
   
-  Application::run();
+  cvt::Application::run();
 }
 
-int countClasses( const DataRange< DataType >::collection& data )
+void get_data( std::vector< DataType >& data, std::vector< char >& class_labels, const char path[] )
 {
-  std::set< size_t > classes;
-  for( size_t i = 0; i < data.size(); i++ )
+  std::ifstream is( path );
+  std::string line;
+  while( std::getline( is, line ) )
   {
-    classes.insert( data[ i ].output );
+    std::istringstream iss( line );
+    std::vector< float > v( 2 );
+    char c;
+    if( !( iss >> c >> v[ 0 ] >> v[ 1 ] ) )
+    {
+      break;
+    }
+    std::vector< char >::iterator it = std::find( class_labels.begin(), class_labels.end(), c );
+    if( it == class_labels.end() )
+    {
+      class_labels.push_back( c );
+      it = class_labels.end() - 1;
+    }
+    size_t idx = std::distance( class_labels.begin(), it );
+    data.push_back( DataType( v, idx ) );
   }
-  return classes.size();
+  is.close();
 }
 
 int main(int argc, char *argv[])
 {
+  srand( time( NULL ) );
   TrainingParameters params = {
     100, //trees
     10,  //noCandidateFeatures
     10,  //noCandidateThresholds
-    10   //maxDecisionLevels
+    10,  //maxDecisionLevels
+    1000 //pool_size
   };
 
   if( argc < 2 ) {
-    cerr << "Please provide a data file" << endl;
-    return 1;
-  }
-  ifstream is( argv[ 1 ] );
-  if( !is.good() )
-  {
-    cerr << "Could not find data file!" << endl;
+    std::cerr << "Please provide a data file" << std::endl;
     return 1;
   }
 
-  if( argc > 2 ) params.noCandidateFeatures = atoi( argv[ 2 ] );
-  if( argc > 3 ) params.noCandateThresholds = atoi( argv[ 3 ] );
-  if( argc > 4 ) params.maxDecisionLevels = atoi( argv[ 4 ] );
+  if( argc > 2 ) params.no_candidate_features = atoi( argv[ 2 ] );
+  if( argc > 3 ) params.no_candate_thresholds = atoi( argv[ 3 ] );
+  if( argc > 4 ) params.max_decision_levels = atoi( argv[ 4 ] );
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
+  if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
 
-  istream_iterator< DataType > start( is ), end;
-  DataRange< DataType >::collection data( start, end );
-  DataRange< DataType > range( data.begin(), data.end() );
-  is.close();
-  size_t numClasses = countClasses( data );
+  std::vector< DataType > data;
+  std::vector< char > class_labels;
+  get_data( data, class_labels, argv[ 1 ] );
+  size_t num_classes = class_labels.size();
 
-  ToyContext context( params, range, numClasses );
+  ToyContext context( params, data, num_classes );
 
   // TreeTrainer< DataType, 
   //   FeatureType, 
@@ -92,17 +95,13 @@ int main(int argc, char *argv[])
   //   StatisticsType > classifier = trainer.trainTree( params, range );
   // cout << classifier;
   
-  ForestTrainer< DataType, 
-    FeatureType, 
-    StatisticsType > trainer( context );
-  Forest< DataType, 
-    FeatureType, 
-    StatisticsType > classifier = trainer.trainForest( range );
+  TrainerType trainer( context );
+  ClassifierType classifier = trainer.train();
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;
 
-  DataRange< DataType >::const_iterator it = range.begin();
+  std::vector< DataType >::const_iterator it = data.begin();
   for( ; it != data.end(); ++it )
   {
     for( size_t i = 0; i < it->input.size(); i++ )
@@ -144,10 +143,10 @@ int main(int argc, char *argv[])
       const StatisticsType& h = classifier.classify( pt );
 
       mix = cvt::Color::BLACK;
-      float mudiness = 0.5f * h.getEntropy();
-      for( size_t i = 0; i < numClasses; i++ )
+      float mudiness = 0.5f * h.get_entropy();
+      for( size_t i = 0; i < num_classes; i++ )
       {
-        float p = ( 1.0f - mudiness ) * h.probability( i + 1 );
+        float p = ( 1.0f - mudiness ) * h.probability( i );
         mix = mix + colormap[ i ] * p;
       }
       mix = mix + gray * mudiness;

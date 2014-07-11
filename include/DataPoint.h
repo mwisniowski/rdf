@@ -7,33 +7,25 @@
 #include <sstream>
 #include <iostream>
 
-using namespace std;
-
-template< typename I, typename O, size_t d > 
+template< typename I, typename O > 
 struct DataPoint
 {
   public:
-    vector<I> input;
+    std::vector<I> input;
     O         output;
 
-    DataPoint() :
-      input( d, I( 0 ) ),
-      output( O( 0 ) )
-    {
-    }
+    DataPoint()
+    {}
 
-    DataPoint( const vector<I>& in, const O& out ) :
+    DataPoint( const std::vector<I>& in, const O& out ) :
       input( in ),
       output( out )
-    {
-    }
+    {}
 
     DataPoint( const DataPoint& other ) :
       input( other.input ),
       output( other.output )
-      // id( other.id )
-    {
-    }
+    {}
 
     virtual ~DataPoint()
     {
@@ -50,26 +42,10 @@ struct DataPoint
       return *this;
     }
 
-    friend istream& operator>>( istream& is, DataPoint& point )
-    {
-      I input;
-
-      is >> point.output;
-
-      point.input.clear();
-      for (int i = 0; i < d; ++i)
-      {
-        is >> input;
-        point.input.push_back( input );
-      }
-
-      return is;
-    }
-
-    friend ostream& operator<<( ostream& os, const DataPoint& point )
+    friend std::ostream& operator<<( std::ostream& os, const DataPoint& point )
     {
       os << "(";
-      for (int i = 0; i < d - 1; ++i)
+      for (int i = 0; i < point.input.size() - 1; i++ )
       {
         os << point.input[ i ] << ",";
       }

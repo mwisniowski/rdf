@@ -24,7 +24,7 @@ class ForestTrainer
       TreeTrainer< D, F, S > trainer( context );
       for( size_t i=0; i < context.params.trees; i++ )
       {
-        cout << "Training tree " << i + 1 << "/" << context.params.trees << endl;
+        std::cout << "Training tree " << i + 1 << "/" << context.params.trees << std::endl;
         Tree< D, F, S > tree( context );
         trainer.train( tree );
         f.add( tree );

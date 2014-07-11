@@ -4,13 +4,11 @@
 #include "Tree.h"
 #include "Interfaces.h"
 
-using namespace std;
-
 template< typename D, typename F, typename S >
 class Forest 
 {
   private:
-    vector< Tree< D, F, S > >           trees;
+    std::vector< Tree< D, F, S > >      trees;
     const ITrainingContext< D, F, S >&  context;
 
   public:
@@ -29,7 +27,7 @@ class Forest
     {
       S statistics = context.get_statistics();
 
-      typename vector< Tree< D, F, S > >::iterator it = trees.begin(),
+      typename std::vector< Tree< D, F, S > >::iterator it = trees.begin(),
         end = trees.end();
       for( ; it != end; ++it )
       {

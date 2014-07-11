@@ -16,13 +16,13 @@ const std::string currentDateTime() {
     tstruct = *localtime(&now);
     // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
     // for more information about date/time format
-    strftime(buf, sizeof(buf), "%Y-%m-%d.%X: ", &tstruct);
+    strftime(buf, sizeof(buf), "%Y-%m-%d %X: ", &tstruct);
 
     return buf;
 }
 
-size_t getData( vector< DataType >& data,
-    vector< String >& class_labels, 
+void get_data( std::vector< DataType >& data,
+    std::vector< String >& class_labels, 
     String& path )
 {
   if( !path.hasSuffix( "/" ) )
@@ -33,7 +33,7 @@ size_t getData( vector< DataType >& data,
   class_labels.clear();
   FileSystem::ls( path, class_labels );
 
-  vector< String >::iterator it = class_labels.begin();
+  std::vector< String >::iterator it = class_labels.begin();
   for( ; it != class_labels.end(); ++it )
   {
     if( !it->hasPrefix( "000" ) )
@@ -42,67 +42,68 @@ size_t getData( vector< DataType >& data,
     }
   }
 
-  size_t c = 0;
-  for( ; c < class_labels.size(); c++ )
+  for( size_t c = 0 ; c < class_labels.size(); c++ )
   {
     String p( path + class_labels[ c ] + "/" );
     if( FileSystem::isDirectory( path ) )
     {
-      vector< String > class_data;
+      std::vector< String > class_data;
       FileSystem::filesWithExtension( p, class_data, "ppm" );
       for( size_t j = 0; j < class_data.size(); j++ )
       {
         Image i;
         i.load( class_data[ j ] );
-        vector< Image > v( 3 );
+        std::vector< Image > v( 3 );
         i.decompose( v[ 0 ], v[ 1 ], v[ 2 ] );
         data.push_back( DataType( v, c ) );
       }
     }
   }
-  return c;
 }
 
 int main(int argc, char *argv[])
 {
+  srand( time( NULL ) );
   TrainingParameters params = {
     1, //trees
     100,  //no_candidate_features
     100,  //no_candidate_thresholds
-    15   //max_decision_levels
+    15,   //max_decision_levels
+    3000
   };
-  size_t pool_size = 3000;
+
   float split = 0.3;
   if( argc > 2 ) params.no_candidate_features = atoi( argv[ 2 ] );
   if( argc > 3 ) params.no_candate_thresholds = atoi( argv[ 3 ] );
   if( argc > 4 ) params.max_decision_levels = atoi( argv[ 4 ] );
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
-  if( argc > 6 ) pool_size = atoi( argv[ 6 ] );
+  if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
   if( argc > 7 ) split = atof( argv[ 7 ] );
 
-  vector< DataType > data;
+  std::vector< DataType > data;
   String path( argv[ 1 ] );
-  cout << currentDateTime() << "Loading data" << endl;
-  vector< String > class_labels;
+  std::cout << currentDateTime() << "Loading data" << std::endl;
+  std::vector< String > class_labels;
 
-  size_t num_classes = getData( data, class_labels, path );
+  get_data( data, class_labels, path );
+  size_t num_classes = class_labels.size();
   std::random_shuffle( data.begin(), data.end() );
 
   size_t n = data.size() * split;
-  vector< DataType > training_data( data.begin(), data.end() - n );
-  vector< DataType > testing_data( data.end() - n, data.end() );
+  std::vector< DataType > training_data( data.begin(), data.end() - n );
+  std::vector< DataType > testing_data( data.end() - n, data.end() );
 
-  cout << currentDateTime() << "Initializing context (builds lookup table)" << endl;
-  ImageContext context( params, training_data, num_classes, pool_size );
+  std::cout << currentDateTime() << "Initializing context (builds lookup table)" << std::endl;
+  ImageContext context( params, training_data, num_classes );
   TrainerType trainer( context );
-  cout << currentDateTime() << "Training" << endl;
+  std::cout << currentDateTime() << "Training" << std::endl;
   ClassifierType classifer = trainer.train();
 
-  cout << currentDateTime() << "Classifying" << endl;
-  vector< vector< size_t > > confusion_matrix;
+  std::cout << currentDateTime() << "Classifying" << std::endl;
+  std::vector< std::vector< size_t > > confusion_matrix;
   for( size_t i = 0; i < num_classes; i++ )
   {
-    confusion_matrix.push_back( vector< size_t >( num_classes, 0 ) );
+    confusion_matrix.push_back( std::vector< size_t >( num_classes, 0 ) );
   }
   for( size_t i = 0; i < testing_data.size(); i++ )
   {
@@ -110,8 +111,8 @@ int main(int argc, char *argv[])
     confusion_matrix[ testing_data[ i ].output ][ s.get_mode().first ]++;
   }
 
-  cout << "Statistics" << endl;
-  vector< double > plot_x, plot_y;
+  std::cout << "Statistics" << std::endl;
+  std::vector< double > plot_x, plot_y;
   float acc = 0.0f;
   for( size_t c = 0; c < num_classes; c++ )
   {
@@ -132,10 +133,10 @@ int main(int argc, char *argv[])
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    cout << c << ": (" << fpr << ", " << tpr << ")" << endl;
+    std::cout << c << ": (" << fpr << ", " << tpr << ")" << std::endl;
   }
   acc /= n;
-  cout << "Accuracy: " << acc << endl;
+  std::cout << "Accuracy: " << acc << std::endl;
 
   try
   {
@@ -159,10 +160,10 @@ int main(int argc, char *argv[])
     g.set_style("points").plot_xy( plot_x, plot_y );
   } catch( GnuplotException e )
   {
-    cout << e.what() << endl;
+    std::cout << e.what() << std::endl;
   }
 
-  cout << currentDateTime() << "Finished" << endl;
+  std::cout << currentDateTime() << "Finished" << std::endl;
 
   getchar();
   

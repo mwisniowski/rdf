@@ -7,8 +7,6 @@
 #include "Tree.h"
 #include "ThresholdSampler.h"
 
-using namespace std;
-
 /**
  * @brief Simple helper class to perform a binary test
  */
@@ -62,10 +60,10 @@ class TreeTrainer
      */
     void train( Tree< D, F, S >& tree ) const
     {
-      deque< size_t > frontier;
-      frontier.push_back( tree.create_leaf( context.data_idxs ) );
+      std::deque< size_t > frontier;
+      frontier.push_back( tree.create_leaf( context.get_data_idxs() ) );
 
-      vector< size_t > feature_idxs;
+      std::vector< size_t > feature_idxs;
       // At every tree level expand all frontier nodes
       for( size_t depth = 0; depth < context.params.max_decision_levels; depth++ )
       {
@@ -78,7 +76,7 @@ class TreeTrainer
           float threshold;
           float gain;
           size_t feature_idx;
-          vector< size_t > left_data_idxs, right_data_idxs;
+          std::vector< size_t > left_data_idxs, right_data_idxs;
 
           compute_threshold( threshold, gain, feature_idx, left_data_idxs, right_data_idxs, 
               tree.nodes[ node_idx ].data_idxs, tree.nodes[ node_idx ].statistics, feature_idxs );
@@ -116,18 +114,18 @@ class TreeTrainer
     void compute_threshold( float& best_threshold,
         float& best_gain,
         size_t& best_feature_idx,
-        vector< size_t >& best_left_data_idxs,
-        vector< size_t >& best_right_data_idxs,
-        vector< size_t >& parent_data_idxs,
+        std::vector< size_t >& best_left_data_idxs,
+        std::vector< size_t >& best_right_data_idxs,
+        std::vector< size_t >& parent_data_idxs,
         const S& parent_statistics,
-        const vector< size_t>& feature_idxs ) const
+        const std::vector< size_t>& feature_idxs ) const
     {
       best_gain = -FLT_MAX;
 
       for( size_t i = 0; i < feature_idxs.size(); i++ )
       {
         // randomly sample thresholds
-        vector< float > candidate_thresholds;
+        std::vector< float > candidate_thresholds;
         ThresholdSampler< D, F, S > sampler( context, feature_idxs[ i ], parent_data_idxs );
         sampler.uniform( candidate_thresholds, context.params.no_candate_thresholds );
 
@@ -137,9 +135,9 @@ class TreeTrainer
           test.threshold = candidate_thresholds[ i ];
 
           // partition data for current threshold and evaluate gain
-          const vector< size_t >::iterator pivot = 
+          const std::vector< size_t >::iterator pivot =
             std::partition( parent_data_idxs.begin(), parent_data_idxs.end(), test );
-          vector< size_t > left_idxs( parent_data_idxs.begin(), pivot ),
+          std::vector< size_t > left_idxs( parent_data_idxs.begin(), pivot ),
             right_idxs( pivot, parent_data_idxs.end() );
 
           S left_statistics = context.get_statistics();
@@ -157,10 +155,10 @@ class TreeTrainer
         }
       }
 
-      vector< size_t >::iterator pivot = 
+      std::vector< size_t >::iterator pivot =
         std::partition( parent_data_idxs.begin(), parent_data_idxs.end(), Test< D, F, S >( context, best_threshold, best_feature_idx ) );
-      best_left_data_idxs = vector< size_t >( parent_data_idxs.begin(), pivot );
-      best_right_data_idxs = vector< size_t >( pivot, parent_data_idxs.end() );
+      best_left_data_idxs = std::vector< size_t >( parent_data_idxs.begin(), pivot );
+      best_right_data_idxs = std::vector< size_t >( pivot, parent_data_idxs.end() );
     }
 };
 
