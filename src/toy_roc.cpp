@@ -142,7 +142,16 @@ int main(int argc, char *argv[])
   try
   {
     Gnuplot g;
-    g.set_title("ROC");
+    std::ostringstream os;
+    os <<
+      "features="    << params.no_candidate_features <<
+      " thresholds=" << params.no_candate_thresholds <<
+      " depth="      << params.max_decision_levels   <<
+      " trees="      << params.trees                 <<
+      " pool_size="  << params.pool_size             <<
+      " folds="      << folds                        <<
+      " path="       << argv[ 1 ];
+    g.set_title( os.str() );
     g.set_xlabel("False positive rate");
     g.set_ylabel("True positive rate");
     g << "set size square";
