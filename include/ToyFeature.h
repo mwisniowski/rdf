@@ -6,27 +6,19 @@
 #include "ToyCommon.h"
 
 template< size_t d >
-class ToyFeature: public IFeature< DataType >
+class ToyFeature: public FeatureBase< DataType >
 {
   private:
-    std::vector< float > v;
-    typedef IFeature< DataType > super;
+    typedef FeatureBase< DataType > super;
 
   public:
-    ToyFeature() :
-      // super(),
-      v( d, 0.0f )
-    {
-    }
-
     ToyFeature( const std::vector< float >& vec ) :
-      // super(),
-      v( vec )
+      v_( vec )
     {}
 
     ToyFeature( const ToyFeature& other ) :
       super( other ),
-      v( other.v )
+      v_( other.v_ )
     {}
 
     virtual ~ToyFeature()
@@ -36,8 +28,7 @@ class ToyFeature: public IFeature< DataType >
     {
       if( this != &other )
       {
-        super::operator=( other );
-        v = other.v;
+        v_ = other.v_;
       }
       return *this;
     }
@@ -54,9 +45,48 @@ class ToyFeature: public IFeature< DataType >
       float sum = 0;
       for( size_t i = 0; i < d; i++ )
       {
-        sum += v[ i ] * point.input[ i ];
+        sum += v_[ i ] * point.input( i );
       }
       return sum;
+    }
+
+    static ToyFeature get_random_feature()
+    {
+      std::vector< float > v;
+      gaussian_vector( v, d );
+      return ToyFeature( v );
+    }
+
+  private:
+    std::vector< float > v_;
+
+    static void gaussian_vector( std::vector< float >& gv, size_t dimensions )
+    {
+      gv.clear();
+      for( size_t i = 0; i < dimensions; i+=2 )
+      {
+        float u, v, s;
+        do {
+          u = cvt::Math::rand( -1.0f, 1.0f );
+          v = cvt::Math::rand( -1.0f, 1.0f );
+          s = u * u + v * v;
+        } while ( s >= 1 );
+
+        gv.push_back( u * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
+        gv.push_back( v * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
+      }
+
+      if( dimensions % 2 == 1 )
+      {
+        float u, v, s;
+        do {
+          u = cvt::Math::rand( -1.0f, 1.0f );
+          v = cvt::Math::rand( -1.0f, 1.0f );
+          s = u * u + v * v;
+        } while ( s >= 1 );
+
+        gv.push_back( u * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
+      }
     }
 };
 

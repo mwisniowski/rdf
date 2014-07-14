@@ -7,28 +7,24 @@
 template< typename D, typename F, typename S >
 class Forest 
 {
-  private:
-    std::vector< Tree< D, F, S > >      trees;
-    const ITrainingContext< D, F, S >&  context;
-
   public:
-    Forest( const ITrainingContext< D, F, S >& context ) :
-      context( context )
+    Forest( TrainingContextBase< D, F, S >& context ) :
+      context_( context )
     {}
 
     virtual ~Forest() {}
 
     void add( const Tree< D, F, S >& tree )
     {
-      trees.push_back( tree );
+      trees_.push_back( tree );
     }
 
     const S classify( const D& point )
     {
-      S statistics = context.get_statistics();
+      S statistics = context_.get_statistics();
 
-      typename std::vector< Tree< D, F, S > >::iterator it = trees.begin(),
-        end = trees.end();
+      typename std::vector< Tree< D, F, S > >::iterator it = trees_.begin(),
+        end = trees_.end();
       for( ; it != end; ++it )
       {
         statistics += it->classify( point );
@@ -37,6 +33,9 @@ class Forest
       return statistics;
     }
 
+  private:
+    std::vector< Tree< D, F, S > >  trees_;
+    TrainingContextBase< D, F, S >&    context_;
 };
 
 #endif

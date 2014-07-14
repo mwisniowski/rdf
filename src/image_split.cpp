@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
   for( size_t i = 0; i < testing_data.size(); i++ )
   {
     const StatisticsType s = classifer.classify( testing_data[ i ] );
-    confusion_matrix[ testing_data[ i ].output ][ s.get_mode().first ]++;
+    confusion_matrix[ testing_data[ i ].output() ][ s.get_mode().first ]++;
   }
 
   std::cout << "Statistics" << std::endl;

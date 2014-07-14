@@ -6,15 +6,11 @@
 
 #include "ImageCommon.h"
 
-class ImageFeature : public IFeature< DataType >
+template< size_t channels >
+class ImageFeature : public FeatureBase< DataType >
 {
   private:
-    typedef IFeature< DataType > super;
-
-  public:
-    cvt::Point2f p1;
-    cvt::Point2f p2;
-    size_t channel;
+    typedef FeatureBase< DataType > super;
 
   public:
     ImageFeature()
@@ -22,15 +18,15 @@ class ImageFeature : public IFeature< DataType >
 
     ImageFeature( const ImageFeature& other ) :
       super( other ),
-      p1( other.p1 ),
-      p2( other.p2 ),
-      channel( other.channel )
+      point1_( other.point1_ ),
+      point2_( other.point2_ ),
+      channel_( other.channel_ )
     {}
 
-    ImageFeature( const cvt::Point2f& p1, const cvt::Point2f& p2, size_t channel ) :
-      p1( p1 ),
-      p2( p2 ),
-      channel( channel )
+    ImageFeature( const cvt::Point2f& point1_, const cvt::Point2f& point2_, size_t channel_ ) :
+      point1_( point1_ ),
+      point2_( point2_ ),
+      channel_( channel_ )
     {}
 
     virtual ~ImageFeature() 
@@ -40,23 +36,35 @@ class ImageFeature : public IFeature< DataType >
     {
       if( this != &other )
       {
-        super::operator=( other );
-        p1 = other.p1;
-        p2 = other.p2;
-        channel = other.channel;
+        point1_ = other.point1_;
+        point2_ = other.point2_;
+        channel_ = other.channel_;
       }
       return *this;
     }
 
     float operator()( const DataType& point ) const
     {
-      const cvt::Image& i = point.input[ channel ];
+      const cvt::Image& i = point.input( channel_ );
       cvt::IMapScoped< const uint8_t > map( i );
-      cvt::Vector2i p( i.width() * p1.x, i.height() * p1.y ),
-        q( i.width() * p2.x, i.height() * p2.y );
+      cvt::Vector2i p( i.width() * point1_.x, i.height() * point1_.y ),
+        q( i.width() * point2_.x, i.height() * point2_.y );
 
       return map( p.x, p.y ) - map( q.x, q.y );
     }
+
+    static ImageFeature get_random_feature()
+    {
+      cvt::Point2f p1( cvt::Math::rand( 0.0f, 1.0f ), cvt::Math::rand( 0.0f, 1.0f ) );
+      cvt::Point2f p2( cvt::Math::rand( 0.0f, 1.0f ), cvt::Math::rand( 0.0f, 1.0f ) );
+      size_t channel = cvt::Math::rand( 0, channels ) + 0.5f;
+      return ImageFeature( p1, p2, channel );
+    }
+
+  public:
+    cvt::Point2f point1_;
+    cvt::Point2f point2_;
+    size_t channel_;
 };
 
 #endif

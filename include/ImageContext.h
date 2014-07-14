@@ -6,38 +6,23 @@
 #include "ImageCommon.h"
 #include "ImageFeature.h"
 
-class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsType >
+class ImageContext : public TrainingContextBase< DataType, FeatureType, StatisticsType >
 {
   private:
-    typedef ITrainingContext< DataType, FeatureType, StatisticsType > super;
-
-  private:
-    static std::vector< FeatureType > pool_init( size_t pool_size )
-    {
-      std::vector< FeatureType > features;
-      features.reserve( pool_size );
-      for( size_t i = 0; i < pool_size; i++ )
-      {
-        cvt::Point2f p1( cvt::Math::rand( 0.0f, 1.0f ), cvt::Math::rand( 0.0f, 1.0f ) );
-        cvt::Point2f p2( cvt::Math::rand( 0.0f, 1.0f ), cvt::Math::rand( 0.0f, 1.0f ) );
-        size_t channel = cvt::Math::rand( 0, CHANNELS ) + 0.5f;
-        features.push_back( FeatureType( p1, p2, channel ) );
-      }
-      return features;
-    }
+    typedef TrainingContextBase< DataType, FeatureType, StatisticsType > super;
 
   public:
     ImageContext( const TrainingParameters& params, 
                   const std::vector< DataType >& data, 
                   size_t num_classes ) :
-      super( params, data, pool_init, num_classes )
+      super( params, data, num_classes )
     {
     }
 
     virtual ~ImageContext() 
     {}
 
-    StatisticsType get_statistics() const
+    StatisticsType get_statistics()
     {
       return StatisticsType( *this );
     }
@@ -60,7 +45,7 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
       float H_l = left_statistics.get_entropy();
       float H_r = right_statistics.get_entropy();
 
-      float fraction = left_statistics.n / static_cast<float>( parent_statistics.n );
+      float fraction = left_statistics.n() / static_cast<float>( parent_statistics.n() );
 
       return H_p - ( ( fraction * H_l ) + ( ( 1.0f  - fraction ) * H_r ) );
     }
@@ -77,7 +62,18 @@ class ImageContext : public ITrainingContext< DataType, FeatureType, StatisticsT
       // TODO Magic number
       return information_gain < 0.01f;
     }
-    
+
+  private:
+    static std::vector< FeatureType > pool_init( size_t pool_size )
+    {
+      std::vector< FeatureType > features;
+      features.reserve( pool_size );
+      for( size_t i = 0; i < pool_size; i++ )
+      {
+        features.push_back( FeatureType::get_random_feature() );
+      }
+      return features;
+    }
 };
 
 #endif

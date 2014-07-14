@@ -7,12 +7,9 @@
 template< typename D, typename F, typename S >
 class ForestTrainer 
 {
-  private:
-    const ITrainingContext< D, F, S >& context;
-
   public:
-    ForestTrainer( const ITrainingContext< D, F, S >& c ) :
-      context( c )
+    ForestTrainer( TrainingContextBase< D, F, S >& c ) :
+      context_( c )
     {}
 
     virtual ~ForestTrainer() 
@@ -20,18 +17,21 @@ class ForestTrainer
 
     Forest< D, F, S > train()
     {
-      Forest< D, F, S > f( context );
-      TreeTrainer< D, F, S > trainer( context );
-      for( size_t i=0; i < context.params.trees; i++ )
+      Forest< D, F, S > f( context_ );
+      TreeTrainer< D, F, S > trainer( context_ );
+      for( size_t i=0; i < context_.params().trees; i++ )
       {
-        std::cout << "Training tree " << i + 1 << "/" << context.params.trees << std::endl;
-        Tree< D, F, S > tree( context );
+        std::cout << "Training tree " << i + 1 << "/" << context_.params().trees << std::endl;
+        Tree< D, F, S > tree( context_ );
         trainer.train( tree );
         f.add( tree );
       }
 
       return f;
     }
+
+  private:
+    TrainingContextBase< D, F, S >& context_;
 };
 
 #endif

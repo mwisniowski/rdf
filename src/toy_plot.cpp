@@ -104,15 +104,15 @@ int main(int argc, char *argv[])
   std::vector< DataType >::const_iterator it = data.begin();
   for( ; it != data.end(); ++it )
   {
-    for( size_t i = 0; i < it->input.size(); i++ )
+    for( size_t i = 0; i < it->input().size(); i++ )
     {
-      if( it->input.at( i )  < min_data )
+      if( it->input( i )  < min_data )
       {
-        min_data = it->input[ i ];
+        min_data = it->input( i );
       }
-      if( it->input.at( i ) > max_data )
+      if( it->input( i ) > max_data )
       {
-        max_data = it->input[ i ];
+        max_data = it->input( i );
       }
     }
   }
@@ -122,8 +122,7 @@ int main(int argc, char *argv[])
   cvt::Image img;
   img.reallocate( width, width, cvt::IFormat::RGBA_FLOAT );
   cvt::IMapScoped<float> map( img );
-  DataType pt;
-  pt.input.resize( 2 );
+  std::vector< float > v( 2 );
   cvt::Color color, gray( 0.5f ), mix;
   cvt::Color colormap[] = {
     cvt::Color::RED,
@@ -135,11 +134,12 @@ int main(int argc, char *argv[])
   for( int row = max_data; row > min_data; row-- )
   {
     float* ptr = map.ptr();
-    pt.input[ 1 ] = static_cast<float>( row );
+    v[ 1 ] = static_cast<float>( row );
     for( int column = min_data; column < max_data; column++ )
     {
-      pt.input[ 0 ] = static_cast<float>( column );
+      v[ 0 ] = static_cast<float>( column );
 
+      DataType pt( v, 0 );
       const StatisticsType& h = classifier.classify( pt );
 
       mix = cvt::Color::BLACK;

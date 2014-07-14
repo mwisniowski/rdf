@@ -5,31 +5,26 @@
 #include "TrainingParameters.h"
 
 template< typename D >
-class IFeature 
+class FeatureBase
 {
   public:
-    size_t id;
-
-    IFeature& operator=( const IFeature& other )
-    {
-      if( this != &other )
-      {
-        id = other.id;
-      }
-      return *this;
-    }
-
     virtual float operator()( const D& point ) const =0;
+
+    /**
+     * IMPLEMENT THIS!
+     * static IFeature get_random_feature();
+     */
 };
 
 template< typename D, typename F, typename S >
-class ITrainingContext
+class TrainingContextBase
 {
   /**
    * Start implementing here
    */
+
   public:
-    virtual S get_statistics() const =0;
+    virtual S get_statistics() =0;
 
     virtual float compute_information_gain( const S& parent_s,
         const S& left_s,
@@ -37,48 +32,84 @@ class ITrainingContext
 
     virtual bool should_terminate( float information_gain ) const =0;
 
-  protected:
-    typedef std::vector< F > (*pool_init_fn)( size_t pool_size );
-
   /**
    * End implementing here
    */
 
   private:
     typedef std::vector< float >     row_type;
-    typedef std::vector< row_type >  table_type;
-    typedef std::vector< F >         pool_type;
+    typedef F (*feature_generator_fn)();
 
   public:
-    const TrainingParameters     params;
-    const std::vector< F >       feature_pool;
-    const std::vector< D >       data;
-    const table_type             table;
-    const size_t                 num_classes;
-
-  public:
-    ITrainingContext( const TrainingParameters& params,
+    TrainingContextBase( const TrainingParameters& params,
         const std::vector< D >& data,
-        pool_init_fn pool_init,
         size_t num_classes ) :
-      params( params ),
-      num_classes( num_classes ),
-      data( data ),
-      feature_pool( pool_init( params.pool_size ) ),
-      table( create_table( feature_pool, data ) )
+      params_( params ),
+      num_classes_( num_classes ),
+      data_( data ),
+      features_( init_features( params.pool_size ) ),
+      table_( init_table( features_, data ) )
     {
     }
 
-    ITrainingContext( const ITrainingContext& other ) :
-      params( other.params ),
-      feature_pool( other.feature_pool ),
-      data( other.data ),
-      table( other.table ),
-      num_classes( other.num_classes )
+    TrainingContextBase( const TrainingContextBase& other ) :
+      params_( other.params_ ),
+      features_( other.features_ ),
+      data_( other.data_ ),
+      table_( other.table_ ),
+      num_classes_( other.num_classes_ )
     {}
 
+  public:
+    float lookup( size_t data_idx, size_t feature_idx ) const
+    {
+      return table_[ data_idx ][ feature_idx ];
+    }
+
+    void get_random_features( std::vector< size_t >& random_feature_idxs ) const
+    {
+      std::vector< size_t > feature_idxs = ascending_idxs( features_.size() );
+      random_shuffle( feature_idxs.begin(), feature_idxs.end() );
+
+      random_feature_idxs.clear();
+      for( size_t i = 0; i < params_.no_candidate_features; i++ )
+      {
+        random_feature_idxs.push_back( feature_idxs[ i ] ); 
+      }
+    }
+
+    std::vector< size_t > get_data_idxs() const
+    {
+      return ascending_idxs( data_.size() );
+    }
+
+    const TrainingParameters& params() const
+    {
+      return params_;
+    }
+
+    const F& feature( size_t idx ) const
+    {
+      return features_[ idx ];
+    }
+
+    const D& data_point( size_t idx ) const
+    {
+      return data_[ idx ];
+    }
+
+    size_t num_classes() const
+    {
+      return num_classes_;
+    }
 
   private:
+    TrainingParameters                   params_;
+    std::vector< F >                     features_;
+    std::vector< D >                     data_;
+    std::vector< std::vector< float > >  table_;
+    size_t                               num_classes_;
+
     static std::vector< size_t > ascending_idxs( size_t size )
     {
       std::vector< size_t > idxs;
@@ -91,10 +122,20 @@ class ITrainingContext
       return idxs;
     }
 
-    static table_type create_table( const std::vector< F >& feature_pool,
+    static std::vector< F > init_features( size_t size )
+    {
+      std::vector< F > features;
+      for( size_t i = 0; i < size; i++ )
+      {
+        features.push_back( F::get_random_feature() );
+      }
+      return features;
+    }
+
+    static std::vector< std::vector< float > > init_table( const std::vector< F >& feature_pool,
         const std::vector< D >& data )
     {
-      table_type table( data.size() );
+      std::vector< std::vector< float > > table( data.size() );
 
       for( size_t d = 0; d < data.size(); d++ )
       {
@@ -107,51 +148,38 @@ class ITrainingContext
       return table;
     }
 
-  public:
-    float lookup( size_t data_idx, size_t feature_idx ) const
-    {
-      return table[ data_idx ][ feature_idx ];
-    }
-
-    void get_random_features( std::vector< size_t >& random_feature_idxs ) const
-    {
-      std::vector< size_t > feature_idxs = ascending_idxs( feature_pool.size() );
-      random_shuffle( feature_idxs.begin(), feature_idxs.end() );
-
-      random_feature_idxs.clear();
-      for( size_t i = 0; i < params.no_candidate_features; i++ )
-      {
-        random_feature_idxs.push_back( feature_idxs[ i ] ); 
-      }
-    }
-
-    std::vector< size_t > get_data_idxs() const
-    {
-      return ascending_idxs( data.size() );
-    }
 };
 
 template< typename D, typename F, typename S >
-class IStatistics 
+class StatisticsBase 
 { 
   public:
-    typedef ITrainingContext< D, F, S > ContextType;
-    const ContextType& context;
-
-    IStatistics( const ContextType& context ) :
-      context( context )
+    StatisticsBase( TrainingContextBase< D, F, S >& context ) :
+      context_( context )
     {}
 
-    IStatistics( const IStatistics& other ) :
-      context( other.context )
+    StatisticsBase( const StatisticsBase& other ) :
+      context_( other.context_ )
     {}
 
-    virtual ~IStatistics()
+    virtual ~StatisticsBase()
     {}
 
-    virtual S& operator+=( const std::vector< size_t >& data_idxs ) =0;
+    StatisticsBase& operator=( const StatisticsBase& other )
+    {
+      if( this != &other )
+      {
+        context_ = other.context_;
+      }
+      return *this;
+    }
+
+    virtual S& operator+=( const std::vector< size_t >& data ) =0;
 
     virtual S& operator+=( const S& s ) =0;
+
+  protected:
+    TrainingContextBase< D, F, S >& context_;
 };
 
 

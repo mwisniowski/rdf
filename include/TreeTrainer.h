@@ -2,47 +2,109 @@
 #define TREE_TRAINER_H
 
 #include <deque>
+#include <cvt/Math/Math.h>
 
 #include "Interfaces.h"
 #include "Tree.h"
-#include "ThresholdSampler.h"
-
-/**
- * @brief Simple helper class to perform a binary test
- */
-template< typename D, typename F, typename S >
-struct Test
-{
-  size_t                              feature_idx;
-  float                               threshold;
-  const ITrainingContext< D, F, S >&  context;
-
-
-  Test( const ITrainingContext< D, F, S >& context, float threshold, size_t feature_idx ) :
-    context( context ),
-    threshold( threshold ),
-    feature_idx( feature_idx )
-  {}
-
-  bool operator()( size_t data_idx ) const
-  {
-    return context.lookup( data_idx, feature_idx ) < threshold;
-  }
-};
 
 template< typename D, typename F, typename S >
 class TreeTrainer 
 {
-  public:
-    const ITrainingContext< D, F, S >& context;
+  private:
+    /**
+    * @brief Simple helper class to perform a binary test
+    */
+    class Test
+    {
+      public:
+        Test( TrainingContextBase< D, F, S >& context, float threshold, size_t feature_idx ) :
+          context_( context ),
+          threshold_( threshold ),
+          feature_idx_( feature_idx )
+        {}
+
+        bool operator()( size_t data_idx ) const
+        {
+          return context_.lookup( data_idx, feature_idx_ ) < threshold_;
+        }
+
+        void set_threshold( float threshold )
+        {
+          threshold_ = threshold;
+        }
+
+      private:
+        const TrainingContextBase< D, F, S >&  context_;
+        size_t                              feature_idx_;
+        float                               threshold_;
+    };
+
+    class ThresholdSampler
+    { 
+      public:
+        ThresholdSampler( const TrainingContextBase< D, F, S >& context, size_t feature_idx, const std::vector< size_t >& data_idxs ) :
+          context_( context ),
+          feature_idx_( feature_idx ),
+          data_idxs_( data_idxs )
+        {}
+
+        /**
+        * @brief Samples thresholds uniformly between minimum and maximum
+        *
+        * @param thresholds
+        * @param size
+        */
+        void uniform( std::vector< float >& thresholds, size_t size )
+        {
+          thresholds.clear();
+          thresholds.reserve( size );
+          float min, max;
+          get_min_max( min, max );
+          for( size_t i = 0; i < size; i++ )
+          {
+            thresholds.push_back( cvt::Math::rand( min, max ) );
+          }
+        }
+
+      private:
+        const TrainingContextBase< D, F, S >&  context_;
+        const size_t                        feature_idx_;
+        const std::vector< size_t >         data_idxs_;
+        /**
+        * @brief Finds minimum and maximum feature value in DataCollection
+        *
+        * @param min
+        * @param max
+        * @param range
+        */
+        void get_min_max( float& min, float& max ) const
+        {
+          min = FLT_MAX;
+          max = -min;
+
+          for( size_t i = 0; i < data_idxs_.size(); i++ )
+          {
+            float response = context_.lookup( data_idxs_[ i ], feature_idx_ );
+            if( response < min )
+            {
+              min = response;
+            }
+            if( response > max )
+            {
+              max = response;
+            }
+          }
+        }
+    };
+
 
   public:
-    TreeTrainer( const ITrainingContext< D, F, S >& c ) :
-      context( c ) 
+    TreeTrainer( TrainingContextBase< D, F, S >& context ) :
+      context_( context ) 
     {}
 
     TreeTrainer( const TreeTrainer& other ) :
-      context( other.context )
+      context_( other.context_ )
     {}
 
     virtual ~TreeTrainer() 
@@ -61,16 +123,16 @@ class TreeTrainer
     void train( Tree< D, F, S >& tree ) const
     {
       std::deque< size_t > frontier;
-      frontier.push_back( tree.create_leaf( context.get_data_idxs() ) );
+      frontier.push_back( tree.create_leaf( context_.get_data_idxs() ) );
 
       std::vector< size_t > feature_idxs;
       // At every tree level expand all frontier nodes
-      for( size_t depth = 0; depth < context.params.max_decision_levels; depth++ )
+      for( size_t depth = 0; depth < context_.params().max_decision_levels; depth++ )
       {
         size_t current_size = frontier.size();
         for( size_t i = 0; i < current_size; i++ )
         {
-          context.get_random_features( feature_idxs );
+          context_.get_random_features( feature_idxs );
           size_t node_idx = frontier.front();
 
           float threshold;
@@ -79,11 +141,11 @@ class TreeTrainer
           std::vector< size_t > left_data_idxs, right_data_idxs;
 
           compute_threshold( threshold, gain, feature_idx, left_data_idxs, right_data_idxs, 
-              tree.nodes[ node_idx ].data_idxs, tree.nodes[ node_idx ].statistics, feature_idxs );
+              tree.data_idxs( node_idx ), tree.statistics( node_idx ), feature_idxs );
 
           // If information gain high enough convert leaf to split node
           // and add children to frontier queue
-          if( !context.should_terminate( gain ) )
+          if( !context_.should_terminate( gain ) )
           {
             size_t child_offset = tree.convert_to_split( node_idx, threshold, feature_idx, left_data_idxs, right_data_idxs );
 
@@ -97,6 +159,8 @@ class TreeTrainer
     }
 
   private:
+    TrainingContextBase< D, F, S >& context_;
+
     /**
      * @brief Selects the best threshold for the given data-partition (parent) according
      * to information gain. Returns the optimal threshold, information gain, feature function
@@ -126,13 +190,13 @@ class TreeTrainer
       {
         // randomly sample thresholds
         std::vector< float > candidate_thresholds;
-        ThresholdSampler< D, F, S > sampler( context, feature_idxs[ i ], parent_data_idxs );
-        sampler.uniform( candidate_thresholds, context.params.no_candate_thresholds );
+        ThresholdSampler sampler( context_, feature_idxs[ i ], parent_data_idxs );
+        sampler.uniform( candidate_thresholds, context_.params().no_candate_thresholds );
 
-        Test< D, F, S > test( context, best_threshold, feature_idxs[ i ] );
-        for( size_t i = 0; i < context.params.no_candate_thresholds; i++ )
+        Test test( context_, best_threshold, feature_idxs[ i ] );
+        for( size_t j = 0; j < context_.params().no_candate_thresholds; j++ )
         {
-          test.threshold = candidate_thresholds[ i ];
+          test.set_threshold( candidate_thresholds[ j ] );
 
           // partition data for current threshold and evaluate gain
           const std::vector< size_t >::iterator pivot =
@@ -140,23 +204,23 @@ class TreeTrainer
           std::vector< size_t > left_idxs( parent_data_idxs.begin(), pivot ),
             right_idxs( pivot, parent_data_idxs.end() );
 
-          S left_statistics = context.get_statistics();
-          S right_statistics = context.get_statistics();
+          S left_statistics = context_.get_statistics();
+          S right_statistics = context_.get_statistics();
           left_statistics += left_idxs;
           right_statistics += right_idxs;
 
-          float gain = context.compute_information_gain( parent_statistics, left_statistics, right_statistics );
+          float gain = context_.compute_information_gain( parent_statistics, left_statistics, right_statistics );
           if( gain > best_gain )
           {
             best_gain = gain;
-            best_threshold = test.threshold;
-            best_feature_idx = test.feature_idx;
+            best_threshold = candidate_thresholds[ j ];
+            best_feature_idx = feature_idxs[ i ];
           }
         }
       }
 
       std::vector< size_t >::iterator pivot =
-        std::partition( parent_data_idxs.begin(), parent_data_idxs.end(), Test< D, F, S >( context, best_threshold, best_feature_idx ) );
+        std::partition( parent_data_idxs.begin(), parent_data_idxs.end(), Test( context_, best_threshold, best_feature_idx ) );
       best_left_data_idxs = std::vector< size_t >( parent_data_idxs.begin(), pivot );
       best_right_data_idxs = std::vector< size_t >( pivot, parent_data_idxs.end() );
     }

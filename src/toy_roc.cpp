@@ -108,7 +108,7 @@ int main(int argc, char *argv[])
     for( size_t i = 0; i < n; i++ )
     {
       const StatisticsType h = classifier.classify( test_data[ i ] );
-      confusion_matrix[ test_data[ i ].output ][ h.get_mode().first ]++;
+      confusion_matrix[ test_data[ i ].output() ][ h.get_mode().first ]++;
     }
   }
 

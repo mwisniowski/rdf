@@ -11,20 +11,17 @@ template< typename I, typename O >
 struct DataPoint
 {
   public:
-    std::vector<I> input;
-    O         output;
+    // DataPoint()
+    // {}
 
-    DataPoint()
-    {}
-
-    DataPoint( const std::vector<I>& in, const O& out ) :
-      input( in ),
-      output( out )
+    DataPoint( const std::vector<I>& input, const O& output ) :
+      input_( input ),
+      output_( output )
     {}
 
     DataPoint( const DataPoint& other ) :
-      input( other.input ),
-      output( other.output )
+      input_( other.input_ ),
+      output_( other.output_ )
     {}
 
     virtual ~DataPoint()
@@ -35,9 +32,8 @@ struct DataPoint
     {
       if( this != &other )
       {
-        input = other.input;
-        output = other.output;
-        // id = other.id;
+        input_ = other.input_;
+        output_ = other.output_;
       }
       return *this;
     }
@@ -47,19 +43,38 @@ struct DataPoint
       os << "(";
       for (int i = 0; i < point.input.size() - 1; i++ )
       {
-        os << point.input[ i ] << ",";
+        os << point.input_[ i ] << ",";
       }
-      os << point.input.back() << "),"; 
+      os << point.input_.back() << "),"; 
 
-      os << point.output;
+      os << point.output_;
 
       return os;
     }
 
     bool operator==( const DataPoint& other )
     {
-      return input == other.input && output == other.output;
+      return input_ == other.input && output_ == other.output;
     }
+    
+    const I& input( size_t idx ) const
+    {
+      return input_[ idx ];
+    }
+
+    const std::vector< I >& input() const
+    {
+      return input_;
+    }
+
+    const O& output() const
+    {
+      return output_;
+    }
+
+  private:
+    std::vector< I >  input_;
+    O                 output_;
 };
 
 #endif

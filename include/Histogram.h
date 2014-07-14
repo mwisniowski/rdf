@@ -7,27 +7,22 @@
 #include "Interfaces.h"
 
 template< typename D, typename F >
-class Histogram: public IStatistics< D, F, Histogram< D, F > >
+class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
 {
-  public:
-    size_t n;
-
   private:
-    typedef IStatistics< D, F, Histogram< D, F > >  super;
-    typedef std::vector< size_t >                   histogram_type;
-    histogram_type                                  histogram;
+    typedef StatisticsBase< D, F, Histogram< D, F > >  super;
 
   public:
-    Histogram( const typename super::ContextType& context ) :
+    Histogram( TrainingContextBase< D, F, Histogram< D, F > >& context ) :
       super( context ),
-      histogram( context.num_classes ),
-      n( 0 )
+      histogram_( context.num_classes() ),
+      n_( 0 )
     {}
 
     Histogram( const Histogram& other ) :
       super( other ),
-      histogram( other.histogram ),
-      n( other.n )
+      histogram_( other.histogram_ ),
+      n_( other.n_ )
     {}
 
     virtual ~Histogram() 
@@ -37,9 +32,9 @@ class Histogram: public IStatistics< D, F, Histogram< D, F > >
     {
       if( this != &other )
       {
-        this->context = other.context;
-        n = other.n;
-        histogram = other.histogram;
+        super::operator=( other );
+        n_ = other.n_;
+        histogram_ = other.histogram_;
       }
       return *this;
     }
@@ -49,23 +44,24 @@ class Histogram: public IStatistics< D, F, Histogram< D, F > >
       std::vector< size_t >::const_iterator it( data_idxs.begin() );
       for( ; it != data_idxs.end(); ++it )
       {
-        histogram[ this->context.data[ *it ].output ]++;
-        n++;
+        const D& d = this->context_.data_point( *it );
+        histogram_[ d.output() ]++;
+        n_++;
       }
       return *this;
     }
 
     Histogram& operator+=( const Histogram& h )
     {
-      typename histogram_type::const_iterator sit = h.histogram.begin(),
-        send = h.histogram.end();
-      typename histogram_type::iterator it = histogram.begin();
+      typename std::vector< size_t >::const_iterator sit = h.histogram_.begin(),
+        send = h.histogram_.end();
+      typename std::vector< size_t >::iterator it = histogram_.begin();
 
       for( ; sit != send; ++sit, ++it )
       {
         ( *it ) += ( *sit );
       }
-      n += h.n;
+      n_ += h.n_;
       return *this;
     }
 
@@ -80,16 +76,16 @@ class Histogram: public IStatistics< D, F, Histogram< D, F > >
       float max_value = FLT_MIN;
       size_t max_c;
 
-      for( size_t i = 0; i < histogram.size(); i++ )
+      for( size_t i = 0; i < histogram_.size(); i++ )
       {
-        if( histogram[ i ] > max_value )
+        if( histogram_[ i ] > max_value )
         {
-          max_value = histogram[ i ];
+          max_value = histogram_[ i ];
           max_c = i;
         }
       }
 
-      return std::pair< size_t, float >( max_c, max_value / n );
+      return std::pair< size_t, float >( max_c, max_value / n_ );
     }
 
     /**
@@ -100,12 +96,12 @@ class Histogram: public IStatistics< D, F, Histogram< D, F > >
     float get_entropy() const
     {
       float entropy = 0.0f;
-      typename histogram_type::const_iterator it = histogram.begin(),
-        end = histogram.end();
+      typename std::vector< size_t >::const_iterator it = histogram_.begin(),
+        end = histogram_.end();
 
       for( ; it != end; ++it )
       {
-        if( float p_i = static_cast<float>( *it ) / n )
+        if( float p_i = static_cast<float>( *it ) / n_ )
         {
           entropy += p_i * cvt::Math::log2( p_i );
         }
@@ -115,24 +111,19 @@ class Histogram: public IStatistics< D, F, Histogram< D, F > >
 
     float probability( size_t class_index ) const
     {
-      if( !histogram[ class_index ] )
+      if( !histogram_[ class_index ] )
       {
         return 0.0f;
       } else {
-        return static_cast<float>( histogram[ class_index ] ) / n;
+        return static_cast<float>( histogram_[ class_index ] ) / n_;
       }
     }
-
-    // size_t num_classes() const
-    // {
-    //   return histogram.size();
-    // }
 
     friend std::ostream& operator<<( std::ostream& os, const Histogram& s )
     {
       os << s.n << ": { ";
-      typename histogram_type::const_iterator it = s.histogram.begin(),
-        end = s.histogram.end();
+      typename std::vector< size_t >::const_iterator it = s.histogram_.begin(),
+        end = s.histogram_.end();
       for( size_t c = 0; it != end; ++it, c++ )
       {
         os << "(" << c << "," << *it << ") ";
@@ -141,6 +132,15 @@ class Histogram: public IStatistics< D, F, Histogram< D, F > >
 
       return os;
     }
+
+    size_t n() const
+    {
+      return n_;
+    }
+
+  private:
+    size_t                 n_;
+    std::vector< size_t >  histogram_;
 };
 
 #endif
