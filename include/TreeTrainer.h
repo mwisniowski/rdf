@@ -2,7 +2,7 @@
 #define TREE_TRAINER_H
 
 #include <deque>
-#include <cvt/Math/Math.h>
+#include <cvt/math/Math.h>
 
 #include "Interfaces.h"
 #include "Tree.h"
