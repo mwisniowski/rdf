@@ -7,8 +7,6 @@
 #include "ToyCommon.h"
 #include "ToyFeature.h"
 
-#define POOL_SIZE 360
-
 class ToyContext : public TrainingContextBase< DataType, FeatureType, StatisticsType >
 {
   private:
@@ -18,17 +16,32 @@ class ToyContext : public TrainingContextBase< DataType, FeatureType, Statistics
     ToyContext( const TrainingParameters& params,
         const std::vector< DataType >& data,
         size_t num_classes ) :
-      super( params, data, num_classes )
-    {
-    }
+      super( params, data ),
+      num_classes_( num_classes )
+    {}
+
+    ToyContext( const ToyContext& other ) :
+      super( other ),
+      num_classes_( other.num_classes_ )
+    {}
 
     virtual ~ToyContext()
+    {}
+
+    StatisticsType get_statistics() const
     {
+      return StatisticsType( num_classes_ );
     }
 
-    StatisticsType get_statistics()
+    StatisticsType get_statistics( const std::vector< size_t >& data_idxs ) const
     {
-      return StatisticsType( *this );
+      StatisticsType s( num_classes_ );
+      for( size_t i = 0; i < data_idxs.size(); ++i )
+      {
+        const DataType& d = data_point( data_idxs[ i ] );
+        s += d;
+      }
+      return s;
     }
 
     /**
@@ -66,6 +79,9 @@ class ToyContext : public TrainingContextBase< DataType, FeatureType, Statistics
       // TODO Magic number
       return information_gain < 0.01f;
     }
+
+  private:
+    size_t num_classes_;
 };
 
 #endif

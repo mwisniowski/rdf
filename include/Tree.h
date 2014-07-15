@@ -9,43 +9,33 @@ template< typename D, typename F, typename S >
 class Tree 
 {
   private:
-    class Node 
+    class Leaf 
     {
       public:
-        Node( const S& statistics, const std::vector< size_t >& data_idxs ) :
+        Leaf( const S& statistics, const std::vector< size_t > data_idxs ) :
           statistics_( statistics ),
           data_idxs_( data_idxs ),
-          child_offset_( 0 )
+          split_idx_( 0 )
         {}
-
-        Node( const Node& other ) :
-          feature_idx_( other.feature_idx_ ),
+    
+        Leaf( const Leaf& other ) :
           statistics_( other.statistics_ ),
-          threshold_( other.threshold_ ),
-          child_offset_( other.child_offset_ ),
-          data_idxs_( other.data_idxs_ )
+          data_idxs_( other.data_idxs_ ),
+          split_idx_( other.split_idx_)
         {}
-
-        virtual ~Node() 
+    
+        virtual ~Leaf() 
         {}
-
-        Node& operator=( const Node& other )
+    
+        Leaf& operator=( const Leaf& other )
         {
           if( this != &other )
           {
-            feature_idx_ = other.feature_idx_;
             statistics_ = other.statistics_;
             data_idxs_ = other.data_idxs_;
-            threshold_ = other.threshold_;
-            child_offset_ = other.child_offset_;
+            split_idx_ = other.split_idx_;
           }
           return *this;
-        }
-
-        friend std::ostream& operator<<( std::ostream& os, const Node& n )
-        {
-          os << n.statistics << " , " << n.child_offset;
-          return os;
         }
 
         const S& statistics() const
@@ -58,14 +48,74 @@ class Tree
           return data_idxs_;
         }
 
-        size_t feature_idx() const
+        size_t split_idx() const
         {
-          return feature_idx_;
+          return split_idx_;
         }
 
-        void set_feature_idx( size_t feature_idx )
+        void set_split_idx( size_t split_idx )
         {
-          feature_idx_ = feature_idx;
+          split_idx_ = split_idx;
+        }
+    
+      private:
+        S                      statistics_;
+        std::vector< size_t >  data_idxs_;
+        size_t                 split_idx_;
+    };
+
+    class Split 
+    {
+      public:
+        Split( const F& feature, float threshold, size_t left_idx, size_t right_idx ) :
+          feature_( feature ),
+          threshold_( threshold ),
+          left_leaf_( true ),
+          left_idx_( left_idx ),
+          right_leaf_( true ),
+          right_idx_( right_idx )
+        {}
+
+        Split( const Split& other ) :
+          feature_( other.feature_ ),
+          threshold_( other.threshold_ ),
+          left_leaf_( other.left_leaf_ ),
+          left_idx_( other.left_idx_ ),
+          right_leaf_( other.right_leaf_ ),
+          right_idx_( other.right_idx_ )
+        {}
+
+        virtual ~Split() 
+        {}
+
+        Split& operator=( const Split& other )
+        {
+          if( this != &other )
+          {
+            feature_ = other.feature_;
+            threshold_ = other.threshold_;
+            left_leaf_ = other.left_leaf_;
+            left_idx_ = other.left_idx_;
+            right_leaf_ = other.right_leaf_;
+            right_idx_ = other.right_idx_;
+          }
+          return *this;
+        }
+
+        friend std::ostream& operator<<( std::ostream& os, const Split& n )
+        {
+          os << n.statistics << " , " << n.child_offset;
+          return os;
+        }
+
+        const F& feature() const
+        {
+          return feature_;
+        }
+
+        void set_feature_idx( const F& feature )
+        {
+          feature_ = feature;
         }
 
         float threshold() const
@@ -78,105 +128,186 @@ class Tree
           threshold_ = threshold;
         }
 
-        size_t child_offset() const
+        bool left_leaf() const
         {
-          return child_offset_;
+          return left_leaf_;
         }
 
-        void set_child_offset( size_t child_offset )
+        void set_left_leaf( bool leaf_leaf )
         {
-          child_offset_ = child_offset;
+          left_leaf_ = leaf_leaf;
+        }
+
+        bool right_leaf() const
+        {
+          return right_leaf_;
+        }
+
+        void set_right_leaf( bool right_leaf )
+        {
+          right_leaf_ = right_leaf;
+        }
+
+        size_t left_idx() const
+        {
+          return left_idx_;
+        }
+
+        void set_left_idx( size_t left_idx )
+        {
+          left_idx_ = left_idx;
+        }
+
+        size_t right_idx() const
+        {
+          return right_idx_;
+        }
+
+        void set_right_idx( size_t right_idx )
+        {
+          right_idx_ = right_idx;
         }
 
       private:
-        S                      statistics_;
-        std::vector< size_t >  data_idxs_;
-        size_t                 feature_idx_;
-        float                  threshold_;
-        size_t                 child_offset_;
+        F       feature_;
+        float   threshold_;
+        bool    left_leaf_;
+        size_t  left_idx_;
+        bool    right_leaf_;
+        size_t  right_idx_;
     };
 
 
   public:
-    Tree( TrainingContextBase< D, F, S >& context ) :
-      context_( context )
+    Tree()
+    {}
+
+    Tree( const Tree& other ) :
+      splits_( other.splits_ ),
+      leaves_( other.leaves_ )
     {}
 
     virtual ~Tree() 
     {}
 
-    const S& classify( const D& point ) const
+    size_t create_leaf( const TrainingContextBase< D, F, S >& context, const std::vector< size_t >& data_idxs )
     {
-      typename std::vector< Node >::const_iterator it = nodes_.begin();
-      while( it->child_offset() > 0 )
-      {
-        const F& feature = context_.feature( it->feature_idx() );
-        if( feature( point ) < it->threshold() )
-        {
-          it += it->child_offset();
-        } else {
-          it += it->child_offset() + 1;
-        }
-      }
-      return it->statistics();
+      S s = context.get_statistics( data_idxs );
+      leaves_.push_back( Leaf( s, data_idxs ) );
+      return leaves_.size() - 1;
     }
 
-    size_t convert_to_split( size_t node_idx, float threshold, size_t feature_idx, 
+    void convert_to_split( size_t& left_idx, size_t& right_idx, 
+        const TrainingContextBase< D, F, S >& context, size_t leaf_idx, float threshold, size_t feature_idx, 
         const std::vector< size_t >& left_data_idxs, const std::vector< size_t >& right_data_idxs )
     {
-      size_t offset = create_leaf( left_data_idxs ) - node_idx;
-      create_leaf( right_data_idxs );
+      left_idx = create_leaf( context, left_data_idxs );
+      right_idx = create_leaf( context, right_data_idxs );
 
-      nodes_[ node_idx ].set_threshold( threshold );
-      nodes_[ node_idx ].set_feature_idx( feature_idx );
-      nodes_[ node_idx ].set_child_offset( offset );
-
-      return offset;
+      splits_.push_back( Split( context.feature( feature_idx ), threshold, left_idx, right_idx ) );
+      leaves_[ leaf_idx ].set_split_idx( splits_.size() - 1 );
     }
 
-    size_t create_leaf( const std::vector< size_t >& data_idxs )
+    void prune()
     {
-      S s = context_.get_statistics();
-      s += data_idxs;
-      nodes_.push_back( Node( s, data_idxs ) );
-      return nodes_.size() - 1;
+      std::vector< Leaf > pruned_leaves;
+      typename std::vector< Split >::iterator it = splits_.begin(),
+        end = splits_.end();
+      for( ; it != end; ++it )
+      {
+        if( it->left_leaf() )
+        {
+          if( leaves_[ it->left_idx() ].split_idx() > 0 )
+          {
+            it->set_left_leaf( false );
+            it->set_left_idx( leaves_[ it->left_idx() ].split_idx() );
+          }
+          else
+          {
+            pruned_leaves.push_back( leaves_[ it->left_idx() ] );
+            it->set_left_idx( pruned_leaves.size() - 1 );
+          }
+        }
+        if( it->right_leaf() )
+        {
+          if( leaves_[ it->right_idx() ].split_idx() > 0 )
+          {
+            it->set_right_leaf( false );
+            it->set_right_idx( leaves_[ it->right_idx() ].split_idx() );
+          }
+          else
+          {
+            pruned_leaves.push_back( leaves_[ it->right_idx() ] );
+            it->set_right_idx( pruned_leaves.size() - 1 );
+          }
+        }
+      }
+      leaves_ = pruned_leaves;
     }
 
-    friend std::ostream& operator<<( std::ostream& os, const Tree& t )
+    const S& classify( const D& point ) const
     {
-      return t.preorder( os, 0, 0 );
+      typename std::vector< Split >::const_iterator it = splits_.begin();
+      if( it == splits_.end() )
+      {
+        return leaves_.front().statistics();
+      }
+      while( true )
+      {
+        if( it->feature()( point ) < it->threshold() )
+        {
+          if( it->left_leaf() )
+          {
+            return leaves_[ it->left_idx() ].statistics();
+          } 
+          else 
+          {
+            it = splits_.begin() + it->left_idx();
+          }
+        } else 
+        {
+          if( it->right_leaf() )
+          {
+            return leaves_[ it->right_idx() ].statistics();
+          } 
+          else
+          {
+            it = splits_.begin() + it->right_idx();
+          }
+        }
+      }
     }
 
-    std::vector< size_t >& data_idxs( size_t node_idx )
+    std::vector< size_t >& data_idxs( size_t leaf_idx )
     {
-      return nodes_[ node_idx ].data_idxs();
+      return leaves_[ leaf_idx ].data_idxs();
     }
 
-    const S& statistics( size_t node_idx ) const
+    const S& statistics( size_t leaf_idx ) const
     {
-      return nodes_[ node_idx ].statistics();
+      return leaves_[ leaf_idx ].statistics();
     }
 
   private:
-    std::vector< Node >           nodes_;
-    TrainingContextBase< D, F, S >&  context_;
+    std::vector< Split > splits_;
+    std::vector< Leaf > leaves_;
 
-    std::ostream& preorder( std::ostream& os, size_t node_idx, int level ) const
-    {
-      if( level )
-      {
-        os << std::setw( 4 * level ) << ' ';
-      }
-      os << nodes_[ node_idx ] << std::endl;
-
-      int offset = nodes_[ node_idx ].child_offset;
-      if( offset > 0 ) {
-        preorder( os, node_idx + offset, level + 1 );
-        preorder( os, node_idx + offset + 1, level + 1 );
-      }
-
-      return os;
-    }
+    // std::ostream& preorder( std::ostream& os, size_t node_idx, int level ) const
+    // {
+    //   if( level )
+    //   {
+    //     os << std::setw( 4 * level ) << ' ';
+    //   }
+    //   os << nodes_[ node_idx ] << std::endl;
+    //
+    //   int offset = nodes_[ node_idx ].child_offset;
+    //   if( offset > 0 ) {
+    //     preorder( os, node_idx + offset, level + 1 );
+    //     preorder( os, node_idx + offset + 1, level + 1 );
+    //   }
+    //
+    //   return os;
+    // }
 };
 
 #endif

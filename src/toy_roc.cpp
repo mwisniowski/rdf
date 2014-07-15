@@ -105,12 +105,13 @@ int main(int argc, char *argv[])
     std::vector< DataType > test_data( partition_map[ f ], partition_map[ f + 1 ] );
 
     ToyContext context( params, training_data, num_classes );
-    TrainerType trainer( context );
-    ClassifierType classifier = trainer.train();
+
+    ClassifierType classifier;
+    TrainerType::train( classifier, context );
     
     for( size_t i = 0; i < n; i++ )
     {
-      const StatisticsType h = classifier.classify( test_data[ i ] );
+      const StatisticsType h = classifier.classify( context, test_data[ i ] );
       confusion_matrix[ test_data[ i ].output() ][ h.get_mode().first ]++;
     }
   }

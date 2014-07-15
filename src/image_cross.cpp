@@ -113,14 +113,15 @@ int main(int argc, char *argv[])
 
     LOG(INFO) << "Initializing context (builds lookup table)";
     ImageContext context( params, training_data, num_classes );
-    TrainerType trainer( context );
+
     LOG(INFO) << "Training";
-    ClassifierType classifier = trainer.train();
+    ClassifierType classifier;
+    TrainerType::train( classifier, context );
     
     LOG(INFO) << "Classifying";
     for( size_t i = 0; i < n; i++ )
     {
-      const StatisticsType s = classifier.classify( testing_data[ i ] );
+      const StatisticsType s = classifier.classify( context, testing_data[ i ] );
       confusion_matrix[ testing_data[ i ].output() ][ s.get_mode().first ]++;
     }
   }

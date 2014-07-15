@@ -24,7 +24,9 @@ class TrainingContextBase
    */
 
   public:
-    virtual S get_statistics() =0;
+    virtual S get_statistics() const =0;
+
+    virtual S get_statistics( const std::vector< size_t >& data_idxs ) const =0;
 
     virtual float compute_information_gain( const S& parent_s,
         const S& left_s,
@@ -37,15 +39,13 @@ class TrainingContextBase
    */
 
   private:
-    typedef std::vector< float >     row_type;
+    typedef std::vector< float > row_type;
     typedef F (*feature_generator_fn)();
 
   public:
     TrainingContextBase( const TrainingParameters& params,
-        const std::vector< D >& data,
-        size_t num_classes ) :
+        const std::vector< D >& data ) :
       params_( params ),
-      num_classes_( num_classes ),
       data_( data ),
       features_( init_features( params.pool_size ) ),
       table_( init_table( features_, data ) )
@@ -56,8 +56,7 @@ class TrainingContextBase
       params_( other.params_ ),
       features_( other.features_ ),
       data_( other.data_ ),
-      table_( other.table_ ),
-      num_classes_( other.num_classes_ )
+      table_( other.table_ )
     {}
 
   public:
@@ -98,17 +97,11 @@ class TrainingContextBase
       return data_[ idx ];
     }
 
-    size_t num_classes() const
-    {
-      return num_classes_;
-    }
-
   private:
     TrainingParameters                   params_;
     std::vector< F >                     features_;
     std::vector< D >                     data_;
     std::vector< std::vector< float > >  table_;
-    size_t                               num_classes_;
 
     static std::vector< size_t > ascending_idxs( size_t size )
     {
@@ -135,7 +128,7 @@ class TrainingContextBase
     static std::vector< std::vector< float > > init_table( const std::vector< F >& features,
         const std::vector< D >& data )
     {
-      std::vector< std::vector< float > > table( data.size() );
+      std::vector< std::vector< float > > table( features.size() );
 
       for( size_t d = 0; d < data.size(); d++ )
       {
@@ -154,32 +147,7 @@ template< typename D, typename F, typename S >
 class StatisticsBase 
 { 
   public:
-    StatisticsBase( TrainingContextBase< D, F, S >& context ) :
-      context_( context )
-    {}
-
-    StatisticsBase( const StatisticsBase& other ) :
-      context_( other.context_ )
-    {}
-
-    virtual ~StatisticsBase()
-    {}
-
-    StatisticsBase& operator=( const StatisticsBase& other )
-    {
-      if( this != &other )
-      {
-        context_ = other.context_;
-      }
-      return *this;
-    }
-
-    virtual S& operator+=( const std::vector< size_t >& data ) =0;
-
     virtual S& operator+=( const S& s ) =0;
-
-  protected:
-    TrainingContextBase< D, F, S >& context_;
 };
 
 

@@ -102,8 +102,8 @@ int main(int argc, char *argv[])
 
   ToyContext context( params, data, num_classes );
 
-  TrainerType trainer( context );
-  ClassifierType classifier = trainer.train();
+  ClassifierType classifier;
+  TrainerType::train( classifier, context );
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;
@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
       v[ 0 ] = static_cast<float>( column );
 
       DataType pt( v, 0 );
-      const StatisticsType& h = classifier.classify( pt );
+      const StatisticsType& h = classifier.classify( context, pt );
 
       mix = cvt::Color::BLACK;
       float mudiness = 0.5f * h.get_entropy();
