@@ -8,30 +8,22 @@ template< typename D, typename F, typename S >
 class ForestTrainer 
 {
   public:
-    ForestTrainer( TrainingContextBase< D, F, S >& c ) :
-      context_( c )
+    ForestTrainer()
     {}
 
     virtual ~ForestTrainer() 
     {}
 
-    Forest< D, F, S > train()
+    static void train( Forest< D, F, S >& forest, const TrainingContextBase< D, F, S >& context )
     {
-      Forest< D, F, S > f( context_ );
-      TreeTrainer< D, F, S > trainer( context_ );
-      for( size_t i=0; i < context_.params().trees; i++ )
+      for( size_t i = 0; i < context.params().trees; i++ )
       {
-        std::cout << "Training tree " << i + 1 << "/" << context_.params().trees << std::endl;
-        Tree< D, F, S > tree( context_ );
-        trainer.train( tree );
-        f.add( tree );
+        std::cout << "Training tree " << i + 1 << "/" << context.params().trees << std::endl;
+        Tree< D, F, S > tree;
+        TreeTrainer< D, F, S >::train( tree, context );
+        forest.add( tree );
       }
-
-      return f;
     }
-
-  private:
-    TrainingContextBase< D, F, S >& context_;
 };
 
 #endif

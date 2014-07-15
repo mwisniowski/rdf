@@ -15,16 +15,26 @@ class ImageContext : public TrainingContextBase< DataType, FeatureType, Statisti
     ImageContext( const TrainingParameters& params, 
                   const std::vector< DataType >& data, 
                   size_t num_classes ) :
-      super( params, data, num_classes )
-    {
-    }
+      super( params, data ),
+      num_classes_( num_classes )
+    {}
 
     virtual ~ImageContext() 
     {}
 
-    StatisticsType get_statistics()
+    StatisticsType get_statistics() const
     {
-      return StatisticsType( *this );
+      return StatisticsType( num_classes_ );
+    }
+
+    StatisticsType get_statistics( const std::vector< size_t >& data_idxs ) const
+    {
+      StatisticsType s( num_classes_ );
+      for( size_t i = 0; i < data_idxs.size(); ++i )
+      {
+        s += data_point( data_idxs[ i ] );
+      }
+      return s;
     }
 
     /**
@@ -64,6 +74,8 @@ class ImageContext : public TrainingContextBase< DataType, FeatureType, Statisti
     }
 
   private:
+    size_t num_classes_;
+
     static std::vector< FeatureType > pool_init( size_t pool_size )
     {
       std::vector< FeatureType > features;

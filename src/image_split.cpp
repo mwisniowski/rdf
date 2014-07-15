@@ -95,9 +95,10 @@ int main(int argc, char *argv[])
 
   std::cout << currentDateTime() << "Initializing context (builds lookup table)" << std::endl;
   ImageContext context( params, training_data, num_classes );
-  TrainerType trainer( context );
+
   std::cout << currentDateTime() << "Training" << std::endl;
-  ClassifierType classifer = trainer.train();
+  ClassifierType classifier;
+  TrainerType::train( classifier, context );
 
   std::cout << currentDateTime() << "Classifying" << std::endl;
   std::vector< std::vector< size_t > > confusion_matrix;
@@ -107,7 +108,7 @@ int main(int argc, char *argv[])
   }
   for( size_t i = 0; i < testing_data.size(); i++ )
   {
-    const StatisticsType s = classifer.classify( testing_data[ i ] );
+    const StatisticsType s = classifier.classify( context, testing_data[ i ] );
     confusion_matrix[ testing_data[ i ].output() ][ s.get_mode().first ]++;
   }
 

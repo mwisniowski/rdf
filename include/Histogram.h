@@ -13,14 +13,26 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
     typedef StatisticsBase< D, F, Histogram< D, F > >  super;
 
   public:
-    Histogram( TrainingContextBase< D, F, Histogram< D, F > >& context ) :
-      super( context ),
-      histogram_( context.num_classes() ),
+    Histogram( size_t num_classes ) :
+      histogram_( num_classes ),
       n_( 0 )
     {}
 
+    // Histogram( const std::vector< D const* >& data, size_t num_classes ) :
+    //   histogram_( num_classes ),
+    //   n_( 0 )
+    // {
+    //   typename std::vector< D const* >::const_iterator it = data.begin(),
+    //     end = data.end();
+    //   for( ; it != end; ++it )
+    //   {
+    //     size_t c = (**it).output();
+    //     histogram_[ c ]++;
+    //     n_++;
+    //   }
+    // }
+
     Histogram( const Histogram& other ) :
-      super( other ),
       histogram_( other.histogram_ ),
       n_( other.n_ )
     {}
@@ -32,22 +44,28 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
     {
       if( this != &other )
       {
-        super::operator=( other );
         n_ = other.n_;
         histogram_ = other.histogram_;
       }
       return *this;
     }
 
-    Histogram& operator+=( const std::vector< size_t >& data_idxs )
+    // Histogram& operator+=( const std::vector< size_t >& data_idxs )
+    // {
+    //   std::vector< size_t >::const_iterator it( data_idxs.begin() );
+    //   for( ; it != data_idxs.end(); ++it )
+    //   {
+    //     const D& d = this->context_.data_point( *it );
+    //     histogram_[ d.output() ]++;
+    //     n_++;
+    //   }
+    //   return *this;
+    // }
+    // 
+    Histogram& operator+=( const D& data_point )
     {
-      std::vector< size_t >::const_iterator it( data_idxs.begin() );
-      for( ; it != data_idxs.end(); ++it )
-      {
-        const D& d = this->context_.data_point( *it );
-        histogram_[ d.output() ]++;
-        n_++;
-      }
+      histogram_[ data_point.output() ]++;
+      n_++;
       return *this;
     }
 
