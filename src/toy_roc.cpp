@@ -20,6 +20,9 @@
 #include "ForestTrainer.h"
 
 #include "gnuplot_i.hpp"
+#include "easylogging++.h"
+
+_INITIALIZE_EASYLOGGINGPP
 
 void get_data( std::vector< DataType >& data, std::vector< char >& class_labels, const char path[] )
 {

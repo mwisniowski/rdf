@@ -1,6 +1,7 @@
 #ifndef FOREST_TRAINER_H
 #define FOREST_TRAINER_H
 
+#include "easylogging++.h"
 #include "Forest.h"
 #include "TreeTrainer.h"
 
@@ -21,7 +22,7 @@ class ForestTrainer
       TreeTrainer< D, F, S > trainer( context_ );
       for( size_t i=0; i < context_.params().trees; i++ )
       {
-        std::cout << "Training tree " << i + 1 << "/" << context_.params().trees << std::endl;
+        LINFO << "Training tree " << i + 1 << "/" << context_.params().trees;
         Tree< D, F, S > tree( context_ );
         trainer.train( tree );
         f.add( tree );

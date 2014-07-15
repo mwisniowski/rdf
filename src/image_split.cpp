@@ -1,29 +1,29 @@
 #include <cvt/gfx/Image.h>
 #include "cvt/io/FileSystem.h"
 
+#include "easylogging++.h"
 #include "gnuplot_i.hpp"
+
 #include "ImageCommon.h"
 #include "TrainingParameters.h"
 #include "DataPoint.h"
 #include "ImageContext.h"
 #include "ForestTrainer.h"
 
-using namespace cvt;
-const std::string currentDateTime() {
-    time_t     now = time(0);
-    struct tm  tstruct;
-    char       buf[80];
-    tstruct = *localtime(&now);
-    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
-    // for more information about date/time format
-    strftime(buf, sizeof(buf), "%Y-%m-%d %X: ", &tstruct);
+_INITIALIZE_EASYLOGGINGPP
 
-    return buf;
+namespace el = easyloggingpp;
+void init_logger()
+{
+  el::Configurations defaultConf;
+  defaultConf.setToDefault();
+  defaultConf.setAll(easyloggingpp::ConfigurationType::Format, "%datetime %level %log");
+  el::Loggers::reconfigureAllLoggers( defaultConf );
 }
 
 void get_data( std::vector< DataType >& data,
-    std::vector< String >& class_labels, 
-    String& path )
+    std::vector< cvt::String >& class_labels, 
+    cvt::String& path )
 {
   if( !path.hasSuffix( "/" ) )
   {
@@ -31,9 +31,9 @@ void get_data( std::vector< DataType >& data,
   }
 
   class_labels.clear();
-  FileSystem::ls( path, class_labels );
+  cvt::FileSystem::ls( path, class_labels );
 
-  std::vector< String >::iterator it = class_labels.begin();
+  std::vector< cvt::String >::iterator it = class_labels.begin();
   for( ; it != class_labels.end(); ++it )
   {
     if( !it->hasPrefix( "000" ) )
@@ -44,16 +44,16 @@ void get_data( std::vector< DataType >& data,
 
   for( size_t c = 0 ; c < class_labels.size(); c++ )
   {
-    String p( path + class_labels[ c ] + "/" );
-    if( FileSystem::isDirectory( path ) )
+    cvt::String p( path + class_labels[ c ] + "/" );
+    if( cvt::FileSystem::isDirectory( path ) )
     {
-      std::vector< String > class_data;
-      FileSystem::filesWithExtension( p, class_data, "ppm" );
+      std::vector< cvt::String > class_data;
+      cvt::FileSystem::filesWithExtension( p, class_data, "ppm" );
       for( size_t j = 0; j < class_data.size(); j++ )
       {
-        Image i;
+        cvt::Image i;
         i.load( class_data[ j ] );
-        std::vector< Image > v( 3 );
+        std::vector< cvt::Image > v( 3 );
         i.decompose( v[ 0 ], v[ 1 ], v[ 2 ] );
         data.push_back( DataType( v, c ) );
       }
@@ -63,6 +63,9 @@ void get_data( std::vector< DataType >& data,
 
 int main(int argc, char *argv[])
 {
+  _START_EASYLOGGINGPP( argc, argv );
+  init_logger();
+
   srand( time( NULL ) );
   TrainingParameters params = {
     1, //trees
@@ -81,9 +84,9 @@ int main(int argc, char *argv[])
   if( argc > 7 ) split = atof( argv[ 7 ] );
 
   std::vector< DataType > data;
-  String path( argv[ 1 ] );
-  std::cout << currentDateTime() << "Loading data" << std::endl;
-  std::vector< String > class_labels;
+  cvt::String path( argv[ 1 ] );
+  LINFO << "Loading data";
+  std::vector< cvt::String > class_labels;
 
   get_data( data, class_labels, path );
   size_t num_classes = class_labels.size();
@@ -93,13 +96,13 @@ int main(int argc, char *argv[])
   std::vector< DataType > training_data( data.begin(), data.end() - n );
   std::vector< DataType > testing_data( data.end() - n, data.end() );
 
-  std::cout << currentDateTime() << "Initializing context (builds lookup table)" << std::endl;
+  LINFO << "Initializing context (builds lookup table)";
   ImageContext context( params, training_data, num_classes );
   TrainerType trainer( context );
-  std::cout << currentDateTime() << "Training" << std::endl;
+  LINFO << "Training";
   ClassifierType classifer = trainer.train();
 
-  std::cout << currentDateTime() << "Classifying" << std::endl;
+  LINFO << "Classifying";
   std::vector< std::vector< size_t > > confusion_matrix;
   for( size_t i = 0; i < num_classes; i++ )
   {
@@ -111,7 +114,7 @@ int main(int argc, char *argv[])
     confusion_matrix[ testing_data[ i ].output() ][ s.get_mode().first ]++;
   }
 
-  std::cout << "Statistics" << std::endl;
+  LINFO << "Statistics";
   std::vector< double > plot_x, plot_y;
   float acc = 0.0f;
   for( size_t c = 0; c < num_classes; c++ )
@@ -133,10 +136,10 @@ int main(int argc, char *argv[])
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    std::cout << c << ": (" << fpr << ", " << tpr << ")" << std::endl;
+    LINFO << "Class " << c << ": (" << fpr << ", " << tpr << ")";
   }
   acc /= n;
-  std::cout << "Accuracy: " << acc << std::endl;
+  LINFO << "Accuracy: " << acc;
 
   try
   {
@@ -169,10 +172,10 @@ int main(int argc, char *argv[])
     g.set_style("points").plot_xy( plot_x, plot_y );
   } catch( GnuplotException e )
   {
-    std::cout << e.what() << std::endl;
+    std::cout << e.what();
   }
 
-  std::cout << currentDateTime() << "Finished" << std::endl;
+  LINFO << "Finished";
 
   getchar();
   

@@ -11,8 +11,21 @@
 #include <cvt/gfx/IMapScoped.h>
 #include <cvt/gfx/GFXEngineImage.h>
 
+#include "easylogging++.h"
+
 #include "ToyContext.h"
 #include "ForestTrainer.h"
+
+_INITIALIZE_EASYLOGGINGPP
+
+namespace el = easyloggingpp;
+void init_logger()
+{
+  el::Configurations defaultConf;
+  defaultConf.setToDefault();
+  defaultConf.setAll(easyloggingpp::ConfigurationType::Format, "%datetime %level %log");
+  el::Loggers::reconfigureAllLoggers( defaultConf );
+}
 
 void display( const cvt::Image& image, size_t width, size_t height ) {
   cvt::Window w("RDF");
@@ -60,6 +73,8 @@ void get_data( std::vector< DataType >& data, std::vector< char >& class_labels,
 
 int main(int argc, char *argv[])
 {
+  init_logger();
+
   srand( time( NULL ) );
   TrainingParameters params = {
     100, //trees
@@ -87,14 +102,6 @@ int main(int argc, char *argv[])
 
   ToyContext context( params, data, num_classes );
 
-  // TreeTrainer< DataType, 
-  //   FeatureType, 
-  //   StatisticsType > trainer( context );
-  // Tree< DataType, 
-  //   FeatureType, 
-  //   StatisticsType > classifier = trainer.trainTree( params, range );
-  // cout << classifier;
-  
   TrainerType trainer( context );
   ClassifierType classifier = trainer.train();
 

@@ -63,7 +63,7 @@ class TrainingContextBase
   public:
     float lookup( size_t data_idx, size_t feature_idx ) const
     {
-      return table_[ data_idx ][ feature_idx ];
+      return table_[ feature_idx ][ data_idx ];
     }
 
     void get_random_features( std::vector< size_t >& random_feature_idxs ) const
@@ -132,16 +132,16 @@ class TrainingContextBase
       return features;
     }
 
-    static std::vector< std::vector< float > > init_table( const std::vector< F >& feature_pool,
+    static std::vector< std::vector< float > > init_table( const std::vector< F >& features,
         const std::vector< D >& data )
     {
       std::vector< std::vector< float > > table( data.size() );
 
       for( size_t d = 0; d < data.size(); d++ )
       {
-        for( size_t f = 0; f < feature_pool.size(); f++ )
+        for( size_t f = 0; f < features.size(); f++ )
         {
-          table[ d ].push_back( feature_pool[ f ]( data[ d ] ) );
+          table[ f ].push_back( features[ f ]( data[ d ] ) );
         }
       }
 

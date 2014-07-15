@@ -8,17 +8,19 @@
 #include "ImageContext.h"
 #include "ForestTrainer.h"
 
-const std::string currentDateTime() {
-    time_t     now = time(0);
-    struct tm  tstruct;
-    char       buf[80];
-    tstruct = *localtime(&now);
-    // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
-    // for more information about date/time format
-    strftime(buf, sizeof(buf), "%Y-%m-%d %X: ", &tstruct);
+_INITIALIZE_EASYLOGGINGPP
 
-    return buf;
-}
+// const std::string currentDateTime() {
+//     time_t     now = time(0);
+//     struct tm  tstruct;
+//     char       buf[80];
+//     tstruct = *localtime(&now);
+//     // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
+//     // for more information about date/time format
+//     strftime(buf, sizeof(buf), "%Y-%m-%d %X: ", &tstruct);
+//
+//     return buf;
+// }
 
 void get_data( std::vector< DataType >& data,
     std::vector< cvt::String >& class_labels, 
@@ -79,7 +81,7 @@ int main(int argc, char *argv[])
   if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
   if( argc > 7 ) folds = atoi( argv[ 7 ] );
 
-  std::cout << currentDateTime() << "Loading data" << std::endl;
+  LOG(INFO) << "Loading data";
   std::vector< DataType > data;
   cvt::String path( argv[ 1 ] );
   std::vector< cvt::String > class_labels;
@@ -104,18 +106,18 @@ int main(int argc, char *argv[])
   float divisor = static_cast<float>( n ) / folds;
   for( size_t f = 0; f < folds; f++ )
   {
-    std::cout << currentDateTime() << "Fold " << f + 1 << "/" << folds << std::endl;
+    LOG(INFO) << "Fold " << f + 1 << "/" << folds;
     std::vector< DataType > training_data( partition_map[ 0 ], partition_map[ f ] );
     training_data.insert( training_data.end(), partition_map[ f + 1 ], partition_map.back() );
     std::vector< DataType > testing_data( partition_map[ f ], partition_map[ f + 1 ] );
 
-    std::cout << currentDateTime() << "Initializing context (builds lookup table)" << std::endl;
+    LOG(INFO) << "Initializing context (builds lookup table)";
     ImageContext context( params, training_data, num_classes );
     TrainerType trainer( context );
-    std::cout << currentDateTime() << "Training" << std::endl;
+    LOG(INFO) << "Training";
     ClassifierType classifier = trainer.train();
     
-    std::cout << currentDateTime() << "Classifying" << std::endl;
+    LOG(INFO) << "Classifying";
     for( size_t i = 0; i < n; i++ )
     {
       const StatisticsType s = classifier.classify( testing_data[ i ] );
@@ -123,7 +125,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  std::cout << currentDateTime() << "Statistics" << std::endl;
+  LOG(INFO) << "Statistics";
   std::vector< double > plot_x, plot_y;
   float acc = 0.0f;
   for( size_t c = 0; c < num_classes; c++ )
@@ -145,10 +147,10 @@ int main(int argc, char *argv[])
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    std::cout << c << ": (" << fpr << ", " << tpr << ")" << std::endl;
+    LOG(INFO) << c << ": (" << fpr << ", " << tpr << ")";
   }
   acc /= folds * n;
-  std::cout << "Accuracy: " << acc << std::endl;
+  std::cout << "Accuracy: " << acc;
 
   try
   {
@@ -181,10 +183,10 @@ int main(int argc, char *argv[])
     g.set_style("points").plot_xy( plot_x, plot_y );
   } catch( GnuplotException e )
   {
-    std::cout << e.what() << std::endl;
+    std::cout << e.what();
   }
 
-  std::cout << currentDateTime() << "Finished" << std::endl;
+  LOG(INFO) << "Finished";
 
   getchar();
   
