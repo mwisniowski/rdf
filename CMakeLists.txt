@@ -29,9 +29,6 @@ TARGET_LINK_LIBRARIES( toy_plot
 ADD_EXECUTABLE( toy_roc
   src/toy_roc.cpp
 )
-TARGET_LINK_LIBRARIES( toy_roc
-  ${CVT_LIBRARIES}
-)
 
 ADD_EXECUTABLE( image_split
   src/image_split.cpp
@@ -44,5 +41,12 @@ ADD_EXECUTABLE( image_cross
   src/image_cross.cpp
 )
 TARGET_LINK_LIBRARIES( image_cross
+  ${CVT_LIBRARIES}
+)
+
+ADD_EXECUTABLE( hog_split
+  src/hog_split.cpp  
+)
+TARGET_LINK_LIBRARIES( hog_split
   ${CVT_LIBRARIES}
 )
