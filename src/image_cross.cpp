@@ -1,26 +1,18 @@
 #include <cvt/gfx/Image.h>
 #include "cvt/io/FileSystem.h"
 
-#include "gnuplot_i.hpp"
-#include "ImageCommon.h"
-#include "TrainingParameters.h"
-#include "DataPoint.h"
-#include "ImageContext.h"
-#include "ForestTrainer.h"
+#include "helper/gnuplot_i.hpp"
+#include "classification/ImageContext.h"
 
 _INITIALIZE_EASYLOGGINGPP
 
-// const std::string currentDateTime() {
-//     time_t     now = time(0);
-//     struct tm  tstruct;
-//     char       buf[80];
-//     tstruct = *localtime(&now);
-//     // Visit http://en.cppreference.com/w/cpp/chrono/c/strftime
-//     // for more information about date/time format
-//     strftime(buf, sizeof(buf), "%Y-%m-%d %X: ", &tstruct);
-//
-//     return buf;
-// }
+void init_logger()
+{
+  el::Configurations defaultConf;
+  defaultConf.setToDefault();
+  defaultConf.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
+  el::Loggers::reconfigureLogger( "default", defaultConf );
+}
 
 void get_data( std::vector< DataType >& data,
     std::vector< cvt::String >& class_labels, 
@@ -64,6 +56,9 @@ void get_data( std::vector< DataType >& data,
 
 int main(int argc, char *argv[])
 {
+  _START_EASYLOGGINGPP( argc, argv );
+  init_logger();
+
   srand( time( NULL ) );
   TrainingParameters params = {
     1, //trees

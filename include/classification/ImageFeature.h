@@ -4,7 +4,7 @@
 #include <cvt/gfx/Image.h>
 #include <cvt/gfx/IMapScoped.h>
 
-#include "ImageCommon.h"
+#include "classification/ImageCommon.h"
 
 template< size_t channels >
 class ImageFeature : public FeatureBase< DataType >

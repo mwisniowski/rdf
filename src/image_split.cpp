@@ -1,24 +1,19 @@
 #include <cvt/gfx/Image.h>
 #include "cvt/io/FileSystem.h"
 
-#include "easylogging++.h"
-#include "gnuplot_i.hpp"
+#include "helper/easylogging++.h"
+#include "helper/gnuplot_i.hpp"
 
-#include "ImageCommon.h"
-#include "TrainingParameters.h"
-#include "DataPoint.h"
-#include "ImageContext.h"
-#include "ForestTrainer.h"
+#include "classification/ImageContext.h"
 
 _INITIALIZE_EASYLOGGINGPP
 
-namespace el = easyloggingpp;
 void init_logger()
 {
   el::Configurations defaultConf;
   defaultConf.setToDefault();
-  defaultConf.setAll(easyloggingpp::ConfigurationType::Format, "%datetime %level %log");
-  el::Loggers::reconfigureAllLoggers( defaultConf );
+  defaultConf.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
+  el::Loggers::reconfigureLogger( "default", defaultConf );
 }
 
 void get_data( std::vector< DataType >& data,
@@ -85,7 +80,7 @@ int main(int argc, char *argv[])
 
   std::vector< DataType > data;
   cvt::String path( argv[ 1 ] );
-  LINFO << "Loading data";
+  LOG(INFO) << "Loading data";
   std::vector< cvt::String > class_labels;
 
   get_data( data, class_labels, path );
@@ -96,14 +91,14 @@ int main(int argc, char *argv[])
   std::vector< DataType > training_data( data.begin(), data.end() - n );
   std::vector< DataType > testing_data( data.end() - n, data.end() );
 
-  LINFO << "Initializing context (builds lookup table)";
+  LOG(INFO) << "Initializing context (builds lookup table)";
   ImageContext context( params, training_data, num_classes );
-  LINFO << "Training";
+  LOG(INFO) << "Training";
 
   ClassifierType classifier;
   TrainerType::train( classifier, context );
 
-  LINFO << "Classifying";
+  LOG(INFO) << "Classifying";
   std::vector< std::vector< size_t > > confusion_matrix;
   for( size_t i = 0; i < num_classes; i++ )
   {
@@ -115,7 +110,7 @@ int main(int argc, char *argv[])
     confusion_matrix[ testing_data[ i ].output() ][ s.get_mode().first ]++;
   }
 
-  LINFO << "Statistics";
+  LOG(INFO) << "Statistics";
   std::vector< double > plot_x, plot_y;
   float acc = 0.0f;
   for( size_t c = 0; c < num_classes; c++ )
@@ -137,10 +132,10 @@ int main(int argc, char *argv[])
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    LINFO << "Class " << c << ": (" << fpr << ", " << tpr << ")";
+    LOG(INFO) << "Class " << c << ": (" << fpr << ", " << tpr << ")";
   }
   acc /= n;
-  LINFO << "Accuracy: " << acc;
+  LOG(INFO) << "Accuracy: " << acc;
 
   try
   {
@@ -176,7 +171,7 @@ int main(int argc, char *argv[])
     std::cout << e.what();
   }
 
-  LINFO << "Finished";
+  LOG(INFO) << "Finished";
 
   getchar();
   

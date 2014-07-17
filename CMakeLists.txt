@@ -6,6 +6,7 @@ find_package(CVT_DEBUG REQUIRED)
 ###########
 ## Build ##
 ###########
+SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
 
 # set(RDF_SOURCES
 #

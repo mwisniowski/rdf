@@ -16,13 +16,20 @@
 #include <cvt/gfx/IMapScoped.h>
 #include <cvt/gfx/GFXEngineImage.h>
 
-#include "ToyContext.h"
-#include "ForestTrainer.h"
+#include "toy/ToyContext.h"
 
-#include "gnuplot_i.hpp"
-#include "easylogging++.h"
+#include "helper/gnuplot_i.hpp"
+#include "helper/easylogging++.h"
 
 _INITIALIZE_EASYLOGGINGPP
+
+void init_logger()
+{
+  el::Configurations defaultConf;
+  defaultConf.setToDefault();
+  defaultConf.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
+  el::Loggers::reconfigureLogger( "default", defaultConf );
+}
 
 void get_data( std::vector< DataType >& data, std::vector< char >& class_labels, const char path[] )
 {
@@ -51,6 +58,9 @@ void get_data( std::vector< DataType >& data, std::vector< char >& class_labels,
 
 int main(int argc, char *argv[])
 {
+  _START_EASYLOGGINGPP( argc, argv );
+  init_logger();
+
   srand( time( NULL ) );
   TrainingParameters params = {
     200, //trees

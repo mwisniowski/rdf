@@ -3,7 +3,7 @@
 
 #include <cvt/gfx/Image.h>
 
-#include "ImageCommon.h"
+#include "classification/ImageCommon.h"
 #include "ImageFeature.h"
 
 class ImageContext : public TrainingContextBase< DataType, FeatureType, StatisticsType >

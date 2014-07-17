@@ -1,10 +1,10 @@
 #ifndef TOY_COMMON_H
 #define TOY_COMMON_H
 
-#include "Interfaces.h"
-#include "DataPoint.h"
-#include "Histogram.h"
-#include "ForestTrainer.h"
+#include "core/Interfaces.h"
+#include "core/DataPoint.h"
+#include "core/Histogram.h"
+#include "core/ForestTrainer.h"
 
 template< size_t d >
 class ToyFeature;
