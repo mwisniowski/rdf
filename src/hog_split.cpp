@@ -4,7 +4,7 @@
 #include "helper/easylogging++.h"
 #include "helper/gnuplot_i.hpp"
 
-#include "classification/ImageContext.h"
+#include "classification/HogContext.h"
 
 _INITIALIZE_EASYLOGGINGPP
 
@@ -46,11 +46,11 @@ void get_data( std::vector< DataType >& data,
       cvt::FileSystem::filesWithExtension( p, class_data, "ppm" );
       for( size_t j = 0; j < class_data.size(); j++ )
       {
-        cvt::Image i;
+        cvt::Image i, g_x, g_y;
         i.load( class_data[ j ] );
-        std::vector< cvt::Image > v( 3 );
-        i.decompose( v[ 0 ], v[ 1 ], v[ 2 ] );
-        data.push_back( DataType( v, c ) );
+        std::vector< float > feature_vector;
+        FeatureType::extract_feature_vector( feature_vector, i );
+        data.push_back( DataType( feature_vector, c ) );
       }
     }
   }
@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
   std::vector< DataType > testing_data( data.end() - n, data.end() );
 
   LOG(INFO) << "Initializing context (builds lookup table)";
-  ImageContext context( params, training_data, num_classes );
+  HogContext context( params, training_data, num_classes );
   LOG(INFO) << "Training";
 
   ClassifierType classifier;

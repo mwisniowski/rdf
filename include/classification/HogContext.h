@@ -75,17 +75,6 @@ class HogContext : public TrainingContextBase< DataType, FeatureType, Statistics
 
   private:
     size_t num_classes_;
-
-    static std::vector< FeatureType > pool_init( size_t pool_size )
-    {
-      std::vector< FeatureType > features;
-      features.reserve( pool_size );
-      for( size_t i = 0; i < pool_size; i++ )
-      {
-        features.push_back( FeatureType::get_random_feature() );
-      }
-      return features;
-    }
 };
 
 #endif
