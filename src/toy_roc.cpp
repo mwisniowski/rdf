@@ -14,10 +14,13 @@ _INITIALIZE_EASYLOGGINGPP
 
 void init_logger()
 {
-  el::Configurations defaultConf;
-  defaultConf.setToDefault();
-  defaultConf.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
-  el::Loggers::reconfigureLogger( "default", defaultConf );
+  el::Configurations c;
+  c.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
+  c.setGlobally( el::ConfigurationType::Filename, "logs/toy_roc/%datetime.log" );
+  el::Loggers::reconfigureLogger( "default", c );
+  el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
+  el::Loggers::addFlag( el::LoggingFlag::ColoredTerminalOutput );
+  // el::Loggers::addFlag( el::LoggingFlag::AutoSpacing );
 }
 
 void get_data( std::vector< DataType >& data, std::vector< char >& class_labels, const char path[] )
@@ -50,18 +53,20 @@ int main(int argc, char *argv[])
   _START_EASYLOGGINGPP( argc, argv );
   init_logger();
 
+  LOG(INFO) << "##########     Starting     ##########";
+
   srand( time( NULL ) );
   TrainingParameters params = {
-    200, //trees
+    100, //trees
     10,  //noCandidateFeatures
     10,  //noCandidateThresholds
     10,   //maxDecisionLevels
-    1000
+    1000 //feature_pool_size
   };
   size_t folds = 10;
 
   if( argc < 2 ) {
-    std::cerr << "Please provide a data file" << std::endl;
+    std::cerr << "Please provide a data file";
     return 1;
   }
 
@@ -71,6 +76,15 @@ int main(int argc, char *argv[])
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
   if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
   if( argc > 7 ) folds = atoi( argv[ 7 ] );
+
+  LOG(INFO) << "Parameters:";
+  LOG(INFO) << "  features="   << params.no_candidate_features;
+  LOG(INFO) << "  thresholds=" << params.no_candate_thresholds;
+  LOG(INFO) << "  depth="      << params.max_decision_levels;
+  LOG(INFO) << "  trees="      << params.trees;
+  LOG(INFO) << "  pool_size="  << params.pool_size;
+  LOG(INFO) << "  folds="      << folds;
+  LOG(INFO) << "  path="       << argv[ 1 ];
 
   std::vector< DataType > data;
   std::vector< char > class_labels;
@@ -95,7 +109,7 @@ int main(int argc, char *argv[])
   float divisor = static_cast<float>( n ) / folds;
   for( size_t f = 0; f < folds; f++ )
   {
-    std::cout << "Fold " << f + 1 << "/" << folds << std::endl;
+    VLOG(1) << "Fold " << f + 1 << "/" << folds;
 
     std::vector< DataType > training_data( partition_map[ 0 ], partition_map[ f ] );
     training_data.insert( training_data.end(), partition_map[ f + 1 ], partition_map.back() );
@@ -115,6 +129,7 @@ int main(int argc, char *argv[])
     }
   }
 
+  LOG(INFO) << "Statistics:";
   std::vector< double > plot_x, plot_y;
   float acc = 0.0f;
   for( size_t c = 0; c < num_classes; c++ )
@@ -136,46 +151,47 @@ int main(int argc, char *argv[])
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    std::cout << c << ": (" << fpr << ", " << tpr << ")" << std::endl;
+    LOG(INFO) << "  Class " << class_labels[ c ] << ": (" << fpr << ", " << tpr << ")";
   }
   acc /= folds * n;
+  LOG(INFO) << "  Accuracy: " << acc;
 
-  std::cout << "Acc: " << acc << std::endl;
+  // try
+  // {
+  //   Gnuplot g;
+  //   std::ostringstream os;
+  //   os <<
+  //     "features="    << params.no_candidate_features <<
+  //     " thresholds=" << params.no_candate_thresholds <<
+  //     " depth="      << params.max_decision_levels   <<
+  //     " trees="      << params.trees                 <<
+  //     " pool_size="  << params.pool_size             <<
+  //     " folds="      << folds                        <<
+  //     " path="       << argv[ 1 ];
+  //   g.set_title( os.str() );
+  //   g.set_xlabel("False positive rate");
+  //   g.set_ylabel("True positive rate");
+  //   g << "set size square";
+  //
+  //   g << "set xtics .1";
+  //   g << "set ytics .1";
+  //   g << "set mxtics 2";
+  //   g << "set mytics 2";
+  //   g.set_xrange(0,1);
+  //   g.set_yrange(0,1);
+  //   g.set_grid();
+  //
+  //   g.unset_legend();
+  //   g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
+  //   g.set_style("lines lt 0").plot_slope(0.0f,acc,"Accuracy");
+  //   g.set_style("points").plot_xy( plot_x, plot_y );
+  //   getchar();
+  // } catch( GnuplotException e )
+  // {
+  //   LOG(INFO) << e.what();
+  // }
 
-  try
-  {
-    Gnuplot g;
-    std::ostringstream os;
-    os <<
-      "features="    << params.no_candidate_features <<
-      " thresholds=" << params.no_candate_thresholds <<
-      " depth="      << params.max_decision_levels   <<
-      " trees="      << params.trees                 <<
-      " pool_size="  << params.pool_size             <<
-      " folds="      << folds                        <<
-      " path="       << argv[ 1 ];
-    g.set_title( os.str() );
-    g.set_xlabel("False positive rate");
-    g.set_ylabel("True positive rate");
-    g << "set size square";
+  LOG(INFO) << "##########     Finished     ##########";
 
-    g << "set xtics .1";
-    g << "set ytics .1";
-    g << "set mxtics 2";
-    g << "set mytics 2";
-    g.set_xrange(0,1);
-    g.set_yrange(0,1);
-    g.set_grid();
-
-    g.unset_legend();
-    g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
-    g.set_style("lines lt 0").plot_slope(0.0f,acc,"Accuracy");
-    g.set_style("points").plot_xy( plot_x, plot_y );
-  } catch( GnuplotException e )
-  {
-    std::cout << e.what() << std::endl;
-  }
-
-  getchar();
   return 0;
 }
