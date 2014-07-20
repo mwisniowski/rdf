@@ -19,7 +19,7 @@ class ForestTrainer
     {
       for( size_t i = 0; i < context.params().trees; i++ )
       {
-        LOG(INFO) << "Training tree " << i + 1 << "/" << context.params().trees;
+        VLOG(2) << "Training tree " << i + 1 << "/" << context.params().trees;
         Tree< D, F, S > tree;
         TreeTrainer< D, F, S >::train( tree, context );
         forest.add( tree );
