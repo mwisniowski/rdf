@@ -8,8 +8,8 @@
 
 #define K 9 // bins
 #define SIGMA 1 // std deviation for feature extraction
-#define CELLS_X 5 // number of cells in x direction
-#define CELLS_Y 5 // number of cells in y direction
+#define CELLS_X 10 // number of cells in x direction
+#define CELLS_Y 10 // number of cells in y direction
 
 template< size_t dimensions >
 class HogFeature;

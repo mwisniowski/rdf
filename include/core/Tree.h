@@ -210,6 +210,11 @@ class Tree
 
     void prune()
     {
+      if( splits_.size() == 0 )
+      {
+        return;
+      }
+
       std::vector< Leaf > pruned_leaves;
       typename std::vector< Split >::iterator it = splits_.begin(),
         end = splits_.end();

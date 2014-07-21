@@ -16,12 +16,13 @@ void init_logger()
 {
   el::Configurations c;
   c.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
-  c.setGlobally( el::ConfigurationType::Filename, "logs/toy_roc/%datetime.log" );
+  c.setGlobally( el::ConfigurationType::Filename, "logs/%datetime.log" );
   el::Loggers::reconfigureLogger( "default", c );
   el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
+  el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );
   el::Loggers::addFlag( el::LoggingFlag::ColoredTerminalOutput );
-  // el::Loggers::addFlag( el::LoggingFlag::AutoSpacing );
 }
+
 
 void get_data( std::vector< DataType >& data, std::vector< char >& class_labels, const char path[] )
 {
@@ -125,7 +126,7 @@ int main(int argc, char *argv[])
     for( size_t i = 0; i < n; i++ )
     {
       const StatisticsType h = classifier.classify( context, test_data[ i ] );
-      confusion_matrix[ test_data[ i ].output() ][ h.get_mode().first ]++;
+      confusion_matrix[ h.get_mode().first ][ test_data[ i ].output() ]++;
     }
   }
 
@@ -134,26 +135,28 @@ int main(int argc, char *argv[])
   float acc = 0.0f;
   for( size_t c = 0; c < num_classes; c++ )
   {
-    acc += confusion_matrix[ c ][ c ];
+    size_t true_positive = confusion_matrix[ c ][ c ];
 
-    size_t condition_positive = 0;
-    size_t test_positive = 0;
+    size_t labelled_positive = 0;
+    size_t classified_positive = 0;
     for( size_t cc = 0; cc < num_classes; cc++ )
     {
-      condition_positive += confusion_matrix[ cc ][ c ];
-      test_positive += confusion_matrix[ c ][ cc ];
+      labelled_positive += confusion_matrix[ cc ][ c ];
+      classified_positive += confusion_matrix[ c ][ cc ];
     }
-    size_t condition_negative = ( folds * n ) - condition_positive;
+    size_t labelled_negative = n - labelled_positive;
 
-    float fpr = ( float ) ( test_positive - confusion_matrix[ c ][ c ] ) / condition_negative;
-    float tpr = ( float ) confusion_matrix[ c ][ c ] / condition_positive;
+    size_t false_positive = classified_positive - true_positive;
+    float fpr = static_cast< float >( false_positive ) / labelled_negative;
+    float tpr = static_cast< float >( true_positive ) / labelled_positive;
+    acc += true_positive;
 
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    LOG(INFO) << "  Class " << class_labels[ c ] << ": (" << fpr << ", " << tpr << ")";
+    LOG(INFO) << "  Class " << c << ": (" << fpr << ", " << tpr << ")";
   }
-  acc /= folds * n;
+  acc /= n;
   LOG(INFO) << "  Accuracy: " << acc;
 
   // try
@@ -183,8 +186,7 @@ int main(int argc, char *argv[])
   //
   //   g.unset_legend();
   //   g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
-  //   g.set_style("lines lt 0").plot_slope(0.0f,acc,"Accuracy");
-  //   g.set_style("points").plot_xy( plot_x, plot_y );
+  //   g.set_style("points lt 3").plot_xy( plot_x, plot_y );
   //   getchar();
   // } catch( GnuplotException e )
   // {

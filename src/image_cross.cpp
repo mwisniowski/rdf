@@ -8,10 +8,13 @@ _INITIALIZE_EASYLOGGINGPP
 
 void init_logger()
 {
-  el::Configurations defaultConf;
-  defaultConf.setToDefault();
-  defaultConf.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
-  el::Loggers::reconfigureLogger( "default", defaultConf );
+  el::Configurations c;
+  c.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
+  c.setGlobally( el::ConfigurationType::Filename, "logs/%datetime.log" );
+  el::Loggers::reconfigureLogger( "default", c );
+  el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
+  el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );
+  el::Loggers::addFlag( el::LoggingFlag::ColoredTerminalOutput );
 }
 
 void get_data( std::vector< DataType >& data,
@@ -59,6 +62,8 @@ int main(int argc, char *argv[])
   _START_EASYLOGGINGPP( argc, argv );
   init_logger();
 
+  LOG(INFO) << "##########     Starting     ##########";
+
   srand( time( NULL ) );
   TrainingParameters params = {
     1, //trees
@@ -76,7 +81,16 @@ int main(int argc, char *argv[])
   if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
   if( argc > 7 ) folds = atoi( argv[ 7 ] );
 
-  LOG(INFO) << "Loading data";
+  LOG(INFO) << "Parameters:";
+  LOG(INFO) << "  features="   << params.no_candidate_features;
+  LOG(INFO) << "  thresholds=" << params.no_candate_thresholds;
+  LOG(INFO) << "  depth="      << params.max_decision_levels;
+  LOG(INFO) << "  trees="      << params.trees;
+  LOG(INFO) << "  pool_size="  << params.pool_size;
+  LOG(INFO) << "  folds="      << folds;
+  LOG(INFO) << "  path="       << argv[ 1 ];
+
+  VLOG(1) << "Loading data";
   std::vector< DataType > data;
   cvt::String path( argv[ 1 ] );
   std::vector< cvt::String > class_labels;
@@ -101,52 +115,55 @@ int main(int argc, char *argv[])
   float divisor = static_cast<float>( n ) / folds;
   for( size_t f = 0; f < folds; f++ )
   {
-    LOG(INFO) << "Fold " << f + 1 << "/" << folds;
+    VLOG(1) << "Fold " << f + 1 << "/" << folds;
     std::vector< DataType > training_data( partition_map[ 0 ], partition_map[ f ] );
     training_data.insert( training_data.end(), partition_map[ f + 1 ], partition_map.back() );
     std::vector< DataType > testing_data( partition_map[ f ], partition_map[ f + 1 ] );
 
-    LOG(INFO) << "Initializing context (builds lookup table)";
+    VLOG(1) << "Initializing context (builds lookup table)";
     ImageContext context( params, training_data, num_classes );
 
-    LOG(INFO) << "Training";
+    VLOG(1) << "Training";
     ClassifierType classifier;
     TrainerType::train( classifier, context );
     
-    LOG(INFO) << "Classifying";
+    VLOG(1) << "Classifying";
     for( size_t i = 0; i < n; i++ )
     {
       const StatisticsType s = classifier.classify( context, testing_data[ i ] );
-      confusion_matrix[ testing_data[ i ].output() ][ s.get_mode().first ]++;
+      confusion_matrix[ s.get_mode().first ][ testing_data[ i ].output() ]++;
     }
   }
 
-  LOG(INFO) << "Statistics";
+  LOG(INFO) << "Statistics:";
   std::vector< double > plot_x, plot_y;
   float acc = 0.0f;
   for( size_t c = 0; c < num_classes; c++ )
   {
-    acc += confusion_matrix[ c ][ c ];
+    size_t true_positive = confusion_matrix[ c ][ c ];
 
-    size_t condition_positive = 0;
-    size_t test_positive = 0;
+    size_t labelled_positive = 0;
+    size_t classified_positive = 0;
     for( size_t cc = 0; cc < num_classes; cc++ )
     {
-      condition_positive += confusion_matrix[ cc ][ c ];
-      test_positive += confusion_matrix[ c ][ cc ];
+      labelled_positive += confusion_matrix[ cc ][ c ];
+      classified_positive += confusion_matrix[ c ][ cc ];
     }
-    size_t condition_negative = ( folds * n ) - condition_positive;
+    size_t labelled_negative = n - labelled_positive;
 
-    float fpr = ( float ) ( test_positive - confusion_matrix[ c ][ c ] ) / static_cast< float >( condition_negative );
-    float tpr = ( float ) confusion_matrix[ c ][ c ] / static_cast< float >( condition_positive );
+    size_t false_positive = classified_positive - true_positive;
+    float fpr = static_cast< float >( false_positive ) / labelled_negative;
+    float tpr = static_cast< float >( true_positive ) / labelled_positive;
+    acc += true_positive;
 
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    LOG(INFO) << c << ": (" << fpr << ", " << tpr << ")";
+    LOG(INFO) << "  Class " << c << ": (" << fpr << ", " << tpr << ")";
   }
-  acc /= folds * n;
-  std::cout << "Accuracy: " << acc;
+  acc /= n;
+  LOG(INFO) << "  Accuracy: " << acc;
+
 
   try
   {
@@ -175,14 +192,13 @@ int main(int argc, char *argv[])
 
     g.unset_legend();
     g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
-    g.set_style("lines lt 0").plot_slope(0.0f,acc,"Accuracy");
     g.set_style("points").plot_xy( plot_x, plot_y );
   } catch( GnuplotException e )
   {
     std::cout << e.what();
   }
 
-  LOG(INFO) << "Finished";
+  LOG(INFO) << "##########     Finished     ##########";
 
   getchar();
   

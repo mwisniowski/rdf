@@ -101,8 +101,7 @@ class HogFeature: public FeatureBase< DataType >
           for( size_t k = 0; k < K; k++ )
           {
             float bin_mean = ( 2 * k + 1 ) * bin_mean_base;
-            // float distance_to_mean = cvt::Math::exp( -( ( cvt::Math::sqr( angle - bin_mean ) ) / ( 2.0f * SIGMA * SIGMA ) ) ) / ( SIGMA * 2.506628275f );
-            float distance_to_mean = 1.0f;
+            float distance_to_mean = cvt::Math::exp( -( ( cvt::Math::sqr( angle - bin_mean ) ) / ( 2.0f * SIGMA * SIGMA ) ) ) / ( SIGMA * 2.506628275f );
             unnormalized_feature_vector[ offset + k ] += magnitude * distance_to_mean;
           }
         }
