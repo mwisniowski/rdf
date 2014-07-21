@@ -10,7 +10,7 @@ void init_logger()
 {
   el::Configurations c;
   c.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
-  c.setGlobally( el::ConfigurationType::Filename, "logs/%datetime.log" );
+  c.setGlobally( el::ConfigurationType::Filename, "logs/image_cross/%datetime.log" );
   el::Loggers::reconfigureLogger( "default", c );
   el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
   el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );

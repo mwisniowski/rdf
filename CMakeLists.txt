@@ -50,3 +50,7 @@ ADD_EXECUTABLE( hog_split
 TARGET_LINK_LIBRARIES( hog_split
   ${CVT_LIBRARIES}
 )
+
+ADD_EXECUTABLE( el_test
+  src/el_test.cpp
+)

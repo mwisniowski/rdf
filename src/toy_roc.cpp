@@ -15,8 +15,7 @@ _INITIALIZE_EASYLOGGINGPP
 void init_logger()
 {
   el::Configurations c;
-  c.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
-  c.setGlobally( el::ConfigurationType::Filename, "logs/%datetime.log" );
+  c.setGlobally( el::ConfigurationType::Filename, "logs/toy_roc/%datetime.log" );
   el::Loggers::reconfigureLogger( "default", c );
   el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
   el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );
@@ -65,6 +64,15 @@ int main(int argc, char *argv[])
     1000 //feature_pool_size
   };
   size_t folds = 10;
+
+  LOG(INFO) << "Parameters:";
+  LOG(INFO) << "  features="   << params.no_candidate_features;
+  LOG(INFO) << "  thresholds=" << params.no_candate_thresholds;
+  LOG(INFO) << "  depth="      << params.max_decision_levels;
+  LOG(INFO) << "  trees="      << params.trees;
+  LOG(INFO) << "  pool_size="  << params.pool_size;
+  LOG(INFO) << "  folds="      << folds;
+  LOG(INFO) << "  path="       << argv[ 1 ];
 
   if( argc < 2 ) {
     std::cerr << "Please provide a data file";
@@ -154,7 +162,7 @@ int main(int argc, char *argv[])
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    LOG(INFO) << "  Class " << c << ": (" << fpr << ", " << tpr << ")";
+    LOG(INFO) << "  Class " << class_labels[ c ] << ": (" << fpr << ", " << tpr << ")";
   }
   acc /= n;
   LOG(INFO) << "  Accuracy: " << acc;

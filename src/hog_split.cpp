@@ -12,7 +12,7 @@ void init_logger()
 {
   el::Configurations c;
   c.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
-  c.setGlobally( el::ConfigurationType::Filename, "logs/%datetime.log" );
+  c.setGlobally( el::ConfigurationType::Filename, "logs/hog_split/%datetime.log" );
   el::Loggers::reconfigureLogger( "default", c );
   el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
   el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );
