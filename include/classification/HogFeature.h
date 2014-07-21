@@ -14,13 +14,12 @@ class HogFeature: public FeatureBase< DataType >
     typedef FeatureBase< DataType > super;
 
   public:
-    HogFeature( const std::vector< float >& vec ) :
-      v_( vec )
+    HogFeature( size_t component ) :
+      component_( component )
     {}
 
     HogFeature( const HogFeature& other ) :
-      super( other ),
-      v_( other.v_ )
+      component_( other.component_ )
     {}
 
     virtual ~HogFeature()
@@ -30,7 +29,7 @@ class HogFeature: public FeatureBase< DataType >
     {
       if( this != &other )
       {
-        v_ = other.v_;
+        component_ = other.component_;
       }
       return *this;
     }
@@ -44,19 +43,12 @@ class HogFeature: public FeatureBase< DataType >
      */
     float operator()( const DataType& point ) const
     {
-      float sum = 0;
-      for( size_t i = 0; i < d; i++ )
-      {
-        sum += v_[ i ] * point.input( i );
-      }
-      return sum;
+      return point.input( component_ );
     }
 
     static HogFeature get_random_feature()
     {
-      std::vector< float > v;
-      gaussian_vector( v, d );
-      return HogFeature( v );
+      return HogFeature( cvt::Math::rand( 0, d ) );
     }
 
     static void extract_feature_vector( std::vector< float >& feature_vector, const cvt::Image& input )
@@ -92,18 +84,27 @@ class HogFeature: public FeatureBase< DataType >
           float g_x = dx_map( x, y );
           float g_y = dy_map( x, y );
           float magnitude = cvt::Math::sqrt( cvt::Math::sqr( g_x ) + cvt::Math::sqr( g_y ) );
+          if( magnitude == 0.0f )
+          {
+            continue;
+          }
           float angle = ( g_x > 0 ) ? ( std::atan( cvt::Math::abs( g_x ) / cvt::Math::abs( g_x ) ) ) : 0.0f;
 
           size_t cell_x = x / cell_width;
           size_t cell_y = y / cell_height;
           size_t offset = ( cell_y * CELLS_X + cell_x ) * K;
 
-          for( size_t k = 0; k < K; k++ )
-          {
-            float bin_mean = ( 2 * k + 1 ) * bin_mean_base;
-            float distance_to_mean = cvt::Math::exp( -( ( cvt::Math::sqr( angle - bin_mean ) ) / ( 2.0f * SIGMA * SIGMA ) ) ) / ( SIGMA * 2.506628275f );
-            unnormalized_feature_vector[ offset + k ] += magnitude * distance_to_mean;
-          }
+          size_t k = angle / cvt::Math::PI;
+          float interpolation_factor = ( angle - k * bin_range ) / bin_range;
+          unnormalized_feature_vector[ offset + k ] += ( 1 - interpolation_factor ) * magnitude;
+          unnormalized_feature_vector[ offset + k + 1 ] += interpolation_factor * magnitude;
+
+          // for( size_t k = 0; k < K; k++ )
+          // {
+          //   float bin_mean = ( 2 * k + 1 ) * bin_mean_base;
+          //   float distance_to_mean = cvt::Math::exp( -( ( cvt::Math::sqr( angle - bin_mean ) ) / ( 2.0f * SIGMA * SIGMA ) ) ) / ( SIGMA * 2.506628275f );
+          //   unnormalized_feature_vector[ offset + k ] += magnitude * distance_to_mean;
+          // }
         }
       }
 
@@ -136,6 +137,7 @@ class HogFeature: public FeatureBase< DataType >
     }
 
   private:
+    size_t component_;
     std::vector< float > v_;
 
     static void gaussian_vector( std::vector< float >& gv, size_t dimensions )
