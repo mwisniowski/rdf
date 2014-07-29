@@ -65,15 +65,6 @@ int main(int argc, char *argv[])
   };
   size_t folds = 10;
 
-  LOG(INFO) << "Parameters:";
-  LOG(INFO) << "  features="   << params.no_candidate_features;
-  LOG(INFO) << "  thresholds=" << params.no_candate_thresholds;
-  LOG(INFO) << "  depth="      << params.max_decision_levels;
-  LOG(INFO) << "  trees="      << params.trees;
-  LOG(INFO) << "  pool_size="  << params.pool_size;
-  LOG(INFO) << "  folds="      << folds;
-  LOG(INFO) << "  path="       << argv[ 1 ];
-
   if( argc < 2 ) {
     std::cerr << "Please provide a data file";
     return 1;
@@ -164,7 +155,7 @@ int main(int argc, char *argv[])
 
     LOG(INFO) << "  Class " << class_labels[ c ] << ": (" << fpr << ", " << tpr << ")";
   }
-  acc /= n;
+  acc /= folds * n;
   LOG(INFO) << "  Accuracy: " << acc;
 
   // try
