@@ -2,6 +2,19 @@ import subprocess
 import sys
 import os
 import glob
+import datetime
+
+class Tee(object):
+    def __init__(self, name, mode):
+        self.file = open(name, mode)
+        self.stdout = sys.stdout
+        sys.stdout = self
+    def __del__(self):
+        sys.stdout = self.stdout
+        self.file.close()
+    def write(self, data):
+        self.file.write(data)
+        self.stdout.write(data)
 
 FEATURE_POOL = [ 10, 100, 1000, 10000 ]
 FEATURES = range( 10, 101, 10 )
@@ -15,6 +28,7 @@ executable = "../build/release/toy_roc"
 folder = "../data/sherwood/supervised_classification"
 path = os.path.join( folder, "*.txt" )
 filenames = glob.glob( path )
+tee = Tee( "toy_roc.log", "w" )
 
 total = float( len( FEATURE_POOL ) * len( FEATURES ) * len( THRESHOLDS ) * len( DEPTHS ) * len( TREES ) * len( FOLDS ) * len( filenames ) )
 counter = 0
@@ -29,8 +43,17 @@ for filename in filenames:
           for depths in DEPTHS:
             for trees in TREES:
               args = [ str( x ) for x in [ executable, filename, num_features, thresholds, depths, trees, feature_pool_size, folds ] ]
+              timestamp_before = datetime.datetime.now()
+              proc = subprocess.Popen( args, stdout=subprocess.PIPE )
+
+              for line in proc.stdout:
+                tee.write( line )
+              proc.wait()
+
+              timestamp_after = datetime.datetime.now()
               progress = counter / total
-              print( '[ {0:20s} ] {1:8.4f}%'.format( '#' * int( progress * 20 ), progress * 100 ) )
-              subprocess.call( args )
+              tee.write( "Elapsed: {}\n".format( timestamp_after - timestamp_before ) )
+              tee.write( '[ {0:20s} ] {1:8.4f}%\n'.format( '#' * int( progress * 20 ), progress * 100 ) )
+
               counter += 1
 
