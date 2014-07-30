@@ -1,23 +1,23 @@
 #include <cvt/gfx/Image.h>
 #include "cvt/io/FileSystem.h"
 
-#include "helper/easylogging++.h"
+// #include "helper/easylogging++.h"
 #include "helper/gnuplot_i.hpp"
 
 #include "classification/ImageContext.h"
 
-_INITIALIZE_EASYLOGGINGPP
-
-void init_logger()
-{
-  el::Configurations c;
-  c.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
-  c.setGlobally( el::ConfigurationType::Filename, "logs/image_split/%datetime.log" );
-  el::Loggers::reconfigureLogger( "default", c );
-  el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
-  el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );
-  el::Loggers::addFlag( el::LoggingFlag::ColoredTerminalOutput );
-}
+// _INITIALIZE_EASYLOGGINGPP
+//
+// void init_logger()
+// {
+//   el::Configurations c;
+//   c.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
+//   c.setGlobally( el::ConfigurationType::Filename, "logs/image_split/%datetime.log" );
+//   el::Loggers::reconfigureLogger( "default", c );
+//   el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
+//   el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );
+//   el::Loggers::addFlag( el::LoggingFlag::ColoredTerminalOutput );
+// }
 
 void get_data( std::vector< DataType >& data,
     std::vector< cvt::String >& class_labels, 
@@ -61,10 +61,10 @@ void get_data( std::vector< DataType >& data,
 
 int main(int argc, char *argv[])
 {
-  _START_EASYLOGGINGPP( argc, argv );
-  init_logger();
+  // _START_EASYLOGGINGPP( argc, argv );
+  // init_logger();
 
-  LOG(INFO) << "##########     Starting     ##########";
+  std::cout << "##########     Starting     ##########" << std::endl;
 
   srand( time( NULL ) );
   TrainingParameters params = {
@@ -83,18 +83,18 @@ int main(int argc, char *argv[])
   if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
   if( argc > 7 ) split = atof( argv[ 7 ] );
 
-  LOG(INFO) << "Parameters:";
-  LOG(INFO) << "  features="   << params.no_candidate_features;
-  LOG(INFO) << "  thresholds=" << params.no_candate_thresholds;
-  LOG(INFO) << "  depth="      << params.max_decision_levels;
-  LOG(INFO) << "  trees="      << params.trees;
-  LOG(INFO) << "  pool_size="  << params.pool_size;
-  LOG(INFO) << "  split="      << split;
-  LOG(INFO) << "  path="       << argv[ 1 ];
+  std::cout << "Parameters:" << std::endl;
+  std::cout << "  features="   << params.no_candidate_features << std::endl;
+  std::cout << "  thresholds=" << params.no_candate_thresholds << std::endl;
+  std::cout << "  depth="      << params.max_decision_levels << std::endl;
+  std::cout << "  trees="      << params.trees << std::endl;
+  std::cout << "  pool_size="  << params.pool_size << std::endl;
+  std::cout << "  split="      << split << std::endl;
+  std::cout << "  path="       << argv[ 1 ] << std::endl;
 
   std::vector< DataType > data;
   cvt::String path( argv[ 1 ] );
-  VLOG(1) << "Loading data";
+  std::cout << "Loading data" << std::endl;
   std::vector< cvt::String > class_labels;
 
   get_data( data, class_labels, path );
@@ -105,14 +105,14 @@ int main(int argc, char *argv[])
   std::vector< DataType > training_data( data.begin(), data.end() - n );
   std::vector< DataType > testing_data( data.end() - n, data.end() );
 
-  VLOG(1) << "Initializing context (builds lookup table)";
+  std::cout << "Initializing context (builds lookup table)" << std::endl;
   ImageContext context( params, training_data, num_classes );
-  VLOG(1) << "Training";
+  std::cout << "Training" << std::endl;
 
   ClassifierType classifier;
   TrainerType::train( classifier, context );
 
-  VLOG(1) << "Classifying";
+  std::cout << "Classifying" << std::endl;
   std::vector< std::vector< size_t > > confusion_matrix;
   for( size_t i = 0; i < num_classes; i++ )
   {
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     confusion_matrix[ s.get_mode().first ][ testing_data[ i ].output() ]++;
   }
 
-  LOG(INFO) << "Statistics:";
+  std::cout << "Statistics:" << std::endl;
   std::vector< double > plot_x, plot_y;
   float acc = 0.0f;
   for( size_t c = 0; c < num_classes; c++ )
@@ -148,10 +148,10 @@ int main(int argc, char *argv[])
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    LOG(INFO) << "  Class " << c << ": (" << fpr << ", " << tpr << ")";
+    std::cout << "  Class " << c << ": (" << fpr << ", " << tpr << ")" << std::endl;
   }
   acc /= n;
-  LOG(INFO) << "  Accuracy: " << acc;
+  std::cout << "  Accuracy: " << acc << std::endl;
 
   try
   {
@@ -186,7 +186,7 @@ int main(int argc, char *argv[])
     std::cout << e.what();
   }
 
-  LOG(INFO) << "Finished";
+  std::cout << "Finished" << std::endl;
 
   getchar();
   

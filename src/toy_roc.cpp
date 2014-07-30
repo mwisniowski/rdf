@@ -8,19 +8,19 @@
 #include "toy/ToyContext.h"
 
 #include "helper/gnuplot_i.hpp"
-#include "helper/easylogging++.h"
+// #include "helper/easylogging++.h"
 
-_INITIALIZE_EASYLOGGINGPP
+// _INITIALIZE_EASYLOGGINGPP
 
-void init_logger()
-{
-  el::Configurations c;
-  c.setGlobally( el::ConfigurationType::Filename, "logs/toy_roc/%datetime.log" );
-  el::Loggers::reconfigureLogger( "default", c );
-  el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
-  el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );
-  el::Loggers::addFlag( el::LoggingFlag::ColoredTerminalOutput );
-}
+// void init_logger()
+// {
+//   el::Configurations c;
+//   c.setGlobally( el::ConfigurationType::Filename, "logs/toy_roc/%datetime.log" );
+//   el::Loggers::reconfigureLogger( "default", c );
+//   el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
+//   el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );
+//   el::Loggers::addFlag( el::LoggingFlag::ColoredTerminalOutput );
+// }
 
 
 void get_data( std::vector< DataType >& data, std::vector< char >& class_labels, const char path[] )
@@ -50,10 +50,10 @@ void get_data( std::vector< DataType >& data, std::vector< char >& class_labels,
 
 int main(int argc, char *argv[])
 {
-  _START_EASYLOGGINGPP( argc, argv );
-  init_logger();
+  // _START_EASYLOGGINGPP( argc, argv );
+  // init_logger();
 
-  LOG(INFO) << "##########     Starting     ##########";
+  std::cout << "##########     Starting     ##########" << std::endl;
 
   srand( time( NULL ) );
   TrainingParameters params = {
@@ -77,14 +77,14 @@ int main(int argc, char *argv[])
   if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
   if( argc > 7 ) folds = atoi( argv[ 7 ] );
 
-  LOG(INFO) << "Parameters:";
-  LOG(INFO) << "  features="   << params.no_candidate_features;
-  LOG(INFO) << "  thresholds=" << params.no_candate_thresholds;
-  LOG(INFO) << "  depth="      << params.max_decision_levels;
-  LOG(INFO) << "  trees="      << params.trees;
-  LOG(INFO) << "  pool_size="  << params.pool_size;
-  LOG(INFO) << "  folds="      << folds;
-  LOG(INFO) << "  path="       << argv[ 1 ];
+  std::cout << "Parameters:" << std::endl;
+  std::cout << "  features="   << params.no_candidate_features << std::endl;
+  std::cout << "  thresholds=" << params.no_candate_thresholds << std::endl;
+  std::cout << "  depth="      << params.max_decision_levels << std::endl;
+  std::cout << "  trees="      << params.trees << std::endl;
+  std::cout << "  pool_size="  << params.pool_size << std::endl;
+  std::cout << "  folds="      << folds << std::endl;
+  std::cout << "  path="       << argv[ 1 ] << std::endl;
 
   std::vector< DataType > data;
   std::vector< char > class_labels;
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
   float divisor = static_cast<float>( n ) / folds;
   for( size_t f = 0; f < folds; f++ )
   {
-    VLOG(1) << "Fold " << f + 1 << "/" << folds;
+    // std::cout << "Fold " << f + 1 << "/" << folds << std::endl;
 
     std::vector< DataType > training_data( partition_map[ 0 ], partition_map[ f ] );
     training_data.insert( training_data.end(), partition_map[ f + 1 ], partition_map.back() );
@@ -129,7 +129,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  LOG(INFO) << "Statistics:";
+  std::cout << "Statistics:" << std::endl;
   std::vector< double > plot_x, plot_y;
   float acc = 0.0f;
   for( size_t c = 0; c < num_classes; c++ )
@@ -153,10 +153,10 @@ int main(int argc, char *argv[])
     plot_x.push_back( fpr );
     plot_y.push_back( tpr );
 
-    LOG(INFO) << "  Class " << class_labels[ c ] << ": (" << fpr << ", " << tpr << ")";
+    std::cout << "  Class " << class_labels[ c ] << ": (" << fpr << ", " << tpr << ")" << std::endl;
   }
   acc /= folds * n;
-  LOG(INFO) << "  Accuracy: " << acc;
+  std::cout << "  Accuracy: " << acc << std::endl;
 
   // try
   // {
@@ -189,10 +189,10 @@ int main(int argc, char *argv[])
   //   getchar();
   // } catch( GnuplotException e )
   // {
-  //   LOG(INFO) << e.what();
+  //   std::cout << e.what() << std::endl;
   // }
 
-  LOG(INFO) << "##########     Finished     ##########";
+  std::cout << "##########     Finished     ##########" << std::endl;
 
   return 0;
 }
