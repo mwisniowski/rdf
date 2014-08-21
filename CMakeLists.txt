@@ -1,12 +1,20 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(CVT_RDF CXX C)
 
-find_package(CVT_DEBUG REQUIRED)
+find_package(CVT_DEBUG REQUIRED OpenMP REQUIRED)
 
 ###########
 ## Build ##
 ###########
-SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
+
+if( OPENMP_FOUND )
+  message("OPENMP FOUND")
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${OpenMP_EXE_LINKER_FLAGS}")
+else()
+  message("NO OPENMP SUPPORT")
+endif()
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -47,6 +55,9 @@ TARGET_LINK_LIBRARIES( hog_split
   ${CVT_LIBRARIES}
 )
 
-ADD_EXECUTABLE( el_test
-  src/el_test.cpp
+ADD_EXECUTABLE( detection
+  src/detection.cpp
+)
+TARGET_LINK_LIBRARIES( detection
+  ${CVT_LIBRARIES}
 )
