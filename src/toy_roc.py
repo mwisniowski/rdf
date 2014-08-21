@@ -27,7 +27,8 @@ devnull = open( os.devnull, "w" )
 executable = "../build/release/toy_roc"
 folder = "../data/sherwood/supervised_classification"
 path = os.path.join( folder, "*.txt" )
-filenames = glob.glob( path )
+# filenames = glob.glob( path )
+filenames = [ "../data/sherwood/supervised_classification/exp4_n4.txt", "../data/sherwood/supervised_classification/exp5_n4.txt" ]
 tee = Tee( "toy_roc.log", "w" )
 
 total = float( len( FEATURE_POOL ) * len( FEATURES ) * len( THRESHOLDS ) * len( DEPTHS ) * len( TREES ) * len( FOLDS ) * len( filenames ) )
