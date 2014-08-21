@@ -11,19 +11,7 @@
 #include <cvt/gfx/IMapScoped.h>
 #include <cvt/gfx/GFXEngineImage.h>
 
-#include "helper/easylogging++.h"
-
 #include "toy/ToyContext.h"
-
-_INITIALIZE_EASYLOGGINGPP
-
-void init_logger()
-{
-  el::Configurations defaultConf;
-  defaultConf.setToDefault();
-  defaultConf.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
-  el::Loggers::reconfigureLogger( "default", defaultConf );
-}
 
 void display( const cvt::Image& image, size_t width, size_t height ) {
   cvt::Window w("RDF");
@@ -71,9 +59,6 @@ void get_data( std::vector< DataType >& data, std::vector< char >& class_labels,
 
 int main(int argc, char *argv[])
 {
-  _START_EASYLOGGINGPP( argc, argv );
-  init_logger();
-
   srand( time( NULL ) );
   TrainingParameters params = {
     100, //trees
@@ -165,7 +150,8 @@ int main(int argc, char *argv[])
     map++;
   }
 
-  display( img, width, width );
+  // display( img, width, width );
+  img.save( "toy_plot.png" );
 
   return 0;
 }

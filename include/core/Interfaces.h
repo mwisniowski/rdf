@@ -12,7 +12,7 @@ class FeatureBase
 
     /**
      * IMPLEMENT THIS!
-     * static IFeature get_random_feature();
+     * static FeatureBase get_random_feature();
      */
 };
 
@@ -128,13 +128,13 @@ class TrainingContextBase
     static std::vector< std::vector< float > > init_table( const std::vector< F >& features,
         const std::vector< D >& data )
     {
-      std::vector< std::vector< float > > table( features.size() );
+      std::vector< std::vector< float > > table( features.size(), std::vector< float >( data.size() ) );
 
       for( size_t d = 0; d < data.size(); d++ )
       {
         for( size_t f = 0; f < features.size(); f++ )
         {
-          table[ f ].push_back( features[ f ]( data[ d ] ) );
+          table[ f ][ d ] = features[ f ]( data[ d ] );
         }
       }
 
@@ -148,6 +148,7 @@ class StatisticsBase
 { 
   public:
     virtual S& operator+=( const S& s ) =0;
+    virtual S& operator+=( const D& d ) =0;
 };
 
 
