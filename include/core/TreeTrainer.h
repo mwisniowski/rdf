@@ -180,7 +180,7 @@ class TreeTrainer
         std::vector< size_t >& best_right_data_idxs,
         const TrainingContextBase< D, F, S >& context,
         std::vector< size_t >& parent_data_idxs,
-        const S& parent_statistics,
+        S& parent_statistics,
         const std::vector< size_t>& feature_idxs )
     {
       best_gain = -FLT_MAX;

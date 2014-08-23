@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
       v[ 0 ] = static_cast<float>( column );
 
       DataType pt( v, 0 );
-      const StatisticsType& h = classifier.classify( context, pt );
+      StatisticsType h = classifier.classify( context, pt );
 
       mix = cvt::Color::BLACK;
       float mudiness = 0.5f * h.get_entropy();

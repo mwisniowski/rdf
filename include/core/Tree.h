@@ -38,7 +38,7 @@ class Tree
           return *this;
         }
 
-        const S& statistics() const
+        S& statistics()
         {
           return statistics_;
         }
@@ -250,7 +250,7 @@ class Tree
       leaves_ = pruned_leaves;
     }
 
-    const S& classify( const D& point ) const
+    S& classify( const D& point )
     {
       typename std::vector< Split >::const_iterator it = splits_.begin();
       if( it == splits_.end() )
@@ -288,7 +288,7 @@ class Tree
       return leaves_[ leaf_idx ].data_idxs();
     }
 
-    const S& statistics( size_t leaf_idx ) const
+    S& statistics( size_t leaf_idx )
     {
       return leaves_[ leaf_idx ].statistics();
     }

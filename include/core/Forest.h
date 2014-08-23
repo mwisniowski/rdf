@@ -18,7 +18,7 @@ class Forest
       trees_.push_back( tree );
     }
 
-    const S classify( const TrainingContextBase< D, F, S >& context, const D& point )
+    S classify( const TrainingContextBase< D, F, S >& context, const D& point )
     {
       S statistics = context.get_statistics();
 
