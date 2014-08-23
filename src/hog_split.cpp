@@ -1,23 +1,9 @@
 #include <cvt/gfx/Image.h>
 #include "cvt/io/FileSystem.h"
 
-// #include "helper/easylogging++.h"
 #include "helper/gnuplot_i.hpp"
 
 #include "classification/HogContext.h"
-
-// _INITIALIZE_EASYLOGGINGPP
-
-// void init_logger()
-// {
-//   el::Configurations c;
-//   c.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
-//   c.setGlobally( el::ConfigurationType::Filename, "logs/hog_split/%datetime.log" );
-//   el::Loggers::reconfigureLogger( "default", c );
-//   el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
-//   el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );
-//   el::Loggers::addFlag( el::LoggingFlag::ColoredTerminalOutput );
-// }
 
 void get_data( std::vector< DataType >& data,
     std::vector< cvt::String >& class_labels, 
@@ -61,9 +47,6 @@ void get_data( std::vector< DataType >& data,
 
 int main( int argc, char *argv[] )
 {
-  // _START_EASYLOGGINGPP( argc, argv );
-  // init_logger();
-
   std::cout << "##########     Starting     ##########" << std::endl;
 
   srand( time( NULL ) );

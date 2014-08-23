@@ -1,7 +1,6 @@
 #ifndef FOREST_TRAINER_H
 #define FOREST_TRAINER_H
 
-// #include "helper/easylogging++.h"
 #include "Forest.h"
 #include "TreeTrainer.h"
 

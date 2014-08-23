@@ -4,19 +4,6 @@
 #include "helper/gnuplot_i.hpp"
 #include "classification/ImageContext.h"
 
-// _INITIALIZE_EASYLOGGINGPP
-//
-// void init_logger()
-// {
-//   el::Configurations c;
-//   c.setGlobally( el::ConfigurationType::Format, "%datetime %level %msg" );
-//   c.setGlobally( el::ConfigurationType::Filename, "logs/image_cross/%datetime.log" );
-//   el::Loggers::reconfigureLogger( "default", c );
-//   el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
-//   el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );
-//   el::Loggers::addFlag( el::LoggingFlag::ColoredTerminalOutput );
-// }
-
 void get_data( std::vector< DataType >& data,
     std::vector< cvt::String >& class_labels, 
     cvt::String& path )
@@ -59,9 +46,6 @@ void get_data( std::vector< DataType >& data,
 
 int main(int argc, char *argv[])
 {
-  // _START_EASYLOGGINGPP( argc, argv );
-  // init_logger();
-
   std::cout << "##########     Starting     ##########" << std::endl;
 
   srand( time( NULL ) );

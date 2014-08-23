@@ -8,20 +8,6 @@
 #include "toy/ToyContext.h"
 
 #include "helper/gnuplot_i.hpp"
-// #include "helper/easylogging++.h"
-
-// _INITIALIZE_EASYLOGGINGPP
-
-// void init_logger()
-// {
-//   el::Configurations c;
-//   c.setGlobally( el::ConfigurationType::Filename, "logs/toy_roc/%datetime.log" );
-//   el::Loggers::reconfigureLogger( "default", c );
-//   el::Loggers::addFlag( el::LoggingFlag::DisableApplicationAbortOnFatalLog );
-//   el::Loggers::addFlag( el::LoggingFlag::LogDetailedCrashReason );
-//   el::Loggers::addFlag( el::LoggingFlag::ColoredTerminalOutput );
-// }
-
 
 void get_data( std::vector< DataType >& data, std::vector< char >& class_labels, const char path[] )
 {
@@ -50,9 +36,6 @@ void get_data( std::vector< DataType >& data, std::vector< char >& class_labels,
 
 int main(int argc, char *argv[])
 {
-  // _START_EASYLOGGINGPP( argc, argv );
-  // init_logger();
-
   std::cout << "##########     Starting     ##########" << std::endl;
 
   srand( time( NULL ) );

@@ -11,9 +11,6 @@ template< typename I, typename O >
 struct DataPoint
 {
   public:
-    // DataPoint()
-    // {}
-
     DataPoint( const std::vector<I>& input, const O& output ) :
       input_( input ),
       output_( output )
