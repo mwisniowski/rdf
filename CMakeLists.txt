@@ -6,22 +6,7 @@ find_package(CVT_DEBUG REQUIRED)
 ###########
 ## Build ##
 ###########
-
-set(RDF_HEADERS
-  include/DataPoint.h
-  include/DataCollection.h
-  include/Histogram.h
-  include/Feature.h
-  include/Forest.h
-  include/ForestTrainer.h
-  include/Tree.h
-  include/TreeTrainer.h
-  include/ThresholdSampler.h
-)
-
-set(RDF_SOURCES
-
-)
+SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
@@ -30,20 +15,38 @@ include_directories(
   ${CVT_INCLUDE_DIRS}
 )
 
-ADD_EXECUTABLE( plot 
-  ${RDF_HEADERS}
-  ${RDF_SOURCES}
-  src/plot.cpp
+ADD_EXECUTABLE( toy_plot 
+  src/toy_plot.cpp
 )
-TARGET_LINK_LIBRARIES( plot
+TARGET_LINK_LIBRARIES( toy_plot
   ${CVT_LIBRARIES}
 )
 
-ADD_EXECUTABLE( roc
-  ${RDF_HEADERS}
-  ${RDF_SOURCES}
-  src/roc.cpp
+ADD_EXECUTABLE( toy_roc
+  src/toy_roc.cpp
 )
-TARGET_LINK_LIBRARIES( roc
+
+ADD_EXECUTABLE( image_split
+  src/image_split.cpp
+)
+TARGET_LINK_LIBRARIES( image_split
   ${CVT_LIBRARIES}
+)
+
+ADD_EXECUTABLE( image_cross
+  src/image_cross.cpp
+)
+TARGET_LINK_LIBRARIES( image_cross
+  ${CVT_LIBRARIES}
+)
+
+ADD_EXECUTABLE( hog_split
+  src/hog_split.cpp  
+)
+TARGET_LINK_LIBRARIES( hog_split
+  ${CVT_LIBRARIES}
+)
+
+ADD_EXECUTABLE( el_test
+  src/el_test.cpp
 )
