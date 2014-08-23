@@ -14,8 +14,9 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
 
   public:
     Histogram( size_t num_classes ) :
-      histogram_( num_classes ),
-      n_( 0 )
+      histogram_( num_classes, 0 ),
+      n_( 0 ),
+      entropy_( -1.0f )
     {}
 
     // Histogram( const std::vector< D const* >& data, size_t num_classes ) :
@@ -34,7 +35,8 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
 
     Histogram( const Histogram& other ) :
       histogram_( other.histogram_ ),
-      n_( other.n_ )
+      n_( other.n_ ),
+      entropy_( other.entropy_ )
     {}
 
     virtual ~Histogram() 
@@ -46,6 +48,7 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
       {
         n_ = other.n_;
         histogram_ = other.histogram_;
+        entropy_ = other.entropy_;
       }
       return *this;
     }
@@ -66,6 +69,7 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
     {
       histogram_[ data_point.output() ]++;
       n_++;
+      entropy_ = -1.0f;
       return *this;
     }
 
@@ -80,6 +84,7 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
         ( *it ) += ( *sit );
       }
       n_ += h.n_;
+      entropy_ = -1.0f;
       return *this;
     }
 
@@ -111,20 +116,23 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
      *
      * @return 
      */
-    float get_entropy() const
+    float get_entropy()
     {
-      float entropy = 0.0f;
-      typename std::vector< size_t >::const_iterator it = histogram_.begin(),
-        end = histogram_.end();
-
-      for( ; it != end; ++it )
+      if( entropy_ < 0 )
       {
-        if( float p_i = static_cast<float>( *it ) / n_ )
+        entropy_ = 0.0f;
+        typename std::vector< size_t >::const_iterator it = histogram_.begin(),
+                 end = histogram_.end();
+
+        for( ; it != end; ++it )
         {
-          entropy += p_i * cvt::Math::log2( p_i );
+          if( float p_i = static_cast<float>( *it ) / n_ )
+          {
+            entropy_ -= p_i * cvt::Math::log2( p_i );
+          }
         }
       }
-      return -entropy;
+      return entropy_;
     }
 
     float probability( size_t class_index ) const
@@ -159,6 +167,7 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
   private:
     size_t                 n_;
     std::vector< size_t >  histogram_;
+    float                  entropy_;
 };
 
 #endif

@@ -28,9 +28,9 @@ class TrainingContextBase
 
     virtual S get_statistics( const std::vector< size_t >& data_idxs ) const =0;
 
-    virtual float compute_information_gain( const S& parent_s,
-        const S& left_s,
-        const S& right_s ) const =0;
+    virtual float compute_information_gain( S& parent_s,
+        S& left_s,
+        S& right_s ) const =0;
 
     virtual bool should_terminate( float information_gain ) const =0;
 

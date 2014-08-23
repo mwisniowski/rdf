@@ -47,9 +47,9 @@ class ImageContext : public TrainingContextBase< DataType, FeatureType, Statisti
      *
      * @return 
      */
-    float compute_information_gain( const StatisticsType& parent_statistics,
-        const StatisticsType& left_statistics,
-        const StatisticsType& right_statistics ) const
+    float compute_information_gain( StatisticsType& parent_statistics,
+        StatisticsType& left_statistics,
+        StatisticsType& right_statistics ) const
     {
       float H_p = parent_statistics.get_entropy();
       float H_l = left_statistics.get_entropy();
