@@ -39,8 +39,8 @@ class TrainingContextBase
    */
 
   private:
-    typedef std::vector< float > row_type;
-    typedef F (*feature_generator_fn)();
+    // typedef std::vector< float > row_type;
+    // typedef F (*feature_generator_fn)();
 
   public:
     TrainingContextBase( const TrainingParameters& params,

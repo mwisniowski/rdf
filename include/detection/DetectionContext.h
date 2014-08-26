@@ -13,10 +13,8 @@ class DetectionContext : public TrainingContextBase< DataType, FeatureType, Stat
 
   public:
     DetectionContext( const TrainingParameters& params, 
-                  const std::vector< DataType >& data, 
-                  size_t num_classes ) :
-      super( params, data ),
-      num_classes_( num_classes )
+                  const std::vector< DataType >& data ) :
+      super( params, data )
     {}
 
     virtual ~DetectionContext() 
@@ -24,12 +22,12 @@ class DetectionContext : public TrainingContextBase< DataType, FeatureType, Stat
 
     StatisticsType get_statistics() const
     {
-      return StatisticsType( num_classes_ );
+      return StatisticsType();
     }
 
     StatisticsType get_statistics( const std::vector< size_t >& data_idxs ) const
     {
-      StatisticsType s( num_classes_ );
+      StatisticsType s;
       for( size_t i = 0; i < data_idxs.size(); ++i )
       {
         s += data_point( data_idxs[ i ] );
@@ -47,17 +45,35 @@ class DetectionContext : public TrainingContextBase< DataType, FeatureType, Stat
      *
      * @return 
      */
-    float compute_information_gain( const StatisticsType& parent_statistics,
-        const StatisticsType& left_statistics,
-        const StatisticsType& right_statistics ) const
+    float compute_information_gain( StatisticsType& parent_statistics,
+        StatisticsType& left_statistics,
+        StatisticsType& right_statistics ) const
     {
-      float H_p = parent_statistics.get_entropy();
-      float H_l = left_statistics.get_entropy();
-      float H_r = right_statistics.get_entropy();
+      if( parent_statistics.type() == 0 )
+      {
+        float H_p = parent_statistics.get_classification_entropy();
+        float H_l = left_statistics.get_classification_entropy();
+        float H_r = right_statistics.get_classification_entropy();
 
-      float fraction = left_statistics.n() / static_cast<float>( parent_statistics.n() );
+        float fraction = left_statistics.n() / static_cast<float>( parent_statistics.n() );
 
-      return H_p - ( ( fraction * H_l ) + ( ( 1.0f  - fraction ) * H_r ) );
+        return H_p - ( ( fraction * H_l ) + ( ( 1.0f  - fraction ) * H_r ) );
+      } else if( parent_statistics.type() == 1 )
+      {
+        float H_p = parent_statistics.get_regression_entropy();
+        float H_l = left_statistics.get_regression_entropy();
+        float H_r = right_statistics.get_regression_entropy();
+
+        float fraction = left_statistics.n() / static_cast<float>( parent_statistics.n() );
+
+        return H_p - ( ( fraction * H_l ) + ( ( 1.0f  - fraction ) * H_r ) );
+      } else
+      {
+        // TODO for small data use regression
+        int rand = std::rand() % 2;
+        parent_statistics.set_type( rand );
+        return compute_information_gain( parent_statistics, left_statistics, right_statistics );
+      }
     }
 
     /**
@@ -72,9 +88,6 @@ class DetectionContext : public TrainingContextBase< DataType, FeatureType, Stat
       // TODO Magic number
       return information_gain < 0.01f;
     }
-
-  private:
-    size_t num_classes_;
 };
 
 #endif

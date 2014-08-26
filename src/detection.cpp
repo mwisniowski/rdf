@@ -1,12 +1,14 @@
+#include <sstream>
+#include <regex>
+
 #include <cvt/gfx/Image.h>
-#include "cvt/io/FileSystem.h"
+#include <cvt/io/FileSystem.h>
 
 #include "helper/gnuplot_i.hpp"
 
 #include "detection/DetectionContext.h"
 
 void get_data( std::vector< DataType >& data,
-    std::vector< cvt::String >& class_labels, 
     cvt::String& path )
 {
   if( !path.hasSuffix( "/" ) )
@@ -14,34 +16,94 @@ void get_data( std::vector< DataType >& data,
     path += "/";
   }
 
-  class_labels.clear();
-  cvt::FileSystem::ls( path, class_labels );
+  std::vector< cvt::String > annotations;
+  cvt::FileSystem::ls( path, annotations );
 
-  std::vector< cvt::String >::iterator it = class_labels.begin();
-  for( ; it != class_labels.end(); ++it )
+  const std::regex filename_rgx( "\"([^\"]+)\": " );
+  const std::regex rect_rgx( "\\((-?\\d+), (-?\\d+), (-?\\d+), (-?\\d+)\\)" );
+  const std::regex coord_rgx( "-?\\d+" );
+
+  std::vector< cvt::String >::iterator it = annotations.begin();
+  for( ; it != annotations.end(); ++it )
   {
-    if( !it->hasPrefix( "000" ) )
+    if( !it->hasSuffix( "idl" ) )
     {
-      class_labels.erase( it );
+      continue;
     }
-  }
 
-  for( size_t c = 0 ; c < class_labels.size(); c++ )
-  {
-    cvt::String p( path + class_labels[ c ] + "/" );
-    if( cvt::FileSystem::isDirectory( path ) )
+    std::string line;
+    std::ifstream file( ( path + *it  ).c_str() );
+    std::cout << "Processing IDL file: " << path + *it << std::endl;
+    while( std::getline( file, line ) )
     {
-      std::vector< cvt::String > class_data;
-      cvt::FileSystem::filesWithExtension( p, class_data, "ppm" );
-      for( size_t j = 0; j < class_data.size(); j++ )
+      std::smatch filename_match;
+      std::regex_search( line, filename_match, filename_rgx );
+      std::string data_filename( filename_match[ 1 ] );
+
+      cvt::Image img;
+      img.load( path + cvt::String( data_filename.c_str() ) );
+      img.convert( img, cvt::IFormat::GRAY_UINT16 );
+      std::cout << "Processing image file: " << data_filename << std::endl;
+
+      std::vector< cvt::Recti > rects;
+      const std::sregex_token_iterator end;
+      std::vector< int > vec { 1, 2, 3, 4 };
+      std::sregex_token_iterator ri( line.begin(), line.end(), rect_rgx, vec );
+      int count = 0;
+      while( ri != end )
       {
-        cvt::Image i;
-        i.load( class_data[ j ] );
-        std::vector< cvt::Image > v( 3 );
-        i.decompose( v[ 0 ], v[ 1 ], v[ 2 ] );
-        data.push_back( DataType( v, c ) );
+        int x = atoi( ri->str().c_str() ); ++ri;
+        int y = atoi( ri->str().c_str() ); ++ri;
+        int width = atoi( ri->str().c_str() ) - x; ++ri;
+        int height = atoi( ri->str().c_str() ) - y; ++ri;
+        rects.push_back( cvt::Recti( x, y, width, height ) );
+        count++;
       }
+      std::cout << "Found " << count << " rectangles" << std::endl;
+
+      std::vector< cvt::Vector2i > centers;
+      for( size_t i = 0; i < rects.size(); i++ )
+      {
+        const cvt::Recti& r = rects[ i ];
+        int x( cvt::Math::round( r.x + r.width/2.0f ) );
+        int y( cvt::Math::round( r.y + r.height/2.0f ) );
+        centers.push_back( cvt::Vector2i( x, y ) );
+      } 
+
+      count = 0;
+      const size_t border = ( PATCH_SIZE - 1 ) / 2;
+      for( size_t y = border; y < img.height() - border; y++ )
+      {
+        for( size_t x = PATCH_SIZE; x < img.width() - PATCH_SIZE; x++ )
+        {
+          cvt::Recti roi( x - border, y - border, PATCH_SIZE, PATCH_SIZE );
+          cvt::Image patch( img, &roi, 0 );
+          std::vector< cvt::Image > patch_vector( 1, patch );
+          // std::vector< cvt::Image > channels( 3 );
+          // patch.decompose( channels[ 0 ], channels[ 1 ], channels[ 2 ] );
+
+          int rect_idx = -1;
+          for( size_t r = 0; r < rects.size() && rect_idx < 0; r++ )
+          {
+            const cvt::Recti& rect = rects[ r ];
+            if( rect.contains( x, y ) )
+            {
+              rect_idx = r;
+            }
+          }
+          if( rect_idx < 0 )
+          {
+            data.push_back( DataType( patch_vector, std::make_pair( 0, cvt::Vector2i( 0, 0 ) ) ) );
+          } else
+          {
+            data.push_back( DataType( patch_vector, std::make_pair( 1, centers[ rect_idx ] ) ) );
+          }
+          count++;
+        }
+      }
+      std::cout << "Generated " << count << " data points" << std::endl;
     }
+    file.close();
   }
 }
 
@@ -78,10 +140,8 @@ int main(int argc, char *argv[])
   std::vector< DataType > data;
   cvt::String path( argv[ 1 ] );
   std::cout << "Loading data" << std::endl;
-  std::vector< cvt::String > class_labels;
 
-  get_data( data, class_labels, path );
-  size_t num_classes = class_labels.size();
+  get_data( data, path );
   std::random_shuffle( data.begin(), data.end() );
 
   size_t n = data.size() * split;
@@ -89,89 +149,89 @@ int main(int argc, char *argv[])
   std::vector< DataType > testing_data( data.end() - n, data.end() );
 
   std::cout << "Initializing context (builds lookup table)" << std::endl;
-  DetectionContext context( params, training_data, num_classes );
+  DetectionContext context( params, training_data );
   std::cout << "Training" << std::endl;
 
   ClassifierType classifier;
   TrainerType::train( classifier, context );
 
-  std::cout << "Classifying" << std::endl;
-  std::vector< std::vector< size_t > > confusion_matrix;
-  for( size_t i = 0; i < num_classes; i++ )
-  {
-    confusion_matrix.push_back( std::vector< size_t >( num_classes, 0 ) );
-  }
-  for( size_t i = 0; i < testing_data.size(); i++ )
-  {
-    const StatisticsType s = classifier.classify( context, testing_data[ i ] );
-    confusion_matrix[ s.get_mode().first ][ testing_data[ i ].output() ]++;
-  }
+  // std::cout << "Classifying" << std::endl;
+  // std::vector< std::vector< size_t > > confusion_matrix;
+  // for( size_t i = 0; i < num_classes; i++ )
+  // {
+  //   confusion_matrix.push_back( std::vector< size_t >( num_classes, 0 ) );
+  // }
+  // for( size_t i = 0; i < testing_data.size(); i++ )
+  // {
+  //   const StatisticsType s = classifier.classify( context, testing_data[ i ] );
+  //   confusion_matrix[ s.get_mode().first ][ testing_data[ i ].output() ]++;
+  // }
+  //
+  // std::cout << "Statistics:" << std::endl;
+  // std::vector< double > plot_x, plot_y;
+  // float acc = 0.0f;
+  // for( size_t c = 0; c < num_classes; c++ )
+  // {
+  //   size_t true_positive = confusion_matrix[ c ][ c ];
+  //
+  //   size_t labelled_positive = 0;
+  //   size_t classified_positive = 0;
+  //   for( size_t cc = 0; cc < num_classes; cc++ )
+  //   {
+  //     labelled_positive += confusion_matrix[ cc ][ c ];
+  //     classified_positive += confusion_matrix[ c ][ cc ];
+  //   }
+  //   size_t labelled_negative = n - labelled_positive;
+  //
+  //   size_t false_positive = classified_positive - true_positive;
+  //   float fpr = static_cast< float >( false_positive ) / labelled_negative;
+  //   float tpr = static_cast< float >( true_positive ) / labelled_positive;
+  //   acc += true_positive;
+  //
+  //   plot_x.push_back( fpr );
+  //   plot_y.push_back( tpr );
+  //
+  //   std::cout << "  Class " << c << ": (" << fpr << ", " << tpr << ")" << std::endl;
+  // }
+  // acc /= n;
+  // std::cout << "  Accuracy: " << acc << std::endl;
+  //
+  // try
+  // {
+  //   Gnuplot g;
+  //   std::ostringstream os;
+  //   os <<
+  //     "features="    << params.no_candidate_features <<
+  //     " thresholds=" << params.no_candate_thresholds <<
+  //     " depth="      << params.max_decision_levels   <<
+  //     " trees="      << params.trees                 <<
+  //     " pool_size="  << params.pool_size             <<
+  //     " split="      << split                        <<
+  //     " path="       << path;
+  //   g.set_title( os.str() );
+  //   g.set_xlabel("False positive rate");
+  //   g.set_ylabel("True positive rate");
+  //   g << "set size square";
+  //
+  //   g << "set xtics .1";
+  //   g << "set ytics .1";
+  //   g << "set mxtics 2";
+  //   g << "set mytics 2";
+  //   g.set_xrange(0,1);
+  //   g.set_yrange(0,1);
+  //   g.set_grid();
+  //
+  //   g.unset_legend();
+  //   g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
+  //   g.set_style("points lt 3").plot_xy( plot_x, plot_y );
+  // } catch( GnuplotException e )
+  // {
+  //   std::cout << e.what();
+  // }
+  //
+  // std::cout << "Finished" << std::endl;
+  //
+  // getchar();
 
-  std::cout << "Statistics:" << std::endl;
-  std::vector< double > plot_x, plot_y;
-  float acc = 0.0f;
-  for( size_t c = 0; c < num_classes; c++ )
-  {
-    size_t true_positive = confusion_matrix[ c ][ c ];
-
-    size_t labelled_positive = 0;
-    size_t classified_positive = 0;
-    for( size_t cc = 0; cc < num_classes; cc++ )
-    {
-      labelled_positive += confusion_matrix[ cc ][ c ];
-      classified_positive += confusion_matrix[ c ][ cc ];
-    }
-    size_t labelled_negative = n - labelled_positive;
-
-    size_t false_positive = classified_positive - true_positive;
-    float fpr = static_cast< float >( false_positive ) / labelled_negative;
-    float tpr = static_cast< float >( true_positive ) / labelled_positive;
-    acc += true_positive;
-
-    plot_x.push_back( fpr );
-    plot_y.push_back( tpr );
-
-    std::cout << "  Class " << c << ": (" << fpr << ", " << tpr << ")" << std::endl;
-  }
-  acc /= n;
-  std::cout << "  Accuracy: " << acc << std::endl;
-
-  try
-  {
-    Gnuplot g;
-    std::ostringstream os;
-    os <<
-      "features="    << params.no_candidate_features <<
-      " thresholds=" << params.no_candate_thresholds <<
-      " depth="      << params.max_decision_levels   <<
-      " trees="      << params.trees                 <<
-      " pool_size="  << params.pool_size             <<
-      " split="      << split                        <<
-      " path="       << path;
-    g.set_title( os.str() );
-    g.set_xlabel("False positive rate");
-    g.set_ylabel("True positive rate");
-    g << "set size square";
-
-    g << "set xtics .1";
-    g << "set ytics .1";
-    g << "set mxtics 2";
-    g << "set mytics 2";
-    g.set_xrange(0,1);
-    g.set_yrange(0,1);
-    g.set_grid();
-
-    g.unset_legend();
-    g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
-    g.set_style("points lt 3").plot_xy( plot_x, plot_y );
-  } catch( GnuplotException e )
-  {
-    std::cout << e.what();
-  }
-
-  std::cout << "Finished" << std::endl;
-
-  getchar();
-  
   return 0;
 }

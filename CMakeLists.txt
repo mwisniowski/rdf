@@ -7,6 +7,7 @@ find_package(CVT_DEBUG REQUIRED OpenMP REQUIRED)
 ## Build ##
 ###########
 
+SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
 if( OPENMP_FOUND )
   message("OPENMP FOUND")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
