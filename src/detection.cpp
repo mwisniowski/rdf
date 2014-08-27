@@ -8,103 +8,90 @@
 
 #include "detection/DetectionContext.h"
 
-void get_data( std::vector< DataType >& data,
-    cvt::String& path )
+void get_data( DetectionContext& context,
+    cvt::String& idl_path )
 {
-  if( !path.hasSuffix( "/" ) )
-  {
-    path += "/";
-  }
-
-  std::vector< cvt::String > annotations;
-  cvt::FileSystem::ls( path, annotations );
-
   const std::regex filename_rgx( "\"([^\"]+)\": " );
   const std::regex rect_rgx( "\\((-?\\d+), (-?\\d+), (-?\\d+), (-?\\d+)\\)" );
   const std::regex coord_rgx( "-?\\d+" );
+  const std::vector< int > rgx_token_vector { 1, 2, 3, 4 };
 
-  std::vector< cvt::String >::iterator it = annotations.begin();
-  for( ; it != annotations.end(); ++it )
+  if( !idl_path.hasSuffix( "idl" ) )
   {
-    if( !it->hasSuffix( "idl" ) )
+    std::cerr << "Please provide an IDL file" << std::endl;
+    return;
+  }
+  cvt::String folder_path = idl_path.substring( 0, idl_path.rfind( '/' ) + 1 );
+
+  std::string line;
+  std::ifstream file( ( idl_path  ).c_str() );
+  while( std::getline( file, line ) )
+  {
+    std::smatch filename_match;
+    std::regex_search( line, filename_match, filename_rgx );
+    std::string data_filename( filename_match[ 1 ] );
+
+    std::cout << "Processing " << data_filename << std::endl;
+    cvt::Image img;
+    img.load( folder_path + cvt::String( data_filename.c_str() ) );
+    img.convert( img, cvt::IFormat::GRAY_UINT16 );
+
+    std::vector< cvt::Recti > rects;
+    std::vector< cvt::Vector2i > centers;
+    const std::sregex_token_iterator end;
+    std::sregex_token_iterator ri( line.begin(), line.end(), rect_rgx, rgx_token_vector );
+    while( ri != end )
     {
-      continue;
+      int x1 = atoi( ri->str().c_str() ); ++ri;
+      int y1 = atoi( ri->str().c_str() ); ++ri;
+      int x2 = atoi( ri->str().c_str() ); ++ri;
+      int y2 = atoi( ri->str().c_str() ); ++ri;
+      if( x2 < x1 ) std::swap( x1, x2 );
+      if( y2 < y1 ) std::swap( y1, y2 );
+      int width = x2 - x1;
+      int height = y2 - y1;
+      rects.push_back( cvt::Recti( x1, y1, width, height ) );
+
+      int c_x( cvt::Math::round( x1 + width / 2.0f ) );
+      int c_y( cvt::Math::round( y1 + height / 2.0f ) );
+      centers.push_back( cvt::Vector2i( c_x, c_y ) );
     }
 
-    std::string line;
-    std::ifstream file( ( path + *it  ).c_str() );
-    std::cout << "Processing IDL file: " << path + *it << std::endl;
-    while( std::getline( file, line ) )
+    std::cout << rects.size() << " rectangles" << std::endl;
+
+    size_t count = 0;
+    const size_t border = ( PATCH_SIZE - 1 ) / 2;
+    for( size_t y = border; y < img.height() - border; y++ )
     {
-      std::smatch filename_match;
-      std::regex_search( line, filename_match, filename_rgx );
-      std::string data_filename( filename_match[ 1 ] );
-
-      cvt::Image img;
-      img.load( path + cvt::String( data_filename.c_str() ) );
-      img.convert( img, cvt::IFormat::GRAY_UINT16 );
-      std::cout << "Processing image file: " << data_filename << std::endl;
-
-      std::vector< cvt::Recti > rects;
-      const std::sregex_token_iterator end;
-      std::vector< int > vec { 1, 2, 3, 4 };
-      std::sregex_token_iterator ri( line.begin(), line.end(), rect_rgx, vec );
-      int count = 0;
-      while( ri != end )
+      for( size_t x = PATCH_SIZE; x < img.width() - PATCH_SIZE; x++ )
       {
-        int x = atoi( ri->str().c_str() ); ++ri;
-        int y = atoi( ri->str().c_str() ); ++ri;
-        int width = atoi( ri->str().c_str() ) - x; ++ri;
-        int height = atoi( ri->str().c_str() ) - y; ++ri;
-        rects.push_back( cvt::Recti( x, y, width, height ) );
+        cvt::Recti roi( x - border, y - border, PATCH_SIZE, PATCH_SIZE );
+        cvt::Image patch( img, &roi, 0 );
+        std::vector< cvt::Image > patch_vector( 1, patch );
+
+        int rect_idx = -1;
+        for( size_t r = 0; r < rects.size() && rect_idx < 0; r++ )
+        {
+          const cvt::Recti& rect = rects[ r ];
+          if( rect.contains( x, y ) )
+          {
+            rect_idx = r;
+          }
+        }
+        std::cout << "Evaluating datapoint " << count << std::endl;
+        if( rect_idx < 0 )
+        {
+          context += DataType( patch_vector, std::make_pair( 0, cvt::Vector2i( 0, 0 ) ) );
+        } else
+        {
+          context += DataType( patch_vector, std::make_pair( 1, centers[ rect_idx ] - cvt::Vector2i( x, y ) ) );
+        }
         count++;
       }
-      std::cout << "Found " << count << " rectangles" << std::endl;
-
-      std::vector< cvt::Vector2i > centers;
-      for( size_t i = 0; i < rects.size(); i++ )
-      {
-        const cvt::Recti& r = rects[ i ];
-        int x( cvt::Math::round( r.x + r.width/2.0f ) );
-        int y( cvt::Math::round( r.y + r.height/2.0f ) );
-        centers.push_back( cvt::Vector2i( x, y ) );
-      } 
-
-      count = 0;
-      const size_t border = ( PATCH_SIZE - 1 ) / 2;
-      for( size_t y = border; y < img.height() - border; y++ )
-      {
-        for( size_t x = PATCH_SIZE; x < img.width() - PATCH_SIZE; x++ )
-        {
-          cvt::Recti roi( x - border, y - border, PATCH_SIZE, PATCH_SIZE );
-          cvt::Image patch( img, &roi, 0 );
-          std::vector< cvt::Image > patch_vector( 1, patch );
-          // std::vector< cvt::Image > channels( 3 );
-          // patch.decompose( channels[ 0 ], channels[ 1 ], channels[ 2 ] );
-
-          int rect_idx = -1;
-          for( size_t r = 0; r < rects.size() && rect_idx < 0; r++ )
-          {
-            const cvt::Recti& rect = rects[ r ];
-            if( rect.contains( x, y ) )
-            {
-              rect_idx = r;
-            }
-          }
-          if( rect_idx < 0 )
-          {
-            data.push_back( DataType( patch_vector, std::make_pair( 0, cvt::Vector2i( 0, 0 ) ) ) );
-          } else
-          {
-            data.push_back( DataType( patch_vector, std::make_pair( 1, centers[ rect_idx ] ) ) );
-          }
-          count++;
-        }
-      }
-      std::cout << "Generated " << count << " data points" << std::endl;
     }
-    file.close();
+    std::cout << count << " data points" << std::endl;
   }
+  file.close();
 }
 
 int main(int argc, char *argv[])
@@ -137,21 +124,13 @@ int main(int argc, char *argv[])
   std::cout << "  split="      << split << std::endl;
   std::cout << "  path="       << argv[ 1 ] << std::endl;
 
-  std::vector< DataType > data;
   cvt::String path( argv[ 1 ] );
-  std::cout << "Loading data" << std::endl;
 
-  get_data( data, path );
-  std::random_shuffle( data.begin(), data.end() );
+  std::cout << "Loading data and initializing context (builds lookup table)" << std::endl;
+  DetectionContext context( params );
+  get_data( context, path );
 
-  size_t n = data.size() * split;
-  std::vector< DataType > training_data( data.begin(), data.end() - n );
-  std::vector< DataType > testing_data( data.end() - n, data.end() );
-
-  std::cout << "Initializing context (builds lookup table)" << std::endl;
-  DetectionContext context( params, training_data );
   std::cout << "Training" << std::endl;
-
   ClassifierType classifier;
   TrainerType::train( classifier, context );
 

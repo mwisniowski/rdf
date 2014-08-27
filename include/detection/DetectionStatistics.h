@@ -97,8 +97,8 @@ class DetectionStatistics: public StatisticsBase< D, F, DetectionStatistics< D, 
     {
       float entropy = 0.0f;
 
-      float x( sum_offset_.x / static_cast< float >( n ) );
-      float y( sum_offset_.y / static_cast< float >( n ) );
+      float x( sum_offset_.x / static_cast< float >( n_ ) );
+      float y( sum_offset_.y / static_cast< float >( n_ ) );
       cvt::Vector2f mean_offset( x, y );
 
       typename std::vector< cvt::Vector2i >::const_iterator it = offsets_.begin(),

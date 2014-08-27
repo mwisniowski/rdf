@@ -12,9 +12,8 @@ class DetectionContext : public TrainingContextBase< DataType, FeatureType, Stat
     typedef TrainingContextBase< DataType, FeatureType, StatisticsType > super;
 
   public:
-    DetectionContext( const TrainingParameters& params, 
-                  const std::vector< DataType >& data ) :
-      super( params, data )
+    DetectionContext( const TrainingParameters& params ) :
+      super( params )
     {}
 
     virtual ~DetectionContext() 

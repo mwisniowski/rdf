@@ -2,7 +2,8 @@
 #define INTERFACES_H
 
 #include <vector>
-#include "TrainingParameters.h"
+#include <iostream>
+#include "core/TrainingParameters.h"
 
 template< typename D >
 class FeatureBase
@@ -43,14 +44,19 @@ class TrainingContextBase
     // typedef F (*feature_generator_fn)();
 
   public:
+    TrainingContextBase( const TrainingParameters& params ) :
+      params_( params ),
+      features_( init_features( params.pool_size ) ),
+      table_( features_.size(), std::vector< float >() )
+    {}
+
     TrainingContextBase( const TrainingParameters& params,
         const std::vector< D >& data ) :
       params_( params ),
       data_( data ),
       features_( init_features( params.pool_size ) ),
       table_( init_table( features_, data ) )
-    {
-    }
+    {}
 
     TrainingContextBase( const TrainingContextBase& other ) :
       params_( other.params_ ),
@@ -60,6 +66,17 @@ class TrainingContextBase
     {}
 
   public:
+    TrainingContextBase& operator+=( const D& d )
+    {
+      data_.push_back( d );
+      for( size_t f = 0; f < features_.size(); f++ )
+      {
+        table_[ f ].push_back( features_[ f ]( d ) );
+      }
+
+      return *this;
+    }
+
     float lookup( size_t data_idx, size_t feature_idx ) const
     {
       return table_[ feature_idx ][ data_idx ];
