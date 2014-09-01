@@ -108,6 +108,11 @@ int main(int argc, char *argv[])
     }
   }
 
+  min_data = ( min_data / 100 ) * 100;
+  max_data = ( max_data / 100 + 1 ) * 100;
+
+  std::cout << min_data << ":" << max_data << std::endl;
+
   int width = max_data - min_data;
 
   cvt::Image img;
@@ -151,7 +156,11 @@ int main(int argc, char *argv[])
   }
 
   // display( img, width, width );
-  img.save( "toy_plot.png" );
+  cvt::String path( argv[ 1 ] );
+  path = path.substring( path.rfind( '/' ) + 1, path.length() );
+  path = path.substring( 0, path.rfind( '.' ) );
+  path += ".png";
+  img.save( path );
 
   return 0;
 }
