@@ -10,6 +10,7 @@
 #include <cvt/gfx/Image.h>
 #include <cvt/gfx/IMapScoped.h>
 #include <cvt/gfx/GFXEngineImage.h>
+#include <cvt/io/FileSystem.h>
 
 #include "toy/ToyContext.h"
 
@@ -156,11 +157,24 @@ int main(int argc, char *argv[])
   }
 
   // display( img, width, width );
-  cvt::String path( argv[ 1 ] );
-  path = path.substring( path.rfind( '/' ) + 1, path.length() );
-  path = path.substring( 0, path.rfind( '.' ) );
-  path += ".png";
-  img.save( path );
+  cvt::String filename( argv[ 1 ] );
+  filename = filename.substring( filename.rfind( '/' ) + 1, filename.length() );
+  filename = filename.substring( 0, filename.rfind( '.' ) );
+  filename += ".png";
+
+  std::stringstream ss;
+  ss << params.no_candidate_features << "_"
+    << params.no_candate_thresholds << "_"
+    << params.max_decision_levels << "_"
+    << params.trees << "_"
+    << params.pool_size;
+  cvt::String dirname( ss.str().c_str() );
+
+  if( !cvt::FileSystem::exists( dirname ) )
+  {
+    cvt::FileSystem::mkdir( dirname );
+  }
+  img.save( dirname + "/" + filename );
 
   return 0;
 }
