@@ -6,11 +6,11 @@
 
 #include "Interfaces.h"
 
-template< typename D, typename F >
-class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
+template< typename I, typename O, typename F >
+class Histogram: public StatisticsBase< I, O, F, Histogram< I, O, F > >
 {
   private:
-    typedef StatisticsBase< D, F, Histogram< D, F > >  super;
+    typedef StatisticsBase< I, O, F, Histogram< I, O, F > >  super;
 
   public:
     Histogram( size_t num_classes ) :
@@ -65,9 +65,9 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
     //   return *this;
     // }
     // 
-    Histogram& operator+=( const D& data_point )
+    Histogram& operator+=( const O& output )
     {
-      histogram_[ data_point.output() ]++;
+      histogram_[ output ]++;
       n_++;
       entropy_ = -1.0f;
       return *this;

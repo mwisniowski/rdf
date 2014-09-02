@@ -5,11 +5,12 @@
 
 #include "detection/DetectionCommon.h"
 #include "detection/DetectionFeature.h"
+#include "detection/DetectionStatistics.h"
 
-class DetectionContext : public TrainingContextBase< DataType, FeatureType, StatisticsType >
+class DetectionContext : public TrainingContextBase< InputType, OutputType, FeatureType, StatisticsType >
 {
   private:
-    typedef TrainingContextBase< DataType, FeatureType, StatisticsType > super;
+    typedef TrainingContextBase< InputType, OutputType, FeatureType, StatisticsType > super;
 
   public:
     DetectionContext( const TrainingParameters& params ) :
@@ -29,7 +30,7 @@ class DetectionContext : public TrainingContextBase< DataType, FeatureType, Stat
       StatisticsType s;
       for( size_t i = 0; i < data_idxs.size(); ++i )
       {
-        s += data_point( data_idxs[ i ] );
+        s += output( data_idxs[ i ] );
       }
       return s;
     }

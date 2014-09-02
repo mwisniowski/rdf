@@ -13,10 +13,12 @@
 template< size_t channels >
 class ImageFeature;
 
-typedef DataPoint< cvt::Image, size_t >                         DataType;
-typedef ImageFeature< CHANNELS >                                FeatureType;
-typedef Histogram< DataType, FeatureType >                      StatisticsType;
-typedef ForestTrainer< DataType, FeatureType, StatisticsType >  TrainerType;
-typedef Forest< DataType, FeatureType, StatisticsType >         ClassifierType;
+typedef cvt::Image                                                            InputType;
+typedef size_t                                                                OutputType;
+typedef DataPoint< InputType, OutputType>                                     DataType;
+typedef ImageFeature< CHANNELS >                                              FeatureType;
+typedef Histogram< InputType, OutputType, FeatureType >                       StatisticsType;
+typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType >   TrainerType;
+typedef Forest< InputType, OutputType, FeatureType, StatisticsType >          ClassifierType;
 
 #endif

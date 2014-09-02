@@ -7,7 +7,7 @@
 #include "Interfaces.h"
 #include "Tree.h"
 
-template< typename D, typename F, typename S >
+template< typename I, typename O, typename F, typename S >
 class TreeTrainer 
 {
   private:
@@ -17,7 +17,7 @@ class TreeTrainer
     class Test
     {
       public:
-        Test( const TrainingContextBase< D, F, S >& context, float threshold, size_t feature_idx ) :
+        Test( const TrainingContextBase< I, O, F, S >& context, float threshold, size_t feature_idx ) :
           context_( context ),
           threshold_( threshold ),
           feature_idx_( feature_idx )
@@ -34,7 +34,7 @@ class TreeTrainer
         }
 
       private:
-        const TrainingContextBase< D, F, S >&  context_;
+        const TrainingContextBase< I, O, F, S >&  context_;
         size_t                              feature_idx_;
         float                               threshold_;
     };
@@ -53,7 +53,7 @@ class TreeTrainer
         * @param thresholds
         * @param size
         */
-        void uniform( std::vector< float >& thresholds, size_t size, const TrainingContextBase< D, F, S >& context ) const
+        void uniform( std::vector< float >& thresholds, size_t size, const TrainingContextBase< I, O, F, S >& context ) const
         {
           thresholds.clear();
           thresholds.reserve( size );
@@ -76,7 +76,7 @@ class TreeTrainer
         * @param max
         * @param range
         */
-        void get_min_max( float& min, float& max, const TrainingContextBase< D, F, S >& context ) const
+        void get_min_max( float& min, float& max, const TrainingContextBase< I, O, F, S >& context ) const
         {
           min = FLT_MAX;
           max = -min;
@@ -117,7 +117,7 @@ class TreeTrainer
      *
      * @return 
      */
-    static void train( Tree< D, F, S >& tree, const TrainingContextBase< D, F, S >& context )
+    static void train( Tree< I, O, F, S >& tree, const TrainingContextBase< I, O, F, S >& context )
     {
       std::deque< size_t > frontier;
       frontier.push_back( tree.create_leaf( context, context.get_data_idxs() ) );
@@ -178,7 +178,7 @@ class TreeTrainer
         size_t& best_feature_idx,
         std::vector< size_t >& best_left_data_idxs,
         std::vector< size_t >& best_right_data_idxs,
-        const TrainingContextBase< D, F, S >& context,
+        const TrainingContextBase< I, O, F, S >& context,
         std::vector< size_t >& parent_data_idxs,
         S& parent_statistics,
         const std::vector< size_t>& feature_idxs )

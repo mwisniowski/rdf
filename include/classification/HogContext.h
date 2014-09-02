@@ -4,18 +4,18 @@
 #include <cvt/gfx/Image.h>
 
 #include "classification/HogCommon.h"
-#include "HogFeature.h"
+#include "classification/HogFeature.h"
 
-class HogContext : public TrainingContextBase< DataType, FeatureType, StatisticsType >
+class HogContext : public TrainingContextBase< InputType, OutputType, FeatureType, StatisticsType >
 {
   private:
-    typedef TrainingContextBase< DataType, FeatureType, StatisticsType > super;
+    typedef TrainingContextBase< InputType, OutputType, FeatureType, StatisticsType > super;
 
   public:
     HogContext( const TrainingParameters& params, 
                   const std::vector< DataType >& data, 
                   size_t num_classes ) :
-      super( params, data ),
+      super( params ),
       num_classes_( num_classes )
     {}
 
@@ -32,7 +32,7 @@ class HogContext : public TrainingContextBase< DataType, FeatureType, Statistics
       StatisticsType s( num_classes_ );
       for( size_t i = 0; i < data_idxs.size(); ++i )
       {
-        s += data_point( data_idxs[ i ] );
+        s += output( data_idxs[ i ] );
       }
       return s;
     }

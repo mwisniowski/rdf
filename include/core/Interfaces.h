@@ -3,13 +3,14 @@
 
 #include <vector>
 #include <iostream>
+#include "core/DataPoint.h"
 #include "core/TrainingParameters.h"
 
-template< typename D >
+template< typename I, typename O >
 class FeatureBase
 {
   public:
-    virtual float operator()( const D& point ) const =0;
+    virtual float operator()( const DataPoint< I, O >& point ) const =0;
 
     /**
      * IMPLEMENT THIS!
@@ -17,7 +18,7 @@ class FeatureBase
      */
 };
 
-template< typename D, typename F, typename S >
+template< typename I, typename O, typename F, typename S >
 class TrainingContextBase
 {
   /**
@@ -50,29 +51,29 @@ class TrainingContextBase
       table_( features_.size(), std::vector< float >() )
     {}
 
-    TrainingContextBase( const TrainingParameters& params,
-        const std::vector< D >& data ) :
-      params_( params ),
-      data_( data ),
-      features_( init_features( params.pool_size ) ),
-      table_( init_table( features_, data ) )
-    {}
+    // TrainingContextBase( const TrainingParameters& params,
+    //     const std::vector< DataPoint< I, O > >& data ) :
+    //   params_( params ),
+    //   outputs_( outputs ),
+    //   features_( init_features( params.pool_size ) ),
+    //   table_( init_table( features_, data ) )
+    // {}
 
     TrainingContextBase( const TrainingContextBase& other ) :
       params_( other.params_ ),
       features_( other.features_ ),
-      data_( other.data_ ),
+      outputs_( other.outputs_ ),
       table_( other.table_ )
     {}
 
   public:
-    TrainingContextBase& operator+=( const D& d )
+    TrainingContextBase& operator+=( const DataPoint< I, O >& d )
     {
-      data_.push_back( d );
       for( size_t f = 0; f < features_.size(); f++ )
       {
         table_[ f ].push_back( features_[ f ]( d ) );
       }
+      outputs_.push_back( d.output() );
 
       return *this;
     }
@@ -96,7 +97,7 @@ class TrainingContextBase
 
     std::vector< size_t > get_data_idxs() const
     {
-      return ascending_idxs( data_.size() );
+      return ascending_idxs( outputs_.size() );
     }
 
     const TrainingParameters& params() const
@@ -109,15 +110,21 @@ class TrainingContextBase
       return features_[ idx ];
     }
 
-    const D& data_point( size_t idx ) const
+    // const DataPoint< I, O >& data_point( size_t idx ) const
+    // {
+    //   return data_[ idx ];
+    // }
+    
+    const O& output( size_t idx ) const
     {
-      return data_[ idx ];
+      return outputs_[ idx ];
     }
 
   private:
     TrainingParameters                   params_;
     std::vector< F >                     features_;
-    std::vector< D >                     data_;
+    // std::vector< DataPoint< I, O > >                     data_;
+    std::vector< O > outputs_;
     std::vector< std::vector< float > >  table_;
 
     static std::vector< size_t > ascending_idxs( size_t size )
@@ -143,7 +150,7 @@ class TrainingContextBase
     }
 
     static std::vector< std::vector< float > > init_table( const std::vector< F >& features,
-        const std::vector< D >& data )
+        const std::vector< DataPoint< I, O > >& data )
     {
       std::vector< std::vector< float > > table( features.size(), std::vector< float >( data.size() ) );
 
@@ -160,12 +167,12 @@ class TrainingContextBase
 
 };
 
-template< typename D, typename F, typename S >
+template< typename I, typename O, typename F, typename S >
 class StatisticsBase 
 { 
   public:
     virtual S& operator+=( const S& s ) =0;
-    virtual S& operator+=( const D& d ) =0;
+    virtual S& operator+=( const O& o ) =0;
 };
 
 

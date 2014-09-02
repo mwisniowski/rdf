@@ -3,13 +3,13 @@
 
 #include <vector>
 
-#include "ToyCommon.h"
+#include "toy/ToyCommon.h"
 
 template< size_t d >
-class ToyFeature: public FeatureBase< DataType >
+class ToyFeature: public FeatureBase< InputType, OutputType >
 {
   private:
-    typedef FeatureBase< DataType > super;
+    typedef FeatureBase< InputType, OutputType > super;
 
   public:
     ToyFeature( const std::vector< float >& vec ) :

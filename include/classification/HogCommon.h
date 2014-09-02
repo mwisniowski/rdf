@@ -14,10 +14,12 @@
 template< size_t dimensions >
 class HogFeature;
 
-typedef DataPoint< float, size_t >                               DataType;
-typedef HogFeature< 4 * K * ( CELLS_X - 1 ) * ( CELLS_Y - 1 ) >  FeatureType;
-typedef Histogram< DataType, FeatureType >                       StatisticsType;
-typedef ForestTrainer< DataType, FeatureType, StatisticsType >   TrainerType;
-typedef Forest< DataType, FeatureType, StatisticsType >          ClassifierType;
+typedef float                                                                 InputType;
+typedef size_t                                                                OutputType;
+typedef DataPoint< InputType, OutputType>                                     DataType;
+typedef HogFeature< 4 * K * ( CELLS_X - 1 ) * ( CELLS_Y - 1 ) >               FeatureType;
+typedef Histogram< InputType, OutputType, FeatureType >                       StatisticsType;
+typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType >   TrainerType;
+typedef Forest< InputType, OutputType, FeatureType, StatisticsType >          ClassifierType;
 
 #endif

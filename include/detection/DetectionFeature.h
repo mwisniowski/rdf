@@ -7,10 +7,10 @@
 #include "detection/DetectionCommon.h"
 
 template< size_t channels >
-class DetectionFeature : public FeatureBase< DataType >
+class DetectionFeature : public FeatureBase< InputType, OutputType >
 {
   private:
-    typedef FeatureBase< DataType > super;
+    typedef FeatureBase< InputType, OutputType > super;
 
   public:
     DetectionFeature()

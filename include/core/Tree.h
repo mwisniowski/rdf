@@ -5,7 +5,7 @@
 #include <vector>
 #include "Interfaces.h"
 
-template< typename D, typename F, typename S >
+template< typename I, typename O, typename F, typename S >
 class Tree 
 {
   private:
@@ -190,7 +190,7 @@ class Tree
     virtual ~Tree() 
     {}
 
-    size_t create_leaf( const TrainingContextBase< D, F, S >& context, const std::vector< size_t >& data_idxs )
+    size_t create_leaf( const TrainingContextBase< I, O, F, S >& context, const std::vector< size_t >& data_idxs )
     {
       S s = context.get_statistics( data_idxs );
       leaves_.push_back( Leaf( s, data_idxs ) );
@@ -198,7 +198,7 @@ class Tree
     }
 
     void convert_to_split( size_t& left_idx, size_t& right_idx, 
-        const TrainingContextBase< D, F, S >& context, size_t leaf_idx, float threshold, size_t feature_idx, 
+        const TrainingContextBase< I, O, F, S >& context, size_t leaf_idx, float threshold, size_t feature_idx, 
         const std::vector< size_t >& left_data_idxs, const std::vector< size_t >& right_data_idxs )
     {
       left_idx = create_leaf( context, left_data_idxs );
@@ -250,7 +250,7 @@ class Tree
       leaves_ = pruned_leaves;
     }
 
-    S& classify( const D& point )
+    S& classify( const DataPoint< I, O >& point )
     {
       typename std::vector< Split >::const_iterator it = splits_.begin();
       if( it == splits_.end() )

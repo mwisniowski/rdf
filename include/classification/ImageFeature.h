@@ -7,10 +7,10 @@
 #include "classification/ImageCommon.h"
 
 template< size_t channels >
-class ImageFeature : public FeatureBase< DataType >
+class ImageFeature : public FeatureBase< InputType, OutputType >
 {
   private:
-    typedef FeatureBase< DataType > super;
+    typedef FeatureBase< InputType, OutputType > super;
 
   public:
     ImageFeature()

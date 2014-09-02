@@ -5,13 +5,13 @@
 #include <cvt/gfx/Image.h>
 #include <cvt/gfx/IMapScoped.h>
 
-#include "HogCommon.h"
+#include "classification/HogCommon.h"
 
 template< size_t d >
-class HogFeature: public FeatureBase< DataType >
+class HogFeature: public FeatureBase< InputType, OutputType >
 {
   private:
-    typedef FeatureBase< DataType > super;
+    typedef FeatureBase< InputType, OutputType > super;
 
   public:
     HogFeature( size_t component ) :

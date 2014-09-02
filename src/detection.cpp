@@ -78,7 +78,7 @@ void get_data( DetectionContext& context,
             rect_idx = r;
           }
         }
-        std::cout << "Evaluating datapoint " << count << std::endl;
+        // std::cout << "Evaluating datapoint " << count << std::endl;
         if( rect_idx < 0 )
         {
           context += DataType( patch_vector, std::make_pair( 0, cvt::Vector2i( 0, 0 ) ) );

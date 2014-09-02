@@ -5,12 +5,12 @@
 #include <map>
 
 #include "core/Interfaces.h"
+#include "detection/DetectionCommon.h"
 
-template< typename D, typename F >
-class DetectionStatistics: public StatisticsBase< D, F, DetectionStatistics< D, F > >
+class DetectionStatistics: public StatisticsBase< InputType, OutputType, FeatureType, DetectionStatistics >
 {
   private:
-    typedef StatisticsBase< D, F, DetectionStatistics< D, F > >  super;
+    typedef StatisticsBase< InputType, OutputType, FeatureType, DetectionStatistics > super;
 
   public:
     DetectionStatistics() :
@@ -44,14 +44,14 @@ class DetectionStatistics: public StatisticsBase< D, F, DetectionStatistics< D, 
       return *this;
     }
 
-    DetectionStatistics& operator+=( const D& data_point )
+    DetectionStatistics& operator+=( const OutputType& output )
     {
-      histogram_[ data_point.output().first ]++;
+      histogram_[ output.first ]++;
       n_++;
-      if( data_point.output().first == 1 )
+      if( output.first == 1 )
       {
-        offsets_.push_back( data_point.output().second );
-        sum_offset_ += data_point.output().second;
+        offsets_.push_back( output.second );
+        sum_offset_ += output.second;
       }
       return *this;
     }
@@ -123,7 +123,7 @@ class DetectionStatistics: public StatisticsBase< D, F, DetectionStatistics< D, 
 
     friend std::ostream& operator<<( std::ostream& os, const DetectionStatistics& s )
     {
-      os << s.n << ": { ";
+      os << s.n_ << ": { ";
       typename std::vector< size_t >::const_iterator it = s.histogram_.begin(),
         end = s.histogram_.end();
       for( size_t c = 0; it != end; ++it, c++ )

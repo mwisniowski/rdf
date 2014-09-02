@@ -4,19 +4,19 @@
 #include <cvt/math/Math.h>
 #include <map>
 
-#include "ToyCommon.h"
-#include "ToyFeature.h"
+#include "toy/ToyCommon.h"
+#include "toy/ToyFeature.h"
 
-class ToyContext : public TrainingContextBase< DataType, FeatureType, StatisticsType >
+class ToyContext : public TrainingContextBase< InputType, OutputType, FeatureType, StatisticsType >
 {
   private:
-    typedef TrainingContextBase< DataType, FeatureType, StatisticsType > super;
+    typedef TrainingContextBase< InputType, OutputType, FeatureType, StatisticsType > super;
 
   public:
     ToyContext( const TrainingParameters& params,
         const std::vector< DataType >& data,
         size_t num_classes ) :
-      super( params, data ),
+      super( params ),
       num_classes_( num_classes )
     {}
 
@@ -38,8 +38,7 @@ class ToyContext : public TrainingContextBase< DataType, FeatureType, Statistics
       StatisticsType s( num_classes_ );
       for( size_t i = 0; i < data_idxs.size(); ++i )
       {
-        const DataType& d = data_point( data_idxs[ i ] );
-        s += d;
+        s += output( data_idxs[ i ] );
       }
       return s;
     }

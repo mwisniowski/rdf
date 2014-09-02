@@ -9,10 +9,12 @@
 template< size_t d >
 class ToyFeature;
 
-typedef DataPoint< float, size_t >                              DataType;
-typedef ToyFeature< 2 >                                         FeatureType;
-typedef Histogram< DataType, FeatureType >                      StatisticsType;
-typedef ForestTrainer< DataType, FeatureType, StatisticsType >  TrainerType;
-typedef Forest< DataType, FeatureType, StatisticsType >         ClassifierType;
+typedef float                                                                 InputType;
+typedef size_t                                                                OutputType;
+typedef DataPoint< InputType, OutputType >                                    DataType;
+typedef ToyFeature< 2 >                                                       FeatureType;
+typedef Histogram< InputType, OutputType, FeatureType >                       StatisticsType;
+typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType >   TrainerType;
+typedef Forest< InputType, OutputType, FeatureType, StatisticsType >          ClassifierType;
 
 #endif
