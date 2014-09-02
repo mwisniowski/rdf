@@ -112,8 +112,6 @@ int main(int argc, char *argv[])
   min_data = ( min_data / 100 ) * 100;
   max_data = ( max_data / 100 + 1 ) * 100;
 
-  std::cout << min_data << ":" << max_data << std::endl;
-
   int width = max_data - min_data;
 
   cvt::Image img;
@@ -156,7 +154,6 @@ int main(int argc, char *argv[])
     map++;
   }
 
-  // display( img, width, width );
   cvt::String filename( argv[ 1 ] );
   filename = filename.substring( filename.rfind( '/' ) + 1, filename.length() );
   filename = filename.substring( 0, filename.rfind( '.' ) );
@@ -174,6 +171,8 @@ int main(int argc, char *argv[])
   {
     cvt::FileSystem::mkdir( dirname );
   }
+
+  std::cout << dirname + "/" + filename << " " << min_data << ":" << max_data << std::endl;
   img.save( dirname + "/" + filename );
 
   return 0;
