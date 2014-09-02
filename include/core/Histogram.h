@@ -121,14 +121,17 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
       if( entropy_ < 0 )
       {
         entropy_ = 0.0f;
-        typename std::vector< size_t >::const_iterator it = histogram_.begin(),
-                 end = histogram_.end();
-
-        for( ; it != end; ++it )
+        if( n_ > 0 )
         {
-          if( float p_i = static_cast<float>( *it ) / n_ )
+          typename std::vector< size_t >::const_iterator it = histogram_.begin(),
+                   end = histogram_.end();
+
+          for( ; it != end; ++it )
           {
-            entropy_ -= p_i * cvt::Math::log2( p_i );
+            if( float p_i = static_cast<float>( *it ) / n_ )
+            {
+              entropy_ -= p_i * cvt::Math::log2( p_i );
+            }
           }
         }
       }
