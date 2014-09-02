@@ -10,6 +10,7 @@
 #include <cvt/gfx/Image.h>
 #include <cvt/gfx/IMapScoped.h>
 #include <cvt/gfx/GFXEngineImage.h>
+#include <cvt/io/FileSystem.h>
 
 #include "toy/ToyContext.h"
 
@@ -108,6 +109,9 @@ int main(int argc, char *argv[])
     }
   }
 
+  min_data = ( min_data / 100 ) * 100;
+  max_data = ( max_data / 100 + 1 ) * 100;
+
   int width = max_data - min_data;
 
   cvt::Image img;
@@ -150,8 +154,26 @@ int main(int argc, char *argv[])
     map++;
   }
 
-  // display( img, width, width );
-  img.save( "toy_plot.png" );
+  cvt::String filename( argv[ 1 ] );
+  filename = filename.substring( filename.rfind( '/' ) + 1, filename.length() );
+  filename = filename.substring( 0, filename.rfind( '.' ) );
+  filename += ".png";
+
+  std::stringstream ss;
+  ss << params.no_candidate_features << "_"
+    << params.no_candate_thresholds << "_"
+    << params.max_decision_levels << "_"
+    << params.trees << "_"
+    << params.pool_size;
+  cvt::String dirname( ss.str().c_str() );
+
+  if( !cvt::FileSystem::exists( dirname ) )
+  {
+    cvt::FileSystem::mkdir( dirname );
+  }
+
+  std::cout << dirname + "/" + filename << " " << min_data << ":" << max_data << std::endl;
+  img.save( dirname + "/" + filename );
 
   return 0;
 }

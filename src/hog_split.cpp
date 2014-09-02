@@ -77,7 +77,7 @@ int main( int argc, char *argv[] )
 
   std::vector< DataType > data;
   cvt::String path( argv[ 1 ] );
-  std::cout << "Loading data" << std::endl;
+  // std::cout << "Loading data" << std::endl;
   std::vector< cvt::String > class_labels;
 
   get_data( data, class_labels, path );
@@ -88,18 +88,18 @@ int main( int argc, char *argv[] )
   std::vector< DataType > training_data( data.begin(), data.end() - n );
   std::vector< DataType > testing_data( data.end() - n, data.end() );
 
-  std::cout << "Initializing context (builds lookup table)" << std::endl;
+  // std::cout << "Initializing context (builds lookup table)" << std::endl;
   HogContext context( params, training_data, num_classes );
-  std::cout << "Training" << std::endl;
+  // std::cout << "Training" << std::endl;
 
   ClassifierType classifier;
   TrainerType::train( classifier, context );
 
-  std::cout << "Classifying" << std::endl;
-  std::vector< std::vector< size_t > > confusion_matrix;
+  // std::cout << "Classifying" << std::endl;
+  std::vector< std::vector< int > > confusion_matrix;
   for( size_t i = 0; i < num_classes; i++ )
   {
-    confusion_matrix.push_back( std::vector< size_t >( num_classes, 0 ) );
+    confusion_matrix.push_back( std::vector< int >( num_classes, 0 ) );
   }
   for( size_t i = 0; i < testing_data.size(); i++ )
   {
@@ -107,71 +107,63 @@ int main( int argc, char *argv[] )
     confusion_matrix[ s.get_mode().first ][ testing_data[ i ].output() ]++;
   }
 
-  std::cout << "Statistics:" << std::endl;
-  std::vector< double > plot_x, plot_y;
   float acc = 0.0f;
   for( size_t c = 0; c < num_classes; c++ )
   {
-    size_t true_positive = confusion_matrix[ c ][ c ];
-
-    size_t labelled_positive = 0;
-    size_t classified_positive = 0;
-    for( size_t cc = 0; cc < num_classes; cc++ )
-    {
-      labelled_positive += confusion_matrix[ cc ][ c ];
-      classified_positive += confusion_matrix[ c ][ cc ];
-    }
-    size_t labelled_negative = n - labelled_positive;
-
-    size_t false_positive = classified_positive - true_positive;
-    float fpr = static_cast< float >( false_positive ) / labelled_negative;
-    float tpr = static_cast< float >( true_positive ) / labelled_positive;
-    acc += true_positive;
-
-    plot_x.push_back( fpr );
-    plot_y.push_back( tpr );
-
-    std::cout << "  Class " << c << ": (" << fpr << ", " << tpr << ")" << std::endl;
+    acc += confusion_matrix[ c ][ c ];
   }
   acc /= n;
-  std::cout << "  Accuracy: " << acc << std::endl;
 
-  try
+  float numerator = 0.0f;
+  float denominator_lk_gf = 0.0f;
+  float denominator_kl_fg = 0.0f;
+
+  for( size_t k = 0; k < num_classes; k++ )
   {
-    Gnuplot g;
-    std::ostringstream os;
-    os <<
-      "features="    << params.no_candidate_features <<
-      " thresholds=" << params.no_candate_thresholds <<
-      " depth="      << params.max_decision_levels   <<
-      " trees="      << params.trees                 <<
-      " pool_size="  << params.pool_size             <<
-      " split="      << split                        <<
-      " path="       << path;
-    g.set_title( os.str() );
-    g.set_xlabel("False positive rate");
-    g.set_ylabel("True positive rate");
-    g << "set size square";
+    // numerator
+    for( size_t l = 0; l < num_classes; l++ )
+    {
+      for( size_t m = 0; m < num_classes; m++ )
+      {
+        numerator += confusion_matrix[ k ][ k ] * confusion_matrix[ m ][ l ] -
+          confusion_matrix[ l ][ k ] * confusion_matrix[ k ][ m ];
+      }
+    }
 
-    g << "set xtics .1";
-    g << "set ytics .1";
-    g << "set mxtics 2";
-    g << "set mytics 2";
-    g.set_xrange(0,1);
-    g.set_yrange(0,1);
-    g.set_grid();
+    // denominator
+    float sum_lk = 0.0f;
+    float sum_kl = 0.0f;
+    for( size_t l = 0; l < num_classes; l++ )
+    {
+      sum_lk += confusion_matrix[ l ][ k ];
+      sum_kl += confusion_matrix[ k ][ l ];
+    }
 
-    g.unset_legend();
-    g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
-    g.set_style("points lt 3").plot_xy( plot_x, plot_y );
-  } catch( GnuplotException e )
-  {
-    std::cout << e.what();
+    float sum_fg = 0.0f;
+    float sum_gf = 0.0f;
+    for( size_t f = 0; f < num_classes; f++ )
+    {
+      for( size_t g = 0; g < num_classes; g++ )
+      {
+        if( f != k )
+        {
+          sum_gf += confusion_matrix[ g ][ f ];
+          sum_fg += confusion_matrix[ f ][ g ];
+        }
+      } 
+    }
+
+    denominator_lk_gf += sum_lk * sum_gf;
+    denominator_kl_fg += sum_kl * sum_fg;
   }
+  float mcc = numerator / ( cvt::Math::sqrt( denominator_lk_gf ) * cvt::Math::sqrt( denominator_kl_fg ) );
+
+  std::cout << "Statistics:" << std::endl;
+  std::cout << "  Accuracy: " << acc << std::endl;
+  std::cout << "  MCC: " << mcc << std::endl;
 
   std::cout << "##########     Finished     ##########" << std::endl;
 
-  getchar();
   
   return 0;
 }
