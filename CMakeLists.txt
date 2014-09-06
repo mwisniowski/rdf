@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(CVT_RDF CXX C)
 
-find_package(cvt_debug REQUIRED)
+find_package(CVT_DEBUG REQUIRED)
 
 ###########
 ## Build ##
