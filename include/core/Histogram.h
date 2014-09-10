@@ -1,18 +1,22 @@
-#ifndef HISTOGRAM_H
-#define HISTOGRAM_H
+#ifndef RDF_HISTOGRAM_H
+#define RDF_HISTOGRAM_H
 
 #include <cvt/math/Math.h>
 #include <map>
 
 #include "Interfaces.h"
 
-template< typename I, typename O, typename F >
-class Histogram: public StatisticsBase< I, O, F, Histogram< I, O, F > >
+template< typename O >
+class Histogram: public StatisticsBase< O, Histogram< O > >
 {
   private:
-    typedef StatisticsBase< I, O, F, Histogram< I, O, F > >  super;
+    typedef StatisticsBase< O, Histogram< O > >  super;
 
   public:
+    Histogram() :
+      entropy_( -1.0f )
+    {}
+
     Histogram( size_t num_classes ) :
       histogram_( num_classes, 0 ),
       n_( 0 ),
@@ -94,7 +98,7 @@ class Histogram: public StatisticsBase< I, O, F, Histogram< I, O, F > >
      *
      * @return 
      */
-    std::pair< size_t, float > get_mode() const
+    std::pair< O, float > predict() const
     {
       float max_value = FLT_MIN;
       size_t max_c;
@@ -121,14 +125,17 @@ class Histogram: public StatisticsBase< I, O, F, Histogram< I, O, F > >
       if( entropy_ < 0 )
       {
         entropy_ = 0.0f;
-        typename std::vector< size_t >::const_iterator it = histogram_.begin(),
-                 end = histogram_.end();
-
-        for( ; it != end; ++it )
+        if( n_ > 0 )
         {
-          if( float p_i = static_cast<float>( *it ) / n_ )
+          typename std::vector< size_t >::const_iterator it = histogram_.begin(),
+                   end = histogram_.end();
+
+          for( ; it != end; ++it )
           {
-            entropy_ -= p_i * cvt::Math::log2( p_i );
+            if( float p_i = static_cast<float>( *it ) / n_ )
+            {
+              entropy_ -= p_i * cvt::Math::log2( p_i );
+            }
           }
         }
       }
@@ -147,7 +154,7 @@ class Histogram: public StatisticsBase< I, O, F, Histogram< I, O, F > >
 
     friend std::ostream& operator<<( std::ostream& os, const Histogram& s )
     {
-      os << s.n << ": { ";
+      os << s.n_ << ": { ";
       typename std::vector< size_t >::const_iterator it = s.histogram_.begin(),
         end = s.histogram_.end();
       for( size_t c = 0; it != end; ++it, c++ )

@@ -13,6 +13,7 @@
 #include <cvt/io/FileSystem.h>
 
 #include "toy/ToyContext.h"
+#include "toy/ToyTestSampler.h"
 
 void display( const cvt::Image& image, size_t width, size_t height ) {
   cvt::Window w("RDF");
@@ -62,11 +63,9 @@ int main(int argc, char *argv[])
 {
   srand( time( NULL ) );
   TrainingParameters params = {
-    100, //trees
+    1, //trees
     10,  //noCandidateFeatures
-    10,  //noCandidateThresholds
-    10,  //maxDecisionLevels
-    1000 //pool_size
+    10  //maxDecisionLevels
   };
 
   if( argc < 2 ) {
@@ -75,20 +74,22 @@ int main(int argc, char *argv[])
   }
 
   if( argc > 2 ) params.no_candidate_features = atoi( argv[ 2 ] );
-  if( argc > 3 ) params.no_candate_thresholds = atoi( argv[ 3 ] );
-  if( argc > 4 ) params.max_decision_levels = atoi( argv[ 4 ] );
-  if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
-  if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
+  if( argc > 3 ) params.max_decision_levels = atoi( argv[ 3 ] );
+  if( argc > 4 ) params.trees = atoi( argv[ 4 ] );
 
   std::vector< DataType > data;
   std::vector< char > class_labels;
   get_data( data, class_labels, argv[ 1 ] );
+  // TODO
+  std::random_shuffle( data.begin(), data.end() );
   size_t num_classes = class_labels.size();
 
-  ToyContext context( params, data, num_classes );
+  ToyTestSampler sampler( data );
+
+  ToyContext context( params, num_classes );
 
   ClassifierType classifier;
-  TrainerType::train( classifier, context );
+  TrainerType::train( classifier, context, sampler, data );
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;
@@ -135,7 +136,8 @@ int main(int argc, char *argv[])
       v[ 0 ] = static_cast<float>( column );
 
       DataType pt( v, 0 );
-      StatisticsType h = classifier.classify( context, pt );
+      StatisticsType h = context.get_statistics();
+      classifier.classify( h, pt );
 
       mix = cvt::Color::BLACK;
       float mudiness = 0.5f * h.get_entropy();
@@ -161,19 +163,23 @@ int main(int argc, char *argv[])
 
   std::stringstream ss;
   ss << params.no_candidate_features << "_"
-    << params.no_candate_thresholds << "_"
     << params.max_decision_levels << "_"
-    << params.trees << "_"
-    << params.pool_size;
+    << params.trees;
   cvt::String dirname( ss.str().c_str() );
 
-  if( !cvt::FileSystem::exists( dirname ) )
+  cvt::String root_dir( "toy_plot_results" );
+  if( !cvt::FileSystem::exists( root_dir ) )
   {
-    cvt::FileSystem::mkdir( dirname );
+    cvt::FileSystem::mkdir( root_dir );
+  }
+  if( !cvt::FileSystem::exists( root_dir + "/" + dirname ) )
+  {
+    cvt::FileSystem::mkdir( root_dir + "/" + dirname );
   }
 
   std::cout << dirname + "/" + filename << " " << min_data << ":" << max_data << std::endl;
-  img.save( dirname + "/" + filename );
+  img.save( root_dir + "/" + dirname + "/" + filename );
+  // img.save( filename );
 
   return 0;
 }

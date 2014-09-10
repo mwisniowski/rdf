@@ -12,6 +12,9 @@ class ToyFeature: public FeatureBase< InputType, OutputType >
     typedef FeatureBase< InputType, OutputType > super;
 
   public:
+    ToyFeature()
+    {}
+
     ToyFeature( const std::vector< float >& vec ) :
       v_( vec )
     {}
@@ -40,54 +43,36 @@ class ToyFeature: public FeatureBase< InputType, OutputType >
      *
      * @return 
      */
-    float operator()( const DataType& point ) const
+    float operator()( const std::vector< InputType >& input ) const
     {
       float sum = 0;
       for( size_t i = 0; i < d; i++ )
       {
-        sum += v_[ i ] * point.input( i );
+        sum += v_[ i ] * input[ i ];
       }
       return sum;
     }
 
-    static ToyFeature get_random_feature()
+    friend std::ostream& operator<<( std::ostream& os, const ToyFeature& feature )
     {
-      std::vector< float > v;
-      gaussian_vector( v, d );
-      return ToyFeature( v );
+      if( feature.v_.empty() )
+      {
+        os << "[]";
+      }
+      else
+      {
+        int last = feature.v_.size() - 1;
+        os << "[";
+        for(int i = 0; i < last; i++)
+          os << feature.v_[ i ] << ", ";
+        os << feature.v_[ last ] << "]";
+      }
+      return os;
     }
+
 
   private:
     std::vector< float > v_;
-
-    static void gaussian_vector( std::vector< float >& gv, size_t dimensions )
-    {
-      gv.clear();
-      for( size_t i = 0; i < dimensions; i+=2 )
-      {
-        float u, v, s;
-        do {
-          u = cvt::Math::rand( -1.0f, 1.0f );
-          v = cvt::Math::rand( -1.0f, 1.0f );
-          s = u * u + v * v;
-        } while ( s >= 1 );
-
-        gv.push_back( u * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
-        gv.push_back( v * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
-      }
-
-      if( dimensions % 2 == 1 )
-      {
-        float u, v, s;
-        do {
-          u = cvt::Math::rand( -1.0f, 1.0f );
-          v = cvt::Math::rand( -1.0f, 1.0f );
-          s = u * u + v * v;
-        } while ( s >= 1 );
-
-        gv.push_back( u * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
-      }
-    }
 };
 
 #endif

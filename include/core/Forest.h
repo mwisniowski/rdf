@@ -1,5 +1,5 @@
-#ifndef FOREST_H
-#define FOREST_H
+#ifndef RDF_FOREST_H
+#define RDF_FOREST_H
 
 #include "Tree.h"
 #include "Interfaces.h"
@@ -18,15 +18,13 @@ class Forest
       trees_.push_back( tree );
     }
 
-    S classify( const TrainingContextBase< I, O, F, S >& context, const DataPoint< I, O >& point )
+    S classify( S& statistics, const DataPoint< I, O >& point )
     {
-      S statistics = context.get_statistics();
-
       typename std::vector< Tree< I, O, F, S > >::iterator it = trees_.begin(),
         end = trees_.end();
       for( ; it != end; ++it )
       {
-        statistics += it->classify( point );
+        statistics += it->evaluate( point );
       }
 
       return statistics;

@@ -1,5 +1,6 @@
-#ifndef CVT_RDF_DATAPOINT_H
-#define CVT_RDF_DATAPOINT_H
+#ifndef RDF_DATAPOINT_H
+
+#define RDF_DATAPOINT_H
 
 #include <vector>
 #include <istream>

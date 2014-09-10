@@ -6,15 +6,20 @@
 #include "core/Histogram.h"
 #include "core/ForestTrainer.h"
 
+#define RDF_FEATURE_DIMENSIONS 2
+
 template< size_t d >
 class ToyFeature;
 
-typedef float                                                                 InputType;
-typedef size_t                                                                OutputType;
-typedef DataPoint< InputType, OutputType >                                    DataType;
-typedef ToyFeature< 2 >                                                       FeatureType;
-typedef Histogram< InputType, OutputType, FeatureType >                       StatisticsType;
-typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType >   TrainerType;
-typedef Forest< InputType, OutputType, FeatureType, StatisticsType >          ClassifierType;
+class ToyThresholdSampler;
+
+typedef float                                                                              InputType;
+typedef size_t                                                                             OutputType;
+typedef DataPoint< InputType, OutputType >                                                 DataType;
+typedef ToyFeature< RDF_FEATURE_DIMENSIONS >                                               FeatureType;
+typedef ToyThresholdSampler                                                                SamplerType;
+typedef Histogram< OutputType >                                                            StatisticsType;
+typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType, SamplerType >   TrainerType;
+typedef Forest< InputType, OutputType, FeatureType, StatisticsType >                       ClassifierType;
 
 #endif
