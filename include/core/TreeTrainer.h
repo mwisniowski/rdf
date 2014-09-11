@@ -11,17 +11,8 @@
 template< typename I, typename O, typename F, typename S >
 class TreeTrainer 
 {
-  typedef typename Tree< I, O, F, S >::Node NodeType;
+  typedef typename Tree< F, I, S >::Node NodeType;
   public:
-    // TreeTrainer()
-    // {}
-    //
-    // TreeTrainer( const TreeTrainer& other )
-    // {}
-    //
-    // virtual ~TreeTrainer() 
-    // {}
-
     /**
      * @brief While training the tree the elements of the DataCollection will be reordered
      * as part of in-place partitioning.
@@ -32,9 +23,9 @@ class TreeTrainer
      *
      * @return 
      */
-    static void train( Tree< I, O, F, S >& tree, 
+    static void train( Tree< F, I, S >& tree, 
         const TrainingContextBase< I, O, S >& context,
-        const TestSamplerBase< I, O, F >& sampler,
+        const TestSamplerBase< F, I >& sampler,
         const std::vector< DataPoint< I, O > >& data )
     {
       tree.make_root( context.get_statistics( data ) );
@@ -42,11 +33,11 @@ class TreeTrainer
       std::vector< std::vector< bool > > blacklist;
 
       // At every tree level expand all frontier nodes
-      for( size_t depth = 0; depth < context.params().max_decision_levels; depth++ )
+      for( size_t depth = 0; depth < context.params().max_depth; depth++ )
       { 
         // sample tests
-        std::vector< Test< I, O, F > > random_tests;
-        sampler.sample( random_tests, context.params().no_candidate_features );
+        std::vector< Test< F, I > > random_tests;
+        sampler.sample( random_tests, context.params().tests );
 
         /**********
          * Start GPU
@@ -55,23 +46,12 @@ class TreeTrainer
         size_t num_nodes_d = 1UL << depth;
 
         // generate candidate statistics
-        // std::vector< S > candidate_statistics( num_nodes_d * random_tests.size() * 2, context.get_statistics() );
-        std::vector< std::vector< std::pair< S, S > > > candidate_statistics( 
-          num_nodes_d, 
-          std::vector< std::pair< S, S > >( 
-            random_tests.size(), 
-            std::pair< S, S >( context.get_statistics(), context.get_statistics() ) 
-          ) 
-        );
-        // aggregate data in respective bin
+        std::vector< S* > candidate_statistics;
+        init_candidate_statistics( candidate_statistics, depth, random_tests.size(), blacklist, context );
         fill_statistics( candidate_statistics, random_tests, tree, paths, blacklist, data );
 
         // compute information gain
-        // std::vector< S > selected_statistics( 2 * num_nodes_d, context.get_statistics() );
-        std::vector< std::pair< S, S > > selected_statistics( 
-          num_nodes_d, 
-          std::pair< S, S >( context.get_statistics(), context.get_statistics() ) 
-        );
+        std::vector< S* > selected_statistics( 2 * num_nodes_d );
         std::vector< size_t > selected_test_idxs( num_nodes_d );
         std::vector< float > selected_gains( num_nodes_d, -FLT_MAX );
 
@@ -96,13 +76,18 @@ class TreeTrainer
           if( !context.should_terminate( selected_gains[ i ] ) )
           {
             tree.convert_to_split( n, random_tests[ selected_test_idxs[ i ] ],
-                selected_statistics[ i ].first, selected_statistics[ i ].second );
+                *selected_statistics[ 2 * i ], *selected_statistics[ 2 * i + 1 ] );
             growing = true;
           }
           else
           {
             blacklist.push_back( path );
           }
+        }
+
+        for( size_t i = 0; i < candidate_statistics.size(); i++ )
+        {
+          delete candidate_statistics[ i ];
         }
 
         if( !growing )
@@ -117,7 +102,7 @@ class TreeTrainer
           NodeType* n = tree.get_node( path );
           if( !is_blacklisted( blacklist, path ) )
           {
-            path.push_back( n->test( data[ i ] ) );
+            path.push_back( n->test( data[ i ].input() ) );
           }
         }
 
@@ -126,9 +111,35 @@ class TreeTrainer
     }
 
   private:
-    static void fill_statistics( std::vector< std::vector< std::pair< S, S > > >& candidate_statistics,
-        const std::vector< Test< I, O, F > >& random_tests,
-        const Tree< I, O, F, S >& tree,
+    static void init_candidate_statistics( std::vector< S* >& candidate_statistics,
+        size_t depth, size_t num_tests,
+        const std::vector< std::vector< bool > >& blacklist,
+        const TrainingContextBase< I, O, S >& context )
+    {
+      size_t num_nodes_d = 1UL << depth;
+      candidate_statistics.clear();
+      candidate_statistics.resize( num_nodes_d * num_tests * 2, NULL );
+
+      for( size_t i = 0; i < num_nodes_d; i++ )
+      {
+        std::vector< bool > path = to_path( i, depth );
+        if( is_blacklisted( blacklist, path ) )
+        {
+          continue;
+        }
+
+        typename std::vector< S* >::iterator it = candidate_statistics.begin() + i * 2 * num_tests,
+                 end = it + 2 * num_tests;
+        for( ; it != end; it++ )
+        {
+          *it = new S( context.get_statistics() );
+        }
+      }
+    }
+
+    static void fill_statistics( std::vector< S* >& candidate_statistics,
+        const std::vector< Test< F, I > >& random_tests,
+        const Tree< F, I, S >& tree,
         const std::vector< std::vector< bool > >& paths,
         const std::vector< std::vector< bool > >& blacklist,
         const std::vector< DataPoint< I, O > >& data )
@@ -145,33 +156,27 @@ class TreeTrainer
         size_t idx = to_int( path );
         for( size_t j = 0; j < random_tests.size(); j++ )
         {
-          // size_t candidate_idx = idx * 2 * random_tests.size() + 2 * j;
-          std::pair< S, S >& s_pair = candidate_statistics[ idx ][ j ];
-          bool result = random_tests[ j ]( data[ i ] );
+          size_t candidate_idx = idx * 2 * random_tests.size() + 2 * j;
+          bool result = random_tests[ j ]( data[ i ].input() );
           if( result ) 
           {
-            s_pair.second += data[ i ].output();
-            // candidate_idx++;
-          }
-          else
-          {
-            s_pair.first += data[ i ].output();
+            candidate_idx++;
           }
 
-          // candidate_statistics[ candidate_idx ] += data[ i ].output();
+          candidate_statistics[ candidate_idx ]->operator+=( data[ i ].output() );
         }
       }
     }
 
-    static void compute_information_gains( std::vector< std::pair< S, S > >& selected_statistics,
+    static void compute_information_gains( std::vector< S* >& selected_statistics,
         std::vector< size_t >& selected_test_idxs,
         std::vector< float >& selected_gains,
         size_t depth,
-        const Tree< I, O, F, S >& tree,
+        const Tree< F, I, S >& tree,
         const std::vector< std::vector< bool > >& blacklist,
-        const std::vector< Test< I, O, F > >& random_tests,
+        const std::vector< Test< F, I > >& random_tests,
         const TrainingContextBase< I, O, S >& context,
-        std::vector< std::vector< std::pair< S, S > > >& candidate_statistics )
+        std::vector< S* >& candidate_statistics )
     {
       size_t num_nodes_d = 1UL << depth;
       for( size_t i = 0; i < num_nodes_d; i++ )
@@ -183,33 +188,21 @@ class TreeTrainer
           continue;
         }
 
-        for( size_t j = 0; j < random_tests.size(); j++ )
+        typename std::vector< S* >::iterator it = candidate_statistics.begin() + 
+          i * 2 * random_tests.size();
+        for( size_t j = 0; j < random_tests.size(); j++, it += 2 )
         {
-          std::pair< S, S >& s_pair = candidate_statistics[ i ][ j ];
-          float gain = context.compute_information_gain( n->statistics, s_pair.first, s_pair.second );
+          S* left = *it;
+          S* right = *( it + 1 );
+          float gain = context.compute_information_gain( n->statistics, *left, *right );
           if( gain > selected_gains[ i ] )
           {
             selected_gains[ i ] = gain;
-            selected_statistics[ i ] = s_pair;
+            selected_statistics[ 2 * i ] = left;
+            selected_statistics[ 2 * i + 1 ] = right;
             selected_test_idxs[ i ] = j;
           }
         }
-
-        // typename std::vector< S >::iterator it = candidate_statistics.begin() + 
-        //   i * 2 * random_tests.size();
-        // for( size_t j = 0; j < random_tests.size(); j++, it += 2 )
-        // {
-        //   S& left = *it;
-        //   S& right = *( it + 1 );
-        //   float gain = context.compute_information_gain( n->statistics, left, right );
-        //   if( gain > selected_gains[ i ] )
-        //   {
-        //     selected_gains[ i ] = gain;
-        //     selected_statistics[ 2 * i ] = left;
-        //     selected_statistics[ 2 * i + 1 ] = right;
-        //     selected_test_idxs[ i ] = j;
-        //   }
-        // }
       }
     }
 

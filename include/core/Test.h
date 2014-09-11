@@ -6,7 +6,7 @@
 /**
  * @brief Simple helper class to perform a binary test
  */
-template< typename I, typename O, typename F >
+template< typename F, typename I >
 class Test
 {
   public:
@@ -33,9 +33,9 @@ class Test
       return *this;
     }
 
-    bool operator()( const DataPoint< I, O >& point ) const
+    bool operator()( const std::vector< I >& input ) const
     {
-      return feature_( point.input() ) < threshold_;
+      return feature_( input ) < threshold_;
     }
 
     friend std::ostream& operator<<( std::ostream& os, const Test& test )

@@ -6,10 +6,10 @@
 #include "toy/ToyCommon.h"
 
 template< size_t d >
-class ToyFeature: public FeatureBase< InputType, OutputType >
+class ToyFeature: public FeatureBase< InputType >
 {
   private:
-    typedef FeatureBase< InputType, OutputType > super;
+    typedef FeatureBase< InputType > super;
 
   public:
     ToyFeature()

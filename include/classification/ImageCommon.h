@@ -10,15 +10,17 @@
 
 #define CHANNELS 3
 
-template< size_t channels >
 class ImageFeature;
+
+template< size_t channels >
+class ImageTestSampler;
 
 typedef cvt::Image                                                            InputType;
 typedef size_t                                                                OutputType;
 typedef DataPoint< InputType, OutputType>                                     DataType;
-typedef ImageFeature< CHANNELS >                                              FeatureType;
-typedef Histogram< InputType, OutputType, FeatureType >                       StatisticsType;
+typedef ImageFeature                                                          FeatureType;
+typedef Histogram< OutputType >                                               StatisticsType;
 typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType >   TrainerType;
-typedef Forest< InputType, OutputType, FeatureType, StatisticsType >          ClassifierType;
+typedef Forest< FeatureType, InputType, StatisticsType >                      ClassifierType;
 
 #endif

@@ -8,16 +8,22 @@
 #include "core/Interfaces.h"
 #include "core/Test.h"
 
-template< typename I, typename O, typename F, typename S >
+template< typename F, typename I, typename S >
 class Tree 
 {
   public:
-    struct Node 
+    class Node 
     {
-      Test< I, O, F > test;
-      S statistics;
-      Node* left = NULL;
-      Node* right = NULL;
+      public:
+        Node() :
+          left( NULL ),
+          right( NULL )
+        {};
+
+        Test< F, I > test;
+        S statistics;
+        Node* left;
+        Node* right;
     };
 
     Tree()
@@ -41,7 +47,7 @@ class Tree
       root_->statistics = statistics;
     }
 
-    void convert_to_split( Node* node, const Test< I, O, F >& test,
+    void convert_to_split( Node* node, const Test< F, I >& test,
         const S& left_s, const S& right_s )
     {
       node->test = test;
@@ -100,12 +106,12 @@ class Tree
       return n;
     }
 
-    S& evaluate( const DataPoint< I, O >& point )
+    S& evaluate( const std::vector< I >& input )
     {
       Node* n = root_;
       while( n->left )
       {
-        if( n->test( point ) )
+        if( n->test( input ) )
         {
           n = n->right;
         }

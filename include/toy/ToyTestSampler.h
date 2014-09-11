@@ -7,13 +7,12 @@
 #include "toy/ToyCommon.h"
 #include "toy/ToyFeature.h"
 
-class ToyTestSampler: public TestSamplerBase< InputType, OutputType, FeatureType >
+class ToyTestSampler: public TestSamplerBase< FeatureType, InputType >
 {
-  typedef TestSamplerBase< InputType, OutputType, FeatureType > super;
+  typedef TestSamplerBase< FeatureType, InputType > super;
 
   public:
     ToyTestSampler( const std::vector< DataType >& data ) :
-      super(),
       t_min_( FLT_MAX ),
       t_max_( -FLT_MIN )
     {
@@ -56,7 +55,7 @@ class ToyTestSampler: public TestSamplerBase< InputType, OutputType, FeatureType
       return *this;
     }
 
-    void sample( std::vector< Test< InputType, OutputType, FeatureType > >& tests,
+    void sample( std::vector< Test< FeatureType, InputType > >& tests,
         size_t num_tests ) const
     {
       tests.clear();
@@ -65,11 +64,8 @@ class ToyTestSampler: public TestSamplerBase< InputType, OutputType, FeatureType
         std::vector< InputType > v;
         gaussian_vector( v, RDF_FEATURE_DIMENSIONS );
         FeatureType f( v );
-        for( size_t j = 0; j < 10; j++ )
-        {
-          float threshold = rand( t_min_, t_max_ );
-          tests.push_back( Test< InputType, OutputType, FeatureType >( f, threshold ) );
-        }
+        float threshold = rand( t_min_, t_max_ );
+        tests.push_back( Test< FeatureType, InputType >( f, threshold ) );
       }
     }
 

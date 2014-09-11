@@ -13,13 +13,13 @@ class ToyFeature;
 
 class ToyThresholdSampler;
 
-typedef float                                                                              InputType;
-typedef size_t                                                                             OutputType;
-typedef DataPoint< InputType, OutputType >                                                 DataType;
-typedef ToyFeature< RDF_FEATURE_DIMENSIONS >                                               FeatureType;
-typedef ToyThresholdSampler                                                                SamplerType;
-typedef Histogram< OutputType >                                                            StatisticsType;
-typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType, SamplerType >   TrainerType;
-typedef Forest< InputType, OutputType, FeatureType, StatisticsType >                       ClassifierType;
+typedef float                                                                 InputType;
+typedef size_t                                                                OutputType;
+typedef DataPoint< InputType, OutputType >                                    DataType;
+typedef ToyFeature< RDF_FEATURE_DIMENSIONS >                                  FeatureType;
+typedef ToyThresholdSampler                                                   SamplerType;
+typedef Histogram< OutputType >                                               StatisticsType;
+typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType >   TrainerType;
+typedef Forest< FeatureType, InputType, StatisticsType >                      ClassifierType;
 
 #endif

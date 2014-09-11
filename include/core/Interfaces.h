@@ -9,21 +9,21 @@
 #include "core/DataPoint.h"
 #include "core/TrainingParameters.h"
 
-template< typename I, typename O, typename F >
+template< typename F, typename I >
 class Test;
 
-template< typename I, typename O >
+template< typename I >
 class FeatureBase
 {
   public:
     virtual float operator()( const std::vector< I >& input ) const =0;
 };
 
-template< typename I, typename O, typename F >
+template< typename F, typename I >
 class TestSamplerBase
 {
   public:
-    virtual void sample( std::vector< Test< I, O, F > >& tests, size_t num_tests ) const =0;
+    virtual void sample( std::vector< Test< F, I > >& tests, size_t num_tests ) const =0;
 };
 
 template< typename O, typename S >

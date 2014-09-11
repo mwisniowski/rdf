@@ -7,14 +7,19 @@
 #include "helper/gnuplot_i.hpp"
 
 #include "detection/DetectionContext.h"
+#include "detection/DetectionTestSampler.h"
 
-void get_data( DetectionContext& context,
+void get_data( std::vector< DataType >& data,
     cvt::String& idl_path )
 {
   const std::regex filename_rgx( "\"([^\"]+)\": " );
   const std::regex rect_rgx( "\\((-?\\d+), (-?\\d+), (-?\\d+), (-?\\d+)\\)" );
   const std::regex coord_rgx( "-?\\d+" );
-  const std::vector< int > rgx_token_vector { 1, 2, 3, 4 };
+  std::vector< int > rgx_token_vector; 
+  rgx_token_vector.push_back( 1 );
+  rgx_token_vector.push_back( 2 );
+  rgx_token_vector.push_back( 3 );
+  rgx_token_vector.push_back( 4 );
 
   if( !idl_path.hasSuffix( "idl" ) )
   {
@@ -81,10 +86,10 @@ void get_data( DetectionContext& context,
         // std::cout << "Evaluating datapoint " << count << std::endl;
         if( rect_idx < 0 )
         {
-          context += DataType( patch_vector, std::make_pair( 0, cvt::Vector2i( 0, 0 ) ) );
+          data.push_back( DataType( patch_vector, std::make_pair( 0, cvt::Vector2i( 0, 0 ) ) ) );
         } else
         {
-          context += DataType( patch_vector, std::make_pair( 1, centers[ rect_idx ] - cvt::Vector2i( x, y ) ) );
+          data.push_back( DataType( patch_vector, std::make_pair( 1, centers[ rect_idx ] - cvt::Vector2i( x, y ) ) ) );
         }
         count++;
       }
@@ -101,38 +106,40 @@ int main(int argc, char *argv[])
   srand( time( NULL ) );
   TrainingParameters params = {
     1, //trees
-    100,  //no_candidate_features
-    100,  //no_candidate_thresholds
-    15,   //max_decision_levels
-    3000
+    10,  //noCandidateFeatures
+    10  //maxDecisionLevels
   };
-
   float split = 0.3;
-  if( argc > 2 ) params.no_candidate_features = atoi( argv[ 2 ] );
-  if( argc > 3 ) params.no_candate_thresholds = atoi( argv[ 3 ] );
-  if( argc > 4 ) params.max_decision_levels = atoi( argv[ 4 ] );
-  if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
-  if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
-  if( argc > 7 ) split = atof( argv[ 7 ] );
 
-  std::cout << "Parameters:" << std::endl;
-  std::cout << "  features="   << params.no_candidate_features << std::endl;
-  std::cout << "  thresholds=" << params.no_candate_thresholds << std::endl;
-  std::cout << "  depth="      << params.max_decision_levels << std::endl;
+  if( argc < 2 ) {
+    std::cerr << "Please provide a data file";
+    return 1;
+  }
+
+  if( argc > 2 ) params.tests = atoi( argv[ 2 ] );
+  if( argc > 3 ) params.max_depth = atoi( argv[ 3 ] );
+  if( argc > 4 ) params.trees = atoi( argv[ 4 ] );
+  if( argc > 5 ) split = atof( argv[ 5 ] );
+
+  std::cout << "Parameters:"   << std::endl;
+  std::cout << "  tests="      << params.tests << std::endl;
+  std::cout << "  max_depth="  << params.max_depth << std::endl;
   std::cout << "  trees="      << params.trees << std::endl;
-  std::cout << "  pool_size="  << params.pool_size << std::endl;
   std::cout << "  split="      << split << std::endl;
   std::cout << "  path="       << argv[ 1 ] << std::endl;
 
   cvt::String path( argv[ 1 ] );
 
   std::cout << "Loading data and initializing context (builds lookup table)" << std::endl;
+  std::vector< DataType > data;
+  get_data( data, path );
+
+  SamplerType sampler;
   DetectionContext context( params );
-  get_data( context, path );
 
   std::cout << "Training" << std::endl;
   ClassifierType classifier;
-  TrainerType::train( classifier, context );
+  TrainerType::train( classifier, context, sampler, data );
 
   // std::cout << "Classifying" << std::endl;
   // std::vector< std::vector< size_t > > confusion_matrix;

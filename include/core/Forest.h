@@ -4,7 +4,7 @@
 #include "Tree.h"
 #include "Interfaces.h"
 
-template< typename I, typename O, typename F, typename S >
+template< typename F, typename I, typename S >
 class Forest 
 {
   public:
@@ -13,25 +13,25 @@ class Forest
 
     virtual ~Forest() {}
 
-    void add( const Tree< I, O, F, S >& tree )
+    void add( const Tree< F, I, S >& tree )
     {
       trees_.push_back( tree );
     }
 
-    S classify( S& statistics, const DataPoint< I, O >& point )
+    S classify( S& statistics, const std::vector< I >& input )
     {
-      typename std::vector< Tree< I, O, F, S > >::iterator it = trees_.begin(),
+      typename std::vector< Tree< F, I, S > >::iterator it = trees_.begin(),
         end = trees_.end();
       for( ; it != end; ++it )
       {
-        statistics += it->evaluate( point );
+        statistics += it->evaluate( input );
       }
 
       return statistics;
     }
 
   private:
-    std::vector< Tree< I, O, F, S > >  trees_;
+    std::vector< Tree< F, I, S > >  trees_;
 };
 
 #endif

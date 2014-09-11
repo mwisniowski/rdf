@@ -7,10 +7,10 @@
 #include "core/Interfaces.h"
 #include "detection/DetectionCommon.h"
 
-class DetectionStatistics: public StatisticsBase< InputType, OutputType, FeatureType, DetectionStatistics >
+class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistics >
 {
   private:
-    typedef StatisticsBase< InputType, OutputType, FeatureType, DetectionStatistics > super;
+    typedef StatisticsBase< OutputType, DetectionStatistics > super;
 
   public:
     DetectionStatistics() :
@@ -58,9 +58,9 @@ class DetectionStatistics: public StatisticsBase< InputType, OutputType, Feature
 
     DetectionStatistics& operator+=( const DetectionStatistics& h )
     {
-      typename std::vector< size_t >::const_iterator sit = h.histogram_.begin(),
+      std::vector< size_t >::const_iterator sit = h.histogram_.begin(),
         send = h.histogram_.end();
-      typename std::vector< size_t >::iterator it = histogram_.begin();
+      std::vector< size_t >::iterator it = histogram_.begin();
 
       for( ; sit != send; ++sit, ++it )
       {
@@ -80,7 +80,7 @@ class DetectionStatistics: public StatisticsBase< InputType, OutputType, Feature
     float get_classification_entropy()
     {
       float entropy = 0.0f;
-      typename std::vector< size_t >::const_iterator it = histogram_.begin(),
+      std::vector< size_t >::const_iterator it = histogram_.begin(),
                end = histogram_.end();
 
       for( ; it != end; ++it )
@@ -101,7 +101,7 @@ class DetectionStatistics: public StatisticsBase< InputType, OutputType, Feature
       float y( sum_offset_.y / static_cast< float >( n_ ) );
       cvt::Vector2f mean_offset( x, y );
 
-      typename std::vector< cvt::Vector2i >::const_iterator it = offsets_.begin(),
+      std::vector< cvt::Vector2i >::const_iterator it = offsets_.begin(),
                end = offsets_.end();
       for( ; it != end; ++it )
       {
@@ -113,18 +113,26 @@ class DetectionStatistics: public StatisticsBase< InputType, OutputType, Feature
 
     float probability( size_t class_index ) const
     {
-      if( !histogram_[ class_index ] )
+      if( n_ > 0 )
+      {
+        return static_cast< float >( histogram_[ class_index ] / n_ );
+      }
+      else
       {
         return 0.0f;
-      } else {
-        return static_cast<float>( histogram_[ class_index ] ) / n_;
       }
+    }
+
+    std::pair< OutputType, float > predict() const
+    {
+      cvt::Vector2i mean_offset = sum_offset_ / n_;
+      return std::pair< OutputType, float >( OutputType( 1, mean_offset ), probability( 1 ) );
     }
 
     friend std::ostream& operator<<( std::ostream& os, const DetectionStatistics& s )
     {
       os << s.n_ << ": { ";
-      typename std::vector< size_t >::const_iterator it = s.histogram_.begin(),
+      std::vector< size_t >::const_iterator it = s.histogram_.begin(),
         end = s.histogram_.end();
       for( size_t c = 0; it != end; ++it, c++ )
       {

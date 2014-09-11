@@ -4,7 +4,7 @@
 #include "Forest.h"
 #include "TreeTrainer.h"
 
-template< typename I, typename O, typename F, typename S, typename T >
+template< typename I, typename O, typename F, typename S >
 class ForestTrainer 
 {
   public:
@@ -14,14 +14,15 @@ class ForestTrainer
     virtual ~ForestTrainer() 
     {}
 
-    static void train( Forest< I, O, F, S >& forest, const TrainingContextBase< I, O, S >& context, 
-        const TestSamplerBase< I, O, F >& sampler,
+    static void train( Forest< F, I, S >& forest, 
+        const TrainingContextBase< I, O, S >& context, 
+        const TestSamplerBase< F, I >& sampler,
         const std::vector< DataPoint< I, O > >& data )
     {
       for( size_t i = 0; i < context.params().trees; i++ )
       {
         // std::cout << "Training tree " << i + 1 << "/" << context.params().trees << std::endl;
-        Tree< I, O, F, S > tree;
+        Tree< F, I, S > tree;
         TreeTrainer< I, O, F, S >::train( tree, context, sampler, data );
         forest.add( tree );
         // std::cout << tree << std::endl;

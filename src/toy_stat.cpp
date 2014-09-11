@@ -6,6 +6,7 @@
 #include <set>
 
 #include "toy/ToyContext.h"
+#include "toy/ToyTestSampler.h"
 
 #include "helper/gnuplot_i.hpp"
 
@@ -40,11 +41,9 @@ int main(int argc, char *argv[])
 
   srand( time( NULL ) );
   TrainingParameters params = {
-    100, //trees
+    1, //trees
     10,  //noCandidateFeatures
-    10,  //noCandidateThresholds
-    10,   //maxDecisionLevels
-    1000 //feature_pool_size
+    10  //maxDecisionLevels
   };
   size_t folds = 10;
 
@@ -53,19 +52,15 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if( argc > 2 ) params.no_candidate_features = atoi( argv[ 2 ] );
-  if( argc > 3 ) params.no_candate_thresholds = atoi( argv[ 3 ] );
-  if( argc > 4 ) params.max_decision_levels = atoi( argv[ 4 ] );
-  if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
-  if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
-  if( argc > 7 ) folds = atoi( argv[ 7 ] );
+  if( argc > 2 ) params.tests = atoi( argv[ 2 ] );
+  if( argc > 3 ) params.max_depth = atoi( argv[ 3 ] );
+  if( argc > 4 ) params.trees = atoi( argv[ 4 ] );
+  if( argc > 5 ) folds = atoi( argv[ 5 ] );
 
-  std::cout << "Parameters:" << std::endl;
-  std::cout << "  features="   << params.no_candidate_features << std::endl;
-  std::cout << "  thresholds=" << params.no_candate_thresholds << std::endl;
-  std::cout << "  depth="      << params.max_decision_levels << std::endl;
+  std::cout << "Parameters:"   << std::endl;
+  std::cout << "  tests="      << params.tests << std::endl;
+  std::cout << "  max_depth="  << params.max_depth << std::endl;
   std::cout << "  trees="      << params.trees << std::endl;
-  std::cout << "  pool_size="  << params.pool_size << std::endl;
   std::cout << "  folds="      << folds << std::endl;
   std::cout << "  path="       << argv[ 1 ] << std::endl;
 
@@ -102,15 +97,17 @@ int main(int argc, char *argv[])
 
     std::vector< DataType > test_data( partition_map[ f ], partition_map[ f + 1 ] );
 
-    ToyContext context( params, training_data, num_classes );
+    ToyTestSampler sampler( training_data );
+    ToyContext context( params, num_classes );
 
     ClassifierType classifier;
-    TrainerType::train( classifier, context );
+    TrainerType::train( classifier, context, sampler, training_data );
     
     for( size_t i = 0; i < n; i++ )
     {
-      const StatisticsType h = classifier.classify( context, test_data[ i ] );
-      confusion_matrix[ h.get_mode().first ][ test_data[ i ].output() ]++;
+      StatisticsType h = context.get_statistics();
+      classifier.classify( h, test_data[ i ].input() );
+      confusion_matrix[ h.predict().first ][ test_data[ i ].output() ]++;
     }
 
     float acc = 0.0f;

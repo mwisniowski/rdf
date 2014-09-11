@@ -4,8 +4,8 @@
 struct TrainingParameters
 {
   unsigned int trees;
-  unsigned int no_candidate_features;
-  unsigned int max_decision_levels;
+  unsigned int tests;
+  unsigned int max_depth;
 };
 
 #endif

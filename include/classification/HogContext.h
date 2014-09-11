@@ -6,14 +6,13 @@
 #include "classification/HogCommon.h"
 #include "classification/HogFeature.h"
 
-class HogContext : public TrainingContextBase< InputType, OutputType, FeatureType, StatisticsType >
+class HogContext : public TrainingContextBase< InputType, OutputType, StatisticsType >
 {
   private:
-    typedef TrainingContextBase< InputType, OutputType, FeatureType, StatisticsType > super;
+    typedef TrainingContextBase< InputType, OutputType, StatisticsType > super;
 
   public:
     HogContext( const TrainingParameters& params, 
-                  const std::vector< DataType >& data, 
                   size_t num_classes ) :
       super( params ),
       num_classes_( num_classes )
@@ -27,12 +26,12 @@ class HogContext : public TrainingContextBase< InputType, OutputType, FeatureTyp
       return StatisticsType( num_classes_ );
     }
 
-    StatisticsType get_statistics( const std::vector< size_t >& data_idxs ) const
+    StatisticsType get_statistics( const std::vector< DataPoint< InputType, OutputType > >& data ) const
     {
       StatisticsType s( num_classes_ );
-      for( size_t i = 0; i < data_idxs.size(); ++i )
+      for( size_t i = 0; i < data.size(); ++i )
       {
-        s += output( data_idxs[ i ] );
+        s += data[ i ].output();
       }
       return s;
     }

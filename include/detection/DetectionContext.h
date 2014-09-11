@@ -7,10 +7,10 @@
 #include "detection/DetectionFeature.h"
 #include "detection/DetectionStatistics.h"
 
-class DetectionContext : public TrainingContextBase< InputType, OutputType, FeatureType, StatisticsType >
+class DetectionContext : public TrainingContextBase< InputType, OutputType, StatisticsType >
 {
   private:
-    typedef TrainingContextBase< InputType, OutputType, FeatureType, StatisticsType > super;
+    typedef TrainingContextBase< InputType, OutputType, StatisticsType > super;
 
   public:
     DetectionContext( const TrainingParameters& params ) :
@@ -25,12 +25,12 @@ class DetectionContext : public TrainingContextBase< InputType, OutputType, Feat
       return StatisticsType();
     }
 
-    StatisticsType get_statistics( const std::vector< size_t >& data_idxs ) const
+    StatisticsType get_statistics( const std::vector< DataPoint< InputType, OutputType > >& data ) const
     {
       StatisticsType s;
-      for( size_t i = 0; i < data_idxs.size(); ++i )
+      for( size_t i = 0; i < data.size(); ++i )
       {
-        s += output( data_idxs[ i ] );
+        s += data[ i ].output();
       }
       return s;
     }

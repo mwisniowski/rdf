@@ -23,20 +23,6 @@ class Histogram: public StatisticsBase< O, Histogram< O > >
       entropy_( -1.0f )
     {}
 
-    // Histogram( const std::vector< D const* >& data, size_t num_classes ) :
-    //   histogram_( num_classes ),
-    //   n_( 0 )
-    // {
-    //   typename std::vector< D const* >::const_iterator it = data.begin(),
-    //     end = data.end();
-    //   for( ; it != end; ++it )
-    //   {
-    //     size_t c = (**it).output();
-    //     histogram_[ c ]++;
-    //     n_++;
-    //   }
-    // }
-
     Histogram( const Histogram& other ) :
       histogram_( other.histogram_ ),
       n_( other.n_ ),
@@ -57,18 +43,6 @@ class Histogram: public StatisticsBase< O, Histogram< O > >
       return *this;
     }
 
-    // Histogram& operator+=( const std::vector< size_t >& data_idxs )
-    // {
-    //   std::vector< size_t >::const_iterator it( data_idxs.begin() );
-    //   for( ; it != data_idxs.end(); ++it )
-    //   {
-    //     const D& d = this->context_.data_point( *it );
-    //     histogram_[ d.output() ]++;
-    //     n_++;
-    //   }
-    //   return *this;
-    // }
-    // 
     Histogram& operator+=( const O& output )
     {
       histogram_[ output ]++;

@@ -73,19 +73,19 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if( argc > 2 ) params.no_candidate_features = atoi( argv[ 2 ] );
-  if( argc > 3 ) params.max_decision_levels = atoi( argv[ 3 ] );
+  bool open = false;
+
+  if( argc > 2 ) params.tests = atoi( argv[ 2 ] );
+  if( argc > 3 ) params.max_depth = atoi( argv[ 3 ] );
   if( argc > 4 ) params.trees = atoi( argv[ 4 ] );
+  if( argc > 5 ) open = atoi( argv[ 5 ] );
 
   std::vector< DataType > data;
   std::vector< char > class_labels;
   get_data( data, class_labels, argv[ 1 ] );
-  // TODO
-  std::random_shuffle( data.begin(), data.end() );
   size_t num_classes = class_labels.size();
 
   ToyTestSampler sampler( data );
-
   ToyContext context( params, num_classes );
 
   ClassifierType classifier;
@@ -135,9 +135,8 @@ int main(int argc, char *argv[])
     {
       v[ 0 ] = static_cast<float>( column );
 
-      DataType pt( v, 0 );
       StatisticsType h = context.get_statistics();
-      classifier.classify( h, pt );
+      classifier.classify( h, v );
 
       mix = cvt::Color::BLACK;
       float mudiness = 0.5f * h.get_entropy();
@@ -162,8 +161,8 @@ int main(int argc, char *argv[])
   filename += ".png";
 
   std::stringstream ss;
-  ss << params.no_candidate_features << "_"
-    << params.max_decision_levels << "_"
+  ss << params.tests << "_"
+    << params.max_depth << "_"
     << params.trees;
   cvt::String dirname( ss.str().c_str() );
 
@@ -177,9 +176,14 @@ int main(int argc, char *argv[])
     cvt::FileSystem::mkdir( root_dir + "/" + dirname );
   }
 
+  cvt::String result_path = root_dir + "/" + dirname + "/" + filename;
   std::cout << dirname + "/" + filename << " " << min_data << ":" << max_data << std::endl;
-  img.save( root_dir + "/" + dirname + "/" + filename );
-  // img.save( filename );
+  img.save( result_path );
+
+  if( open )
+  {
+    system( ( cvt::String( "open " ) + result_path ).c_str() );
+  }
 
   return 0;
 }
