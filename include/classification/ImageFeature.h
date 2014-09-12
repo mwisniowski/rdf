@@ -52,6 +52,12 @@ class ImageFeature : public FeatureBase< InputType >
       return map( p.x, p.y ) - map( q.x, q.y );
     }
 
+    friend std::ostream& operator<<( std::ostream& os, const ImageFeature& f )
+    {
+      os << "[" << f.point1_ << ", " << f.point2_ << ", " << f.channel_ << " ]";
+      return os;
+    }
+
   public:
     cvt::Point2f point1_;
     cvt::Point2f point2_;

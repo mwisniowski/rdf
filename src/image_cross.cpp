@@ -104,15 +104,15 @@ int main(int argc, char *argv[])
     ImageContext context( params, num_classes );
 
     // std::cout << "Training" << std::endl;
-    ClassifierType classifier;
-    TrainerType::train( classifier, context, sampler, training_data );
+    ForestType forest;
+    TrainerType::train( forest, context, sampler, training_data );
     
     // std::cout << "Classifying" << std::endl;
     for( size_t i = 0; i < n; i++ )
     {
-      StatisticsType h = context.get_statistics();
-      classifier.classify( h, testing_data[ i ].input() );
-      confusion_matrix[ h.predict().first ][ testing_data[ i ].output() ]++;
+      StatisticsType s = context.get_statistics();
+      forest( s, testing_data[ i ].input() );
+      confusion_matrix[ s.predict().first ][ testing_data[ i ].output() ]++;
     }
 
     float acc = 0.0f;

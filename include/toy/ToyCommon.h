@@ -20,6 +20,6 @@ typedef ToyFeature< RDF_FEATURE_DIMENSIONS >                                  Fe
 typedef ToyThresholdSampler                                                   SamplerType;
 typedef Histogram< OutputType >                                               StatisticsType;
 typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType >   TrainerType;
-typedef Forest< FeatureType, InputType, StatisticsType >                      ClassifierType;
+typedef Forest< FeatureType, InputType, StatisticsType >                      ForestType;
 
 #endif

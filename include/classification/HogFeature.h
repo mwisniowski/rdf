@@ -48,6 +48,12 @@ class HogFeature: public FeatureBase< InputType >
       return input[ component_ ];
     }
 
+    friend std::ostream& operator<<( std::ostream& os, const HogFeature& f )
+    {
+      os << "[ " << f.component_ << " ]";
+      return os;
+    }
+
   private:
     size_t component_;
 };

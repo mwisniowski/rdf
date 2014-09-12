@@ -14,10 +14,10 @@
 #include "core/Test.h"
 
 template< typename F, typename I, typename S >
-class Tree : public cvt::XMLSerializable
+class Tree
 {
   public:
-    class Node : public cvt::XMLSerializable
+    class Node
     {
       public:
         Node() :

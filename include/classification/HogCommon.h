@@ -23,6 +23,6 @@ typedef HogFeature FeatureType;
 typedef HogTestSampler< 4 * K * ( CELLS_X - 1 ) * ( CELLS_Y - 1 ) >           SamplerType;
 typedef Histogram< OutputType >                                               StatisticsType;
 typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType >   TrainerType;
-typedef Forest< FeatureType, InputType, StatisticsType >                      ClassifierType;
+typedef Forest< FeatureType, InputType, StatisticsType >                      ForestType;
 
 #endif

@@ -88,8 +88,8 @@ int main(int argc, char *argv[])
   ToyTestSampler sampler( data );
   ToyContext context( params, num_classes );
 
-  ClassifierType classifier;
-  TrainerType::train( classifier, context, sampler, data );
+  ForestType forest;
+  TrainerType::train( forest, context, sampler, data );
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;
@@ -135,14 +135,14 @@ int main(int argc, char *argv[])
     {
       v[ 0 ] = static_cast<float>( column );
 
-      StatisticsType h = context.get_statistics();
-      classifier.classify( h, v );
+      StatisticsType s = context.get_statistics();
+      forest( s, v );
 
       mix = cvt::Color::BLACK;
-      float mudiness = 0.5f * h.get_entropy();
+      float mudiness = 0.5f * s.get_entropy();
       for( size_t i = 0; i < num_classes; i++ )
       {
-        float p = ( 1.0f - mudiness ) * h.probability( i );
+        float p = ( 1.0f - mudiness ) * s.probability( i );
         mix = mix + colormap[ i ] * p;
       }
       mix = mix + gray * mudiness;
