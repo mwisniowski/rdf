@@ -3,6 +3,7 @@
 
 #include <cvt/gfx/Image.h>
 #include <cvt/io/FileSystem.h>
+#include <cvt/gfx/IExpr.h>
 
 #include "helper/gnuplot_i.hpp"
 
@@ -39,7 +40,7 @@ void get_data( std::vector< DataType >& data,
     std::cout << "Processing " << data_filename << std::endl;
     cvt::Image img;
     img.load( folder_path + cvt::String( data_filename.c_str() ) );
-    img.convert( img, cvt::IFormat::GRAY_UINT16 );
+    img.convert( img, cvt::IFormat::RGBA_UINT8 );
 
     std::vector< cvt::Recti > rects;
     std::vector< cvt::Vector2i > centers;
@@ -65,14 +66,15 @@ void get_data( std::vector< DataType >& data,
     std::cout << rects.size() << " rectangles" << std::endl;
 
     size_t count = 0;
-    const size_t border = ( PATCH_SIZE - 1 ) / 2;
+    const size_t border = PATCH_SIZE / 2;
     for( size_t y = border; y < img.height() - border; y++ )
     {
-      for( size_t x = PATCH_SIZE; x < img.width() - PATCH_SIZE; x++ )
+      for( size_t x = border; x < img.width() - border; x++ )
       {
         cvt::Recti roi( x - border, y - border, PATCH_SIZE, PATCH_SIZE );
         cvt::Image patch( img, &roi, 0 );
-        std::vector< cvt::Image > patch_vector( 1, patch );
+        std::vector< cvt::Image > patch_vector( 3 );
+        patch.decompose( patch_vector[ 0 ], patch_vector[ 1 ], patch_vector[ 2 ] );
 
         int rect_idx = -1;
         for( size_t r = 0; r < rects.size() && rect_idx < 0; r++ )
@@ -99,6 +101,28 @@ void get_data( std::vector< DataType >& data,
   file.close();
 }
 
+void extract_patches( std::vector< std::vector< cvt::Image > >& patches,
+    cvt::String image_path )
+{
+  cvt::Image img;
+  img.load( image_path );
+  img.convert( img, cvt::IFormat::RGBA_UINT8 );
+
+    const size_t border = PATCH_SIZE / 2;
+    for( size_t y = border; y < img.height() - border; y++ )
+    {
+      for( size_t x = PATCH_SIZE; x < img.width() - PATCH_SIZE; x++ )
+      {
+        cvt::Recti roi( x - border, y - border, PATCH_SIZE, PATCH_SIZE );
+        cvt::Image patch( img, &roi, 0 );
+        std::vector< cvt::Image > patch_vector( 3 );
+        patch.decompose( patch_vector[ 0 ], patch_vector[ 1 ], patch_vector[ 2 ] );
+
+        patches.push_back( patch_vector );
+      }
+    }
+}
+
 int main(int argc, char *argv[])
 {
   std::cout << "##########     Starting     ##########" << std::endl;
@@ -109,115 +133,96 @@ int main(int argc, char *argv[])
     10,  //noCandidateFeatures
     10  //maxDecisionLevels
   };
-  float split = 0.3;
 
   if( argc < 2 ) {
     std::cerr << "Please provide a data file";
     return 1;
   }
 
-  if( argc > 2 ) params.tests = atoi( argv[ 2 ] );
-  if( argc > 3 ) params.max_depth = atoi( argv[ 3 ] );
-  if( argc > 4 ) params.trees = atoi( argv[ 4 ] );
-  if( argc > 5 ) split = atof( argv[ 5 ] );
+  if( argc > 3 ) params.tests = atoi( argv[ 3 ] );
+  if( argc > 4 ) params.max_depth = atoi( argv[ 4 ] );
+  if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
 
   std::cout << "Parameters:"   << std::endl;
   std::cout << "  tests="      << params.tests << std::endl;
   std::cout << "  max_depth="  << params.max_depth << std::endl;
   std::cout << "  trees="      << params.trees << std::endl;
-  std::cout << "  split="      << split << std::endl;
   std::cout << "  path="       << argv[ 1 ] << std::endl;
+  std::cout << "  test_img="   << argv[ 2 ] << std::endl;
 
   cvt::String path( argv[ 1 ] );
 
-  std::cout << "Loading data and initializing context (builds lookup table)" << std::endl;
+  std::cout << "Loading data and extracting patches" << std::endl;
   std::vector< DataType > data;
-  get_data( data, path );
+  // get_data( data, path );
 
   SamplerType sampler;
   DetectionContext context( params );
 
   std::cout << "Training" << std::endl;
-  ClassifierType classifier;
-  TrainerType::train( classifier, context, sampler, data );
+  ForestType forest;
+  // TrainerType::train( forest, context, sampler, data );
 
-  // std::cout << "Classifying" << std::endl;
-  // std::vector< std::vector< size_t > > confusion_matrix;
-  // for( size_t i = 0; i < num_classes; i++ )
-  // {
-  //   confusion_matrix.push_back( std::vector< size_t >( num_classes, 0 ) );
-  // }
-  // for( size_t i = 0; i < testing_data.size(); i++ )
-  // {
-  //   const StatisticsType s = classifier.classify( context, testing_data[ i ] );
-  //   confusion_matrix[ s.get_mode().first ][ testing_data[ i ].output() ]++;
-  // }
-  //
-  // std::cout << "Statistics:" << std::endl;
-  // std::vector< double > plot_x, plot_y;
-  // float acc = 0.0f;
-  // for( size_t c = 0; c < num_classes; c++ )
-  // {
-  //   size_t true_positive = confusion_matrix[ c ][ c ];
-  //
-  //   size_t labelled_positive = 0;
-  //   size_t classified_positive = 0;
-  //   for( size_t cc = 0; cc < num_classes; cc++ )
-  //   {
-  //     labelled_positive += confusion_matrix[ cc ][ c ];
-  //     classified_positive += confusion_matrix[ c ][ cc ];
-  //   }
-  //   size_t labelled_negative = n - labelled_positive;
-  //
-  //   size_t false_positive = classified_positive - true_positive;
-  //   float fpr = static_cast< float >( false_positive ) / labelled_negative;
-  //   float tpr = static_cast< float >( true_positive ) / labelled_positive;
-  //   acc += true_positive;
-  //
-  //   plot_x.push_back( fpr );
-  //   plot_y.push_back( tpr );
-  //
-  //   std::cout << "  Class " << c << ": (" << fpr << ", " << tpr << ")" << std::endl;
-  // }
-  // acc /= n;
-  // std::cout << "  Accuracy: " << acc << std::endl;
-  //
-  // try
-  // {
-  //   Gnuplot g;
-  //   std::ostringstream os;
-  //   os <<
-  //     "features="    << params.no_candidate_features <<
-  //     " thresholds=" << params.no_candate_thresholds <<
-  //     " depth="      << params.max_decision_levels   <<
-  //     " trees="      << params.trees                 <<
-  //     " pool_size="  << params.pool_size             <<
-  //     " split="      << split                        <<
-  //     " path="       << path;
-  //   g.set_title( os.str() );
-  //   g.set_xlabel("False positive rate");
-  //   g.set_ylabel("True positive rate");
-  //   g << "set size square";
-  //
-  //   g << "set xtics .1";
-  //   g << "set ytics .1";
-  //   g << "set mxtics 2";
-  //   g << "set mytics 2";
-  //   g.set_xrange(0,1);
-  //   g.set_yrange(0,1);
-  //   g.set_grid();
-  //
-  //   g.unset_legend();
-  //   g.set_style("lines lt -1").plot_slope(1.0f,0.0f,"Random");
-  //   g.set_style("points lt 3").plot_xy( plot_x, plot_y );
-  // } catch( GnuplotException e )
-  // {
-  //   std::cout << e.what();
-  // }
-  //
-  // std::cout << "Finished" << std::endl;
-  //
-  // getchar();
+  std::cout << "Testing" << std::endl;
+
+  cvt::String image_path( argv[ 2 ] );
+  cvt::Image input;
+  input.load( image_path );
+  input.convert( input, cvt::IFormat::RGBA_UINT8 );
+
+  cvt::Image output( input.width(), input.height(), cvt::IFormat::GRAY_FLOAT );
+  cvt::IMapScoped< float > output_map( output );
+
+  float max_peak = 0.0f;
+  const size_t border = PATCH_SIZE / 2;
+  for( size_t y = border; y < input.height() - border; y++ )
+  {
+    for( size_t x = PATCH_SIZE; x < input.width() - PATCH_SIZE; x++ )
+    {
+      cvt::Recti roi( x - border, y - border, PATCH_SIZE, PATCH_SIZE );
+      cvt::Image patch( input, &roi, 0 );
+      std::vector< cvt::Image > patch_vector( 3 );
+      patch.decompose( patch_vector[ 0 ], patch_vector[ 1 ], patch_vector[ 2 ] );
+
+      StatisticsType s = context.get_statistics();
+      forest( s, patch_vector );
+      std::pair< OutputType, float > prediction = s.predict();
+      if( prediction.first.first == 1 )
+      {
+        cvt::Vector2i v = cvt::Vector2i( x, y ) + prediction.first.second;
+        if( v.x < output.width() && v.x >= 0 && v.y < output.height() && v.y >= 0 )
+        {
+          float& p_value = output_map( v.x, v.y );
+          p_value += prediction.second;
+          if( p_value > max_peak )
+          {
+            max_peak = p_value;
+          }
+        }
+      }
+    }
+  }
+
+  for( size_t y = border; y < input.height() - border; y++ )
+  {
+    for( size_t x = PATCH_SIZE; x < input.width() - PATCH_SIZE; x++ )
+    {
+      output_map( x, y ) /= max_peak;
+    }
+  }
+
+  // cvt::Image input_gray;
+  // input.convert( input_gray, cvt::IFormat::GRAY_FLOAT );
+  // input_gray = 1.0f - input_gray;
+  // input_gray.save( "input_inv.png" );
+
+  // cvt::Image output_inv( output );
+  // output_inv = ( 1.0f - output );
+
+  output.save( "detection.png" );
+  // output_inv.save( "detection_inv.png" );
+
+  std::cout << "Finished" << std::endl;
 
   return 0;
 }

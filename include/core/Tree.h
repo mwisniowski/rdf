@@ -5,14 +5,19 @@
 #include <vector>
 #include <deque>
 
+#include <cvt/io/xml/XMLDocument.h>
+#include <cvt/io/xml/XMLElement.h>
+#include <cvt/io/xml/XMLText.h>
+#include <cvt/io/xml/XMLSerializable.h>
+
 #include "core/Interfaces.h"
 #include "core/Test.h"
 
 template< typename F, typename I, typename S >
-class Tree 
+class Tree : public cvt::XMLSerializable
 {
   public:
-    class Node 
+    class Node : public cvt::XMLSerializable
     {
       public:
         Node() :
@@ -45,6 +50,11 @@ class Tree
     {
       root_ = new Node;
       root_->statistics = statistics;
+    }
+
+    bool is_split( Node* node ) const
+    {
+      return node->left && node->right;
     }
 
     void convert_to_split( Node* node, const Test< F, I >& test,
@@ -86,7 +96,7 @@ class Tree
       for( size_t i = 0; i < path.size(); i++ )
       {
         // if n is split node
-        if( n->left )
+        if( is_split( n ) )
         {
           if( path[ i ] )
           {
@@ -106,10 +116,10 @@ class Tree
       return n;
     }
 
-    S& evaluate( const std::vector< I >& input )
+    S& operator()( const std::vector< I >& input )
     {
       Node* n = root_;
-      while( n->left )
+      while( is_split( n) )
       {
         if( n->test( input ) )
         {
@@ -138,14 +148,21 @@ class Tree
         if ( indent ) {
           os << std::setw( indent ) << ' ';
         }
-        os << p->statistics << ", " << p->test << std::endl;
+        if( is_split( p ) )
+        {
+          os << p->test << std::endl;
+        }
+        else
+        {
+          os << p->statistics << std::endl;
+        }
         if( p->left )
         {
-          preorder( os, p->left, indent + 4 );
+          preorder( os, p->left, indent + 2 );
         }
         if( p->right ) 
         {
-          preorder( os, p->right, indent + 4 );
+          preorder( os, p->right, indent + 2 );
         }
       }
     }

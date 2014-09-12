@@ -58,7 +58,8 @@ class DetectionContext : public TrainingContextBase< InputType, OutputType, Stat
         float fraction = left_statistics.n() / static_cast<float>( parent_statistics.n() );
 
         return H_p - ( ( fraction * H_l ) + ( ( 1.0f  - fraction ) * H_r ) );
-      } else if( parent_statistics.type() == 1 )
+      } 
+      else if( parent_statistics.type() == 1 )
       {
         float H_p = parent_statistics.get_regression_entropy();
         float H_l = left_statistics.get_regression_entropy();
@@ -67,11 +68,16 @@ class DetectionContext : public TrainingContextBase< InputType, OutputType, Stat
         float fraction = left_statistics.n() / static_cast<float>( parent_statistics.n() );
 
         return H_p - ( ( fraction * H_l ) + ( ( 1.0f  - fraction ) * H_r ) );
-      } else
+      } 
+      else
       {
-        // TODO for small data use regression
-        int rand = std::rand() % 2;
-        parent_statistics.set_type( rand );
+        if( parent_statistics.probability( 0 ) < 0.05f )
+        {
+          parent_statistics.set_type( 1 );
+        }
+        else {
+          parent_statistics.set_type( std::rand() % 2 );
+        }
         return compute_information_gain( parent_statistics, left_statistics, right_statistics );
       }
     }

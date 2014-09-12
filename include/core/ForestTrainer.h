@@ -25,7 +25,7 @@ class ForestTrainer
         Tree< F, I, S > tree;
         TreeTrainer< I, O, F, S >::train( tree, context, sampler, data );
         forest.add( tree );
-        // std::cout << tree << std::endl;
+        std::cout << tree << std::endl;
       }
     }
 };

@@ -12,7 +12,8 @@ class DetectionFeature : public FeatureBase< InputType >
     typedef FeatureBase< InputType > super;
 
   public:
-    DetectionFeature()
+    DetectionFeature() :
+      channel_( -1 )
     {}
 
     DetectionFeature( const DetectionFeature& other ) :
@@ -21,7 +22,7 @@ class DetectionFeature : public FeatureBase< InputType >
       channel_( other.channel_ )
     {}
 
-    DetectionFeature( const cvt::Point2f& point1_, const cvt::Point2f& point2_, size_t channel_ ) :
+    DetectionFeature( const cvt::Point2f& point1_, const cvt::Point2f& point2_, int channel_ ) :
       point1_( point1_ ),
       point2_( point2_ ),
       channel_( channel_ )
@@ -51,10 +52,23 @@ class DetectionFeature : public FeatureBase< InputType >
       return map( p.x, p.y ) - map( q.x, q.y );
     }
 
+    friend std::ostream& operator<<( std::ostream& os, const DetectionFeature& f )
+    {
+      if( f.channel_ < 0 )
+      {
+        os << "n/a";
+      }
+      else
+      {
+        os << "[" << f.point1_ << ", " << f.point2_ << ", " << f.channel_ << " ]";
+      }
+      return os;
+    }
+
   public:
     cvt::Point2f point1_;
     cvt::Point2f point2_;
-    size_t channel_;
+    int channel_;
 };
 
 #endif

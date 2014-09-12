@@ -125,7 +125,9 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
 
     std::pair< OutputType, float > predict() const
     {
-      cvt::Vector2i mean_offset = sum_offset_ / n_;
+      float x( sum_offset_.x / static_cast< float >( n_ ) );
+      float y( sum_offset_.y / static_cast< float >( n_ ) );
+      cvt::Vector2f mean_offset( x, y );
       return std::pair< OutputType, float >( OutputType( 1, mean_offset ), probability( 1 ) );
     }
 

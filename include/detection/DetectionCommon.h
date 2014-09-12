@@ -7,8 +7,8 @@
 #include "core/DataPoint.h"
 #include "core/ForestTrainer.h"
 
-#define CHANNELS 1
-#define PATCH_SIZE 17
+#define CHANNELS 3
+#define PATCH_SIZE 16
 
 class DetectionFeature;
 
@@ -24,6 +24,6 @@ typedef DetectionFeature                                                      Fe
 typedef DetectionTestSampler< CHANNELS >                                      SamplerType;
 typedef DetectionStatistics                                                   StatisticsType;
 typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType >   TrainerType;
-typedef Forest< FeatureType, InputType, StatisticsType >                      ClassifierType;
+typedef Forest< FeatureType, InputType, StatisticsType >                      ForestType;
 
 #endif
