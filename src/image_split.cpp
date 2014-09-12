@@ -95,11 +95,7 @@ int main(int argc, char *argv[])
   TrainerType::train( classifier, context, sampler, training_data );
 
   // std::cout << "Classifying" << std::endl;
-  std::vector< std::vector< int > > confusion_matrix;
-  for( size_t i = 0; i < num_classes; i++ )
-  {
-    confusion_matrix.push_back( std::vector< int >( num_classes, 0 ) );
-  }
+  std::vector< std::vector< int > > confusion_matrix( num_classes, std::vector< int >( num_classes, 0 ) );
   for( size_t i = 0; i < testing_data.size(); i++ )
   {
     StatisticsType h = context.get_statistics();
