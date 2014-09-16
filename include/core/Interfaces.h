@@ -6,8 +6,10 @@
 #include <bitset>
 #include <cvt/math/Math.h>
 
+#include "core/Tree.h"
 #include "core/DataPoint.h"
 #include "core/TrainingParameters.h"
+
 
 template< typename F, typename I >
 class Test;
@@ -16,14 +18,14 @@ template< typename I >
 class FeatureBase
 {
   public:
-    virtual float operator()( const std::vector< I >& input ) const =0;
+    virtual float operator()( const I& input ) const =0;
 };
 
-template< typename F, typename I >
+template< typename T >
 class TestSamplerBase
 {
   public:
-    virtual void sample( std::vector< Test< F, I > >& tests, size_t num_tests ) const =0;
+    virtual void sample( std::vector< T >& tests, size_t num_tests ) const =0;
 };
 
 template< typename O, typename S >
@@ -35,7 +37,7 @@ class StatisticsBase
     virtual std::pair< O, float > predict() const =0;
 };
 
-template< typename I, typename O, typename S >
+template< typename I, typename S, typename TestType, typename TreeType >
 class TrainingContextBase
 {
   /**
@@ -44,14 +46,23 @@ class TrainingContextBase
 
   public:
     virtual S get_statistics() const =0;
-
-    virtual S get_statistics( const std::vector< DataPoint< I, O > >& data ) const =0;
+    
+    virtual S get_root_statistics() const =0;
 
     virtual float compute_information_gain( S& parent_s,
         S& left_s,
         S& right_s ) const =0;
 
     virtual bool should_terminate( float information_gain ) const =0;
+
+    virtual void fill_statistics( std::vector< S* >& candidate_statistics,
+        const std::vector< TestType >& random_tests,
+        const std::vector< std::vector< bool > >& blacklist,
+        const std::vector< std::vector< bool > >& paths ) const =0;
+
+    virtual void update_paths( std::vector< std::vector< bool > >& paths,
+         const std::vector< std::vector< bool > >& blacklist, 
+         const TreeType& tree ) const =0;
 
   /**
    * End implementing here
@@ -73,64 +84,6 @@ class TrainingContextBase
 
   private:
     TrainingParameters   params_;
-
-    // class ThresholdSampler
-    // { 
-    //   public:
-    //     ThresholdSampler( size_t feature_idx, const std::vector< size_t >& data_idxs ) :
-    //       feature_idx_( feature_idx ),
-    //       data_idxs_( data_idxs )
-    //     {}
-    //
-    //     /**
-    //     * @brief Samples thresholds uniformly between minimum and maximum
-    //     *
-    //     * @param thresholds
-    //     * @param size
-    //     */
-    //     void uniform( std::vector< float >& thresholds, size_t size, const TrainingContextBase< I, O, F, S >& context ) const
-    //     {
-    //       thresholds.clear();
-    //       thresholds.reserve( size );
-    //       float min, max;
-    //       get_min_max( min, max, context );
-    //       for( size_t i = 0; i < size; i++ )
-    //       {
-    //         thresholds.push_back( cvt::Math::rand( min, max ) );
-    //       }
-    //     }
-    //
-    //   private:
-    //     const size_t                  feature_idx_;
-    //     const std::vector< size_t >   data_idxs_;
-    //
-    //     /**
-    //     * @brief Finds minimum and maximum feature value in DataCollection
-    //     *
-    //     * @param min
-    //     * @param max
-    //     * @param range
-    //     */
-    //     void get_min_max( float& min, float& max, const TrainingContextBase< I, O, F, S >& context ) const
-    //     {
-    //       min = FLT_MAX;
-    //       max = -min;
-    //
-    //       for( size_t i = 0; i < data_idxs_.size(); i++ )
-    //       {
-    //         float response = context.lookup( data_idxs_[ i ], feature_idx_ );
-    //         if( response < min )
-    //         {
-    //           min = response;
-    //         }
-    //         if( response > max )
-    //         {
-    //           max = response;
-    //         }
-    //       }
-    //     }
-    // };
-
 };
 
 #endif

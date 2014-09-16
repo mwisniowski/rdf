@@ -100,12 +100,12 @@ int main(int argc, char *argv[])
     std::vector< DataType > testing_data( partition_map[ f ], partition_map[ f + 1 ] );
 
     // std::cout << "Initializing context (builds lookup table)" << std::endl;
-    ImageTestSampler< CHANNELS > sampler;
-    ImageContext context( params, num_classes );
-
+    SamplerType sampler;
+    ContextType context( params, training_data, num_classes );
     // std::cout << "Training" << std::endl;
+
     ForestType forest;
-    TrainerType::train( forest, context, sampler, training_data );
+    ForestTrainerType::train( forest, context, sampler );
     
     // std::cout << "Classifying" << std::endl;
     for( size_t i = 0; i < n; i++ )

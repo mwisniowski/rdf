@@ -42,14 +42,11 @@ class DetectionFeature : public FeatureBase< InputType >
       return *this;
     }
 
-    float operator()( const std::vector< InputType >& input ) const
+    float operator()( const InputType& input ) const
     {
-      const cvt::Image& i = input[ channel_ ];
-      cvt::IMapScoped< const uint8_t > map( i );
-      cvt::Vector2i p( i.width() * point1_.x, i.height() * point1_.y ),
-        q( i.width() * point2_.x, i.height() * point2_.y );
-
-      return map( p.x, p.y ) - map( q.x, q.y );
+      const uint8_t i1 = *( input.map.ptr() + input.map.stride() * ( input.y + point1_.y ) + 4 * ( input.x + point1_.x ) + channel_ );
+      const uint8_t i2 = *( input.map.ptr() + input.map.stride() * ( input.y + point2_.y ) + 4 * ( input.x + point2_.x ) + channel_ );
+      return i1 - i2;
     }
 
     friend std::ostream& operator<<( std::ostream& os, const DetectionFeature& f )
@@ -66,8 +63,8 @@ class DetectionFeature : public FeatureBase< InputType >
     }
 
   public:
-    cvt::Point2f point1_;
-    cvt::Point2f point2_;
+    cvt::Vector2i point1_;
+    cvt::Vector2i point2_;
     int channel_;
 };
 

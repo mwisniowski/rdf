@@ -7,15 +7,26 @@
 #include "detection/DetectionFeature.h"
 #include "detection/DetectionStatistics.h"
 
-class DetectionContext : public TrainingContextBase< InputType, OutputType, StatisticsType >
+class DetectionContext : public TrainingContextBase< InputType, StatisticsType, TestType, TreeType >
 {
   private:
-    typedef TrainingContextBase< InputType, OutputType, StatisticsType > super;
+    typedef TrainingContextBase< InputType, StatisticsType, TestType, TreeType >
+ super;
 
   public:
-    DetectionContext( const TrainingParameters& params ) :
-      super( params )
-    {}
+    DetectionContext( const TrainingParameters& params,
+       const std::vector< cvt::Image >& images,
+       const std::vector< std::vector< cvt::Recti > >& rois ) :
+      super( params ),
+      images_( images ),
+      rois_( rois ),
+      num_data_points_( images.size(), 0 )
+    {
+      for( size_t i = 0; i < images.size(); i++ )
+      {
+        num_data_points_[ i ] = ( images[ i ].width() - PATCH_SIZE ) * ( images[ i ].height() - PATCH_SIZE );
+      }
+    }
 
     virtual ~DetectionContext() 
     {}
@@ -25,13 +36,24 @@ class DetectionContext : public TrainingContextBase< InputType, OutputType, Stat
       return StatisticsType();
     }
 
-    StatisticsType get_statistics( const std::vector< DataPoint< InputType, OutputType > >& data ) const
+    StatisticsType get_root_statistics() const
     {
       StatisticsType s;
-      for( size_t i = 0; i < data.size(); ++i )
+
+      //TODO only go over rois
+      const size_t border = PATCH_SIZE / 2;
+      for( size_t i = 0; i < images_.size(); i++ )
       {
-        s += data[ i ].output();
+        const cvt::Image& img = images_[ i ];
+        for( size_t y = border; y < img.height() - border; y++ )
+        {
+          for( size_t x = border; x < img.width() - border; x++ )
+          {
+            s += get_output( i, x, y );
+          }
+        }
       }
+
       return s;
     }
 
@@ -93,6 +115,106 @@ class DetectionContext : public TrainingContextBase< InputType, OutputType, Stat
     {
       // TODO Magic number
       return information_gain < 0.01f;
+    }
+
+    void fill_statistics( std::vector< StatisticsType* >& candidate_statistics,
+        const std::vector< TestType >& random_tests,
+        const std::vector< std::vector< bool > >& blacklist,
+        const std::vector< std::vector< bool > >& paths ) const
+    {
+      const size_t border = PATCH_SIZE / 2;
+      for( size_t i = 0; i < images_.size(); i++ )
+      {
+        size_t path_idx = 0;
+        for( size_t j = 0; j < i; j++ )
+        {
+          path_idx += num_data_points_[ j ];
+        }
+
+        size_t counter = 0;
+        const cvt::Image& img = images_[ i ];
+        cvt::IMapScoped< const uint8_t > map( img );
+        for( size_t y = border; y < img.height() - border; y++ )
+        {
+          for( size_t x = border; x < img.width() - border; x++ )
+          {
+            const std::vector< bool >& path = paths[ path_idx + counter ];
+            counter++;
+            if( TreeTrainerType::is_blacklisted( blacklist, path ) )
+            {
+              continue;
+            }
+
+            const InputType in = { map, x, y };
+            size_t idx = TreeTrainerType::to_int( path );
+            for( size_t j = 0; j < random_tests.size(); j++ )
+            {
+              size_t candidate_idx = idx * 2 * random_tests.size() + 2 * j;
+              bool result = random_tests[ j ]( in );
+              if( result ) 
+              {
+                candidate_idx++;
+              }
+
+              candidate_statistics[ candidate_idx ]->operator+=( get_output( i, x, y ) );
+            }
+          }
+        }
+      }
+    } 
+
+    void update_paths( std::vector< std::vector< bool > >& paths,
+         const std::vector< std::vector< bool > >& blacklist, 
+         const TreeType& tree ) const
+    {
+      const size_t border = PATCH_SIZE / 2;
+      for( size_t i = 0; i < images_.size(); i++ )
+      {
+        size_t path_idx = 0;
+        for( size_t j = 0; j < i; j++ )
+        {
+          path_idx += num_data_points_[ j ];
+        }
+
+        size_t counter = 0;
+        const cvt::Image& img = images_[ i ];
+        cvt::IMapScoped< const uint8_t > map( img );
+        for( size_t y = border; y < img.height() - border; y++ )
+        {
+          for( size_t x = border; x < img.width() - border; x++ )
+          {
+            std::vector< bool >& path = paths[ path_idx + counter ];
+            counter++;
+            if( !TreeTrainerType::is_blacklisted( blacklist, path ) )
+            {
+              const InputType in = { map, x, y };
+              path.push_back( tree.get_node( path )->test( in ) );
+            }
+          }
+        }
+      }
+    }
+
+
+  private:
+    std::vector< cvt::Image > images_;
+    std::vector< std::vector< cvt::Recti > > rois_;
+    std::vector< size_t > num_data_points_;
+
+    OutputType get_output( size_t image_idx, size_t x, size_t y ) const
+    {
+      const std::vector< cvt::Recti >& rects = rois_[ image_idx ];
+
+      for( size_t r = 0; r < rects.size(); r++ )
+      {
+        const cvt::Recti& rect = rects[ r ];
+        if( rect.contains( x, y ) )
+        {
+          cvt::Vector2i center( rect.x + ( rect.width / 2 ), rect.y + ( rect.height / 2 ) );
+          return OutputType( 1, center - cvt::Vector2i( x, y ) );
+        }
+      }
+      return OutputType( 0, cvt::Vector2i( 0, 0 ) );
     }
 };
 

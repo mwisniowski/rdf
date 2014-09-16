@@ -11,15 +11,22 @@
 template< size_t d >
 class ToyFeature;
 
-class ToyThresholdSampler;
+class ToyTestSampler;
 
-typedef float                                                                 InputType;
-typedef size_t                                                                OutputType;
-typedef DataPoint< InputType, OutputType >                                    DataType;
-typedef ToyFeature< RDF_FEATURE_DIMENSIONS >                                  FeatureType;
-typedef ToyThresholdSampler                                                   SamplerType;
-typedef Histogram< OutputType >                                               StatisticsType;
-typedef ForestTrainer< InputType, OutputType, FeatureType, StatisticsType >   TrainerType;
-typedef Forest< FeatureType, InputType, StatisticsType >                      ForestType;
+class ToyContext;
+
+typedef std::vector< float >                   InputType;
+typedef size_t                                 OutputType;
+typedef ToyFeature< RDF_FEATURE_DIMENSIONS >   FeatureType;
+typedef ToyTestSampler                         SamplerType;
+typedef Histogram< OutputType >                StatisticsType;
+typedef ToyContext                             ContextType;
+
+typedef DataPoint< InputType, OutputType >                                                 DataType;
+typedef Test< FeatureType, InputType >                                                     TestType;
+typedef Tree< InputType, StatisticsType, TestType >                                        TreeType;
+typedef TreeTrainer< ContextType, StatisticsType, TestType, TreeType >                     TreeTrainerType;
+typedef Forest< InputType, StatisticsType, TestType >                                      ForestType;
+typedef ForestTrainer< ContextType, ForestType, SamplerType, TreeTrainerType, TreeType >   ForestTrainerType;
 
 #endif

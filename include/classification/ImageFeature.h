@@ -42,7 +42,7 @@ class ImageFeature : public FeatureBase< InputType >
       return *this;
     }
 
-    float operator()( const std::vector< InputType >& input ) const
+    float operator()( const InputType& input ) const
     {
       const cvt::Image& i = input[ channel_ ];
       cvt::IMapScoped< const uint8_t > map( i );

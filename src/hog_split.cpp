@@ -175,11 +175,11 @@ int main( int argc, char *argv[] )
 
   // std::cout << "Initializing context (builds lookup table)" << std::endl;
   SamplerType sampler;
-  HogContext context( params, num_classes );
+  ContextType context( params, training_data, num_classes );
   // std::cout << "Training" << std::endl;
 
   ForestType forest;
-  TrainerType::train( forest, context, sampler, training_data );
+  ForestTrainerType::train( forest, context, sampler );
 
   // std::cout << "Classifying" << std::endl;
   std::vector< std::vector< int > > confusion_matrix;

@@ -8,10 +8,8 @@
 #include "detection/DetectionFeature.h"
 
 template< size_t channels >
-class DetectionTestSampler: public TestSamplerBase< FeatureType, InputType >
+class DetectionTestSampler: public TestSamplerBase< Test< FeatureType, InputType > >
 {
-  typedef TestSamplerBase< FeatureType, InputType > super;
-
   public:
     DetectionTestSampler()
     {}
@@ -34,11 +32,12 @@ class DetectionTestSampler: public TestSamplerBase< FeatureType, InputType >
         size_t num_tests ) const
     {
       tests.clear();
+      const int p_half = PATCH_SIZE / 2;
       for( size_t i = 0; i < num_tests; i++ )
       {
-        cvt::Point2f p1( rand( 0.0f, 1.0f ), rand( 0.0f, 1.0f ) );
-        cvt::Point2f p2( rand( 0.0f, 1.0f ), rand( 0.0f, 1.0f ) );
-        size_t channel = cvt::Math::rand( 0, channels ) + 0.5f;
+        cvt::Vector2i p1( rand( -p_half, p_half ), rand( -p_half, p_half ) );
+        cvt::Point2f p2( rand( -p_half, p_half ), rand( -p_half, p_half ) );
+        size_t channel = rand( 0, channels );
         FeatureType f( p1, p2, channel );
         float threshold = rand( -255.0f, 255.0f );
         tests.push_back( Test< FeatureType, InputType >( f, threshold ) );
@@ -48,6 +47,11 @@ class DetectionTestSampler: public TestSamplerBase< FeatureType, InputType >
     static float rand( float LO, float HI )
     {
       return LO + static_cast <float>( std::rand() ) / ( static_cast <float>( RAND_MAX / ( HI - LO ) ) );
+    }
+
+    static int rand( int LO, int HI )
+    {
+      return static_cast< int >( cvt::Math::round( rand( static_cast< float >( LO ), static_cast< float >( HI ) ) ) );
     }
 };
 

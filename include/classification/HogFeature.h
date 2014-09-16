@@ -43,7 +43,7 @@ class HogFeature: public FeatureBase< InputType >
      *
      * @return 
      */
-    float operator()( const std::vector< InputType >& input ) const
+    float operator()( const InputType& input ) const
     {
       return input[ component_ ];
     }

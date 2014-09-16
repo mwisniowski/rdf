@@ -43,7 +43,7 @@ class ToyFeature: public FeatureBase< InputType >
      *
      * @return 
      */
-    float operator()( const std::vector< InputType >& input ) const
+    float operator()( const InputType& input ) const
     {
       float sum = 0;
       for( size_t i = 0; i < d; i++ )
@@ -55,18 +55,11 @@ class ToyFeature: public FeatureBase< InputType >
 
     friend std::ostream& operator<<( std::ostream& os, const ToyFeature& feature )
     {
-      if( feature.v_.empty() )
-      {
-        os << "[]";
-      }
-      else
-      {
-        int last = feature.v_.size() - 1;
-        os << "[";
-        for(int i = 0; i < last; i++)
-          os << feature.v_[ i ] << ", ";
-        os << feature.v_[ last ] << "]";
-      }
+      int last = feature.v_.size() - 1;
+      os << "[";
+      for(int i = 0; i < last; i++)
+        os << feature.v_[ i ] << ", ";
+      os << feature.v_[ last ] << "]";
       return os;
     }
 

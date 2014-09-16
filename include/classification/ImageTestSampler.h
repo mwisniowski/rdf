@@ -8,27 +8,16 @@
 #include "classification/ImageFeature.h"
 
 template< size_t channels >
-class ImageTestSampler: public TestSamplerBase< FeatureType, InputType >
+class ImageTestSampler: public TestSamplerBase< TestType >
 {
-  typedef TestSamplerBase< FeatureType, InputType > super;
+  typedef TestSamplerBase< TestType > super;
 
   public:
     ImageTestSampler()
     {}
 
-    ImageTestSampler( const ImageTestSampler& other )
-    {}
-
     virtual ~ImageTestSampler() 
     {}
-
-    ImageTestSampler& operator=( const ImageTestSampler& other )
-    {
-      if( this != &other )
-      {
-      }
-      return *this;
-    }
 
     void sample( std::vector< Test< FeatureType, InputType > >& tests,
         size_t num_tests ) const

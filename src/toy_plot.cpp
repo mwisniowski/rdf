@@ -85,11 +85,11 @@ int main(int argc, char *argv[])
   get_data( data, class_labels, argv[ 1 ] );
   size_t num_classes = class_labels.size();
 
-  ToyTestSampler sampler( data );
-  ToyContext context( params, num_classes );
+  SamplerType sampler( data );
+  ContextType context( params, data, num_classes );
 
   ForestType forest;
-  TrainerType::train( forest, context, sampler, data );
+  ForestTrainerType::train( forest, context, sampler );
 
   int min_data = INT_MAX;
   int max_data = -INT_MIN;
@@ -99,13 +99,13 @@ int main(int argc, char *argv[])
   {
     for( size_t i = 0; i < it->input().size(); i++ )
     {
-      if( it->input( i )  < min_data )
+      if( it->input()[ i ]  < min_data )
       {
-        min_data = it->input( i );
+        min_data = it->input()[ i ];
       }
-      if( it->input( i ) > max_data )
+      if( it->input()[ i ] > max_data )
       {
-        max_data = it->input( i );
+        max_data = it->input()[ i ];
       }
     }
   }

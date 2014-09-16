@@ -97,11 +97,11 @@ int main(int argc, char *argv[])
 
     std::vector< DataType > test_data( partition_map[ f ], partition_map[ f + 1 ] );
 
-    ToyTestSampler sampler( training_data );
-    ToyContext context( params, num_classes );
+    SamplerType sampler( training_data );
+    ContextType context( params, training_data, num_classes );
 
     ForestType forest;
-    TrainerType::train( forest, context, sampler, training_data );
+    ForestTrainerType::train( forest, context, sampler );
     
     for( size_t i = 0; i < n; i++ )
     {

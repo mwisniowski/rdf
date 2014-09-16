@@ -13,9 +13,12 @@
 #include "core/Interfaces.h"
 #include "core/Test.h"
 
-template< typename F, typename I, typename S >
+template< typename I, typename S, typename T >
 class Tree
 {
+  typedef std::vector< int > v_int;
+  typedef float foo;
+
   public:
     class Node
     {
@@ -25,7 +28,7 @@ class Tree
           right( NULL )
         {};
 
-        Test< F, I > test;
+        T test;
         S statistics;
         Node* left;
         Node* right;
@@ -57,7 +60,7 @@ class Tree
       return node->left && node->right;
     }
 
-    void convert_to_split( Node* node, const Test< F, I >& test,
+    void convert_to_split( Node* node, const T& test,
         const S& left_s, const S& right_s )
     {
       node->test = test;
@@ -116,10 +119,10 @@ class Tree
       return n;
     }
 
-    S& operator()( const std::vector< I >& input )
+    S& operator()( const I& input )
     {
       Node* n = root_;
-      while( is_split( n) )
+      while( is_split( n ) )
       {
         if( n->test( input ) )
         {

@@ -33,7 +33,7 @@ class Test
       return *this;
     }
 
-    bool operator()( const std::vector< I >& input ) const
+    bool operator()( const I& input ) const
     {
       return feature_( input ) < threshold_;
     }

@@ -6,15 +6,17 @@
 #include "classification/HogCommon.h"
 #include "classification/HogFeature.h"
 
-class HogContext : public TrainingContextBase< InputType, OutputType, StatisticsType >
+class HogContext : public TrainingContextBase< InputType, StatisticsType, TestType, TreeType >
 {
   private:
-    typedef TrainingContextBase< InputType, OutputType, StatisticsType > super;
+    typedef TrainingContextBase< InputType, StatisticsType, TestType, TreeType > super;
 
   public:
     HogContext( const TrainingParameters& params, 
-                  size_t num_classes ) :
+        std::vector< DataType >& data,
+        size_t num_classes ) :
       super( params ),
+      data_( data ),
       num_classes_( num_classes )
     {}
 
@@ -26,12 +28,12 @@ class HogContext : public TrainingContextBase< InputType, OutputType, Statistics
       return StatisticsType( num_classes_ );
     }
 
-    StatisticsType get_statistics( const std::vector< DataPoint< InputType, OutputType > >& data ) const
+    StatisticsType get_root_statistics() const
     {
       StatisticsType s( num_classes_ );
-      for( size_t i = 0; i < data.size(); ++i )
+      for( size_t i = 0; i < data_.size(); ++i )
       {
-        s += data[ i ].output();
+        s += data_[ i ].output();
       }
       return s;
     }
@@ -72,8 +74,56 @@ class HogContext : public TrainingContextBase< InputType, OutputType, Statistics
       return information_gain < 0.01f;
     }
 
+    size_t num_data_points() const
+    {
+      return data_.size();
+    }
+
+    void fill_statistics( std::vector< StatisticsType* >& candidate_statistics,
+        const std::vector< TestType >& random_tests,
+        const std::vector< std::vector< bool > >& blacklist,
+        const std::vector< std::vector< bool > >& paths ) const
+    {
+      for( size_t i = 0; i < data_.size(); i++ )
+      {
+        const std::vector< bool >& path = paths[ i ];
+        if( TreeTrainerType::is_blacklisted( blacklist, path ) )
+        {
+          continue;
+        }
+
+        size_t idx = TreeTrainerType::to_int( path );
+        for( size_t j = 0; j < random_tests.size(); j++ )
+        {
+          size_t candidate_idx = idx * 2 * random_tests.size() + 2 * j;
+          bool result = random_tests[ j ]( data_[ i ].input() );
+          if( result ) 
+          {
+            candidate_idx++;
+          }
+
+          candidate_statistics[ candidate_idx ]->operator+=( data_[ i ].output() );
+        }
+      }
+    }
+
+    void update_paths( std::vector< std::vector< bool > >& paths,
+        const std::vector< std::vector< bool > >& blacklist,
+        const TreeType& tree ) const
+    {
+      for( size_t i = 0; i < data_.size(); i++ )
+      {
+        std::vector< bool >& path = paths[ i ];
+        if( !TreeTrainerType::is_blacklisted( blacklist, path ) )
+        {
+          path.push_back( tree.get_node( path )->test( data_[ i ].input() ) );
+        }
+      }
+    }
+
   private:
-    size_t num_classes_;
+    size_t                                              num_classes_;
+    std::vector< DataPoint< InputType, OutputType > >   data_;
 };
 
 #endif

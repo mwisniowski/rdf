@@ -8,9 +8,9 @@
 #include "classification/HogFeature.h"
 
 template< size_t dimensions >
-class HogTestSampler: public TestSamplerBase< FeatureType, InputType >
+class HogTestSampler: public TestSamplerBase< TestType >
 {
-  typedef TestSamplerBase< FeatureType, InputType > super;
+  typedef TestSamplerBase< TestType > super;
 
   public:
     HogTestSampler()
