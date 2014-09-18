@@ -1,21 +1,28 @@
 #ifndef HISTOGRAM_H
 #define HISTOGRAM_H
 
+#include <set>
 #include <cvt/math/Math.h>
-#include <map>
 
 #include "core/Interfaces.h"
 #include "detection/DetectionCommon.h"
 
 class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistics >
 {
-  private:
-    typedef StatisticsBase< OutputType, DetectionStatistics > super;
-
   public:
+    struct VectorCompare {
+      bool operator()( const cvt::Vector2i& lhs, const cvt::Vector2i& rhs) const
+      {
+        return ( lhs.x < rhs.x ) || ( ( lhs.x == rhs.x ) && ( lhs.y < rhs.y ) );
+      }
+    };
+
+    typedef std::set< cvt::Vector2i, VectorCompare > VectorSetType;
+
     DetectionStatistics() :
       type_( -1 ),
       n_( 0 ),
+      positive_( 0 ),
       sum_offset_( cvt::Vector2i( 0, 0 ) )
     {}
 
@@ -23,6 +30,7 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       type_( other.type_ ),
       n_( other.n_ ),
       offsets_( other.offsets_ ),
+      positive_( other.positive_ ),
       sum_offset_( other.sum_offset_ )
     {}
 
@@ -36,6 +44,7 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
         type_ = other.type_;
         n_ = other.n_;
         offsets_ = other.offsets_;
+        positive_ = other.positive_;
         sum_offset_ = other.sum_offset_;
       }
       return *this;
@@ -46,7 +55,8 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       n_++;
       if( output.first == 1 )
       {
-        offsets_.push_back( output.second );
+        offsets_.insert( output.second );
+        positive_++;
         sum_offset_ += output.second;
       }
       return *this;
@@ -55,7 +65,8 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
     DetectionStatistics& operator+=( const DetectionStatistics& s )
     {
       n_ += s.n_;
-      offsets_.insert( offsets_.end(), s.offsets_.begin(), s.offsets_.end() );
+      positive_ += s.positive_;
+      offsets_.insert( s.offsets_.begin(), s.offsets_.end() );
       sum_offset_ += s.sum_offset_;
       return *this;
     }
@@ -67,12 +78,12 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
      */
     float get_classification_entropy()
     {
-      if( offsets_.size() == 0 || offsets_.size() == n_ )
+      if( positive_ == 0 || positive_ == n_ )
       {
         return 0.0f;
       }
 
-      float p_1 = static_cast< float >( offsets_.size() ) / n_;
+      float p_1 = static_cast< float >( positive_ ) / n_;
       return -p_1 * cvt::Math::log2( p_1 ) - ( 1 - p_1 ) * cvt::Math::log2( 1 - p_1 );
     }
 
@@ -84,7 +95,7 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       float y( sum_offset_.y / static_cast< float >( n_ ) );
       cvt::Vector2f mean_offset( x, y );
 
-      std::vector< cvt::Vector2i >::const_iterator it = offsets_.begin(),
+      VectorSetType::const_iterator it = offsets_.begin(),
                end = offsets_.end();
       for( ; it != end; ++it )
       {
@@ -100,7 +111,7 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       {
         return 0.0f;
       }
-      float p_1 = static_cast< float >( offsets_.size() ) / n_;
+      float p_1 = static_cast< float >( positive_ ) / n_;
       if( class_index == 1 )
       {
         return p_1;
@@ -140,6 +151,11 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       type_ = type;
     }
 
+    const std::set< cvt::Vector2i, VectorCompare >& offsets() const
+    {
+      return offsets_;
+    }
+
     friend std::ostream& operator<<( std::ostream& os, const DetectionStatistics& s )
     {
       os << s.n_ << ": " << s.probability( 1 );
@@ -147,10 +163,13 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
     }
 
   private:
-    int                           type_;
-    size_t                        n_;
-    std::vector< cvt::Vector2i >  offsets_;
-    cvt::Vector2i                 sum_offset_;
+
+    int             type_;
+    size_t          n_;
+    size_t          positive_;
+    VectorSetType   offsets_;
+    cvt::Vector2i   sum_offset_;
+
 };
 
 #endif

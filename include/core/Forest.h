@@ -18,18 +18,18 @@ class Forest
       trees_.push_back( tree );
     }
 
-    void operator()( S& statistics, const I& input )
+    void operator()( std::vector< const S* >& statistics, const I& input )
     {
       typename std::vector< Tree< I, S, T > >::iterator it = trees_.begin(),
         end = trees_.end();
       for( ; it != end; ++it )
       {
-        statistics += it->operator()( input );
+        statistics.push_back( &( it->operator()( input ) ) );
       }
     }
 
-  private:
     std::vector< Tree< I, S, T > >  trees_;
+  private:
 };
 
 #endif

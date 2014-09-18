@@ -91,7 +91,7 @@ class TreeTrainer
         // update paths data has taken
         context.update_paths( paths, blacklist, tree );
 
-        std::cout << tree << std::endl;
+        // std::cout << tree << std::endl;
       }
     }
 

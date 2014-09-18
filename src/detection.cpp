@@ -10,6 +10,19 @@
 #include "detection/DetectionContext.h"
 #include "detection/DetectionTestSampler.h"
 
+static inline void loadbar(unsigned int x, unsigned int n, unsigned int w = 50)
+{
+    if ( (x != n) && (x % (n/100+1) != 0) ) return;
+ 
+    float ratio  =  x/(float)n;
+    int   c      =  ratio * w;
+ 
+    std::cout << std::setw(3) << (int)(ratio*100) << "% [";
+    for (int x=0; x<c; x++) std::cout << "=";
+    for (int x=c; x<w; x++) std::cout << " ";
+    std::cout << "]\r" << std::flush;
+}
+
 void get_data( std::vector< cvt::Image >& images,
     std::vector< std::vector< cvt::Recti > >& rois,
     cvt::String& idl_path )
@@ -140,45 +153,52 @@ int main(int argc, char *argv[])
 
   float max_peak = 0.0f;
   const size_t border = PATCH_SIZE / 2;
+  size_t counter = 0;
+  size_t total = ( input.height() - PATCH_SIZE ) * ( input.width() - PATCH_SIZE );
   for( size_t y = border; y < input.height() - border; y++ )
   {
-    for( size_t x = PATCH_SIZE; x < input.width() - PATCH_SIZE; x++ )
+    for( size_t x = border; x < input.width() - border; x++ )
     {
+      loadbar( counter++, total );
       const InputType in = { input_map, x, y };
-      StatisticsType s = context.get_statistics();
-      forest( s, in );
-      std::pair< OutputType, float > prediction = s.predict();
-      size_t predicted_class = prediction.first.first;
-      if( predicted_class == 1 )
+      std::vector< const StatisticsType* > statistics;
+      forest( statistics, in );
+
+      for( size_t i = 0; i < statistics.size(); i++ )
       {
-        cvt::Vector2i center( cvt::Vector2i( x, y ) + prediction.first.second );
-        if( center.x < output.width() && center.x >= 0 && center.y < output.height() && center.y >= 0 )
+        const StatisticsType& s = *statistics[ i ];
+        const StatisticsType::VectorSetType& offsets = s.offsets();
+        StatisticsType::VectorSetType::const_iterator it = offsets.begin(),
+          end = offsets.end();
+        float weight = s.probability( 1 ) / ( offsets.size() );
+        for( ; it != end; ++it )
         {
-          float& p_value = output_map( center.x, center.y );
-          p_value += prediction.second;
-          if( p_value > max_peak )
+          cvt::Vector2i center( x + it->x, y + it->y );
+          if( center.x < output.width() && center.x >= 0 && center.y < output.height() && center.y >= 0 )
           {
-            max_peak = p_value;
+            float& p_value = output_map( center.x, center.y );
+            p_value += weight;
+            if( p_value > max_peak )
+            {
+              max_peak = p_value;
+            }
           }
         }
       }
     }
   }
-  std::cout << "Max peak: " << max_peak << std::endl;
+  std::cout << std::endl;
+  // std::cout << "Max peak: " << max_peak << std::endl;
 
-  size_t count = 0;
-  float avg_peak = 0.0f;
   for( size_t y = border; y < input.height() - border; y++ )
   {
     for( size_t x = PATCH_SIZE; x < input.width() - PATCH_SIZE; x++ )
     {
-      avg_peak += output_map( x, y );
       output_map( x, y ) /= max_peak;
-      count++;
     }
   }
 
-  std::cout << "Avg peak: " << avg_peak / count << std::endl;
+  // output.boxfilter( output, 5, 5 );
 
   cvt::Image input_gray;
   input.convert( input_gray, cvt::IFormat::GRAY_FLOAT );
