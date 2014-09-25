@@ -119,7 +119,7 @@ class Tree
       return n;
     }
 
-    S& operator()( const I& input )
+    S& evaluate( const I& input )
     {
       Node* n = root_;
       while( is_split( n ) )

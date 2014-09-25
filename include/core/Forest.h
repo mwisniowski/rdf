@@ -18,13 +18,23 @@ class Forest
       trees_.push_back( tree );
     }
 
-    void operator()( std::vector< const S* >& statistics, const I& input )
+    void evaluate( std::vector< const S* >& statistics, const I& input )
     {
       typename std::vector< Tree< I, S, T > >::iterator it = trees_.begin(),
         end = trees_.end();
       for( ; it != end; ++it )
       {
-        statistics.push_back( &( it->operator()( input ) ) );
+        statistics.push_back( &( it->evaluate( input ) ) );
+      }
+    }
+
+    void evaluate( S& s, const I& input )
+    {
+      typename std::vector< Tree< I, S, T > >::iterator it = trees_.begin(),
+        end = trees_.end();
+      for( ; it != end; ++it )
+      {
+        s += it->evaluate( input );
       }
     }
 

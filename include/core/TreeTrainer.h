@@ -36,6 +36,8 @@ class TreeTrainer
       // At every tree level expand all frontier nodes
       for( size_t depth = 0; depth < context.params().max_depth; depth++ )
       { 
+        loadbar( depth, context.params().max_depth );
+
         // sample tests
         std::vector< TestType > random_tests;
         sampler.sample( random_tests, context.params().tests );
@@ -93,6 +95,8 @@ class TreeTrainer
 
         // std::cout << tree << std::endl;
       }
+      loadbar( 1, 1 );
+      std::cout << std::endl;
     }
 
     static bool is_blacklisted( const std::vector< std::vector< bool > >& blacklist, 
@@ -204,7 +208,18 @@ class TreeTrainer
       }
     }
 
+    static inline void loadbar(unsigned int x, unsigned int n, unsigned int w = 50)
+    {
+      if ( (x != n) && (x % (n/100+1) != 0) ) return;
 
+      float ratio  =  x/(float)n;
+      int   c      =  ratio * w;
+
+      std::cout << std::setw(3) << (int)(ratio*100) << "% [";
+      for (int x=0; x<c; x++) std::cout << "=";
+      for (int x=c; x<w; x++) std::cout << " ";
+      std::cout << "]\r" << std::flush;
+    }
 };
 
 #endif

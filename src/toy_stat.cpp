@@ -106,7 +106,7 @@ int main(int argc, char *argv[])
     for( size_t i = 0; i < n; i++ )
     {
       StatisticsType s = context.get_statistics();
-      forest( s, test_data[ i ].input() );
+      forest.evaluate( s, test_data[ i ].input() );
       confusion_matrix[ s.predict().first ][ test_data[ i ].output() ]++;
     }
 

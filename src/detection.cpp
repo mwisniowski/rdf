@@ -162,7 +162,7 @@ int main(int argc, char *argv[])
       loadbar( counter++, total );
       const InputType in = { input_map, x, y };
       std::vector< const StatisticsType* > statistics;
-      forest( statistics, in );
+      forest.evaluate( statistics, in );
 
       for( size_t i = 0; i < statistics.size(); i++ )
       {
@@ -187,12 +187,13 @@ int main(int argc, char *argv[])
       }
     }
   }
+  loadbar( 1, 1 );
   std::cout << std::endl;
   // std::cout << "Max peak: " << max_peak << std::endl;
 
-  for( size_t y = border; y < input.height() - border; y++ )
+  for( size_t y = 0; y < input.height(); y++ )
   {
-    for( size_t x = PATCH_SIZE; x < input.width() - PATCH_SIZE; x++ )
+    for( size_t x = 0; x < input.width(); x++ )
     {
       output_map( x, y ) /= max_peak;
     }
@@ -211,9 +212,9 @@ int main(int argc, char *argv[])
   output.save( "detection.png" );
   // output_inv.save( "detection_inv.png" );
   // 
-  system( "open detection.png" );
+  // system( "open detection.png" );
 
-  std::cout << "Finished" << std::endl;
+  std::cout << "##########     Finished     ##########" << std::endl;
 
   return 0;
 }

@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
       v[ 0 ] = static_cast<float>( column );
 
       StatisticsType s = context.get_statistics();
-      forest( s, v );
+      forest.evaluate( s, v );
 
       mix = cvt::Color::BLACK;
       float mudiness = 0.5f * s.get_entropy();
