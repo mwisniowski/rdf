@@ -10,7 +10,6 @@
 #include "core/DataPoint.h"
 #include "core/TrainingParameters.h"
 
-
 template< typename F, typename I >
 class Test;
 
@@ -57,11 +56,11 @@ class TrainingContextBase
 
     virtual void fill_statistics( std::vector< S* >& candidate_statistics,
         const std::vector< TestType >& random_tests,
-        const std::vector< std::vector< bool > >& blacklist,
-        const std::vector< std::vector< bool > >& paths ) const =0;
+        const std::vector< Path >& blacklist,
+        const std::vector< Path >& paths ) const =0;
 
-    virtual void update_paths( std::vector< std::vector< bool > >& paths,
-         const std::vector< std::vector< bool > >& blacklist, 
+    virtual void update_paths( std::vector< Path >& paths,
+         const std::vector< Path >& blacklist, 
          const TreeType& tree ) const =0;
 
   /**

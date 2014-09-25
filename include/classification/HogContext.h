@@ -81,18 +81,18 @@ class HogContext : public TrainingContextBase< InputType, StatisticsType, TestTy
 
     void fill_statistics( std::vector< StatisticsType* >& candidate_statistics,
         const std::vector< TestType >& random_tests,
-        const std::vector< std::vector< bool > >& blacklist,
-        const std::vector< std::vector< bool > >& paths ) const
+        const std::vector< Path >& blacklist,
+        const std::vector< Path >& paths ) const
     {
       for( size_t i = 0; i < data_.size(); i++ )
       {
-        const std::vector< bool >& path = paths[ i ];
-        if( TreeTrainerType::is_blacklisted( blacklist, path ) )
+        const Path& path = paths[ i ];
+        if( path.is_blacklisted( blacklist ) )
         {
           continue;
         }
 
-        size_t idx = TreeTrainerType::to_int( path );
+        size_t idx = path.path();
         for( size_t j = 0; j < random_tests.size(); j++ )
         {
           size_t candidate_idx = idx * 2 * random_tests.size() + 2 * j;
@@ -107,16 +107,16 @@ class HogContext : public TrainingContextBase< InputType, StatisticsType, TestTy
       }
     }
 
-    void update_paths( std::vector< std::vector< bool > >& paths,
-        const std::vector< std::vector< bool > >& blacklist,
+    void update_paths( std::vector< Path >& paths,
+        const std::vector< Path >& blacklist,
         const TreeType& tree ) const
     {
       for( size_t i = 0; i < data_.size(); i++ )
       {
-        std::vector< bool >& path = paths[ i ];
-        if( !TreeTrainerType::is_blacklisted( blacklist, path ) )
+        Path& path = paths[ i ];
+        if( !path.is_blacklisted( blacklist ) )
         {
-          path.push_back( tree.get_node( path )->test( data_[ i ].input() ) );
+          path.add( tree.get_node( path )->test( data_[ i ].input() ) );
         }
       }
     }

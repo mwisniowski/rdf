@@ -119,8 +119,8 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
 
     void fill_statistics( std::vector< StatisticsType* >& candidate_statistics,
         const std::vector< TestType >& random_tests,
-        const std::vector< std::vector< bool > >& blacklist,
-        const std::vector< std::vector< bool > >& paths ) const
+        const std::vector< Path >& blacklist,
+        const std::vector< Path >& paths ) const
     {
       const size_t border = PATCH_SIZE / 2;
       for( size_t i = 0; i < images_.size(); i++ )
@@ -138,15 +138,15 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
         {
           for( size_t x = border; x < img.width() - border; x++ )
           {
-            const std::vector< bool >& path = paths[ path_idx + counter ];
+            const Path& path = paths[ path_idx + counter ];
             counter++;
-            if( TreeTrainerType::is_blacklisted( blacklist, path ) )
+            if( path.is_blacklisted( blacklist ) )
             {
               continue;
             }
 
             const InputType in = { map, x, y };
-            size_t idx = TreeTrainerType::to_int( path );
+            size_t idx = path.path();
             for( size_t j = 0; j < random_tests.size(); j++ )
             {
               size_t candidate_idx = idx * 2 * random_tests.size() + 2 * j;
@@ -163,8 +163,8 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
       }
     } 
 
-    void update_paths( std::vector< std::vector< bool > >& paths,
-         const std::vector< std::vector< bool > >& blacklist, 
+    void update_paths( std::vector< Path >& paths,
+         const std::vector< Path >& blacklist, 
          const TreeType& tree ) const
     {
       const size_t border = PATCH_SIZE / 2;
@@ -183,12 +183,12 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
         {
           for( size_t x = border; x < img.width() - border; x++ )
           {
-            std::vector< bool >& path = paths[ path_idx + counter ];
+            Path& path = paths[ path_idx + counter ];
             counter++;
-            if( !TreeTrainerType::is_blacklisted( blacklist, path ) )
+            if( !path.is_blacklisted( blacklist ) )
             {
               const InputType in = { map, x, y };
-              path.push_back( tree.get_node( path )->test( in ) );
+              path.add( tree.get_node( path )->test( in ) );
             }
           }
         }

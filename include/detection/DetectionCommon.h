@@ -7,7 +7,7 @@
 #include "core/Interfaces.h"
 #include "core/ForestTrainer.h"
 
-#define CHANNELS 3
+#define CHANNELS 5
 #define PATCH_SIZE 16
 
 class DetectionFeature;

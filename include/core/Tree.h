@@ -12,6 +12,7 @@
 
 #include "core/Interfaces.h"
 #include "core/Test.h"
+#include "core/Path.h"
 
 template< typename I, typename S, typename T >
 class Tree
@@ -93,15 +94,19 @@ class Tree
       nodes = std::vector< Node* >( queue.begin(), queue.end() );
     }
 
-    Node* get_node( const std::vector< bool >& path ) const
+    Node* get_node( const Path& path ) const
     {
+      if( path.depth() == 0 )
+      {
+        return root_;
+      }
       Node* n = root_;
-      for( size_t i = 0; i < path.size(); i++ )
+      for( size_t mask = 1UL << ( path.depth() - 1 ); mask; mask >>= 1 )
       {
         // if n is split node
         if( is_split( n ) )
         {
-          if( path[ i ] )
+          if( ( path.path() & mask ) == mask )
           {
             n = n->right;
           }

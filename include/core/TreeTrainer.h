@@ -7,6 +7,7 @@
 #include "core/Interfaces.h"
 #include "core/Tree.h"
 #include "core/Test.h"
+#include "core/Path.h"
 
 template< typename C, typename S, typename TestType, typename TreeType >
 class TreeTrainer 
@@ -30,8 +31,8 @@ class TreeTrainer
     {
       S root_s = context.get_root_statistics();
       tree.make_root( root_s );
-      std::vector< std::vector< bool > > paths( root_s.n(), std::vector< bool >( 0 ) );
-      std::vector< std::vector< bool > > blacklist;
+      std::vector< Path > paths( root_s.n(), Path( 0, 0 ) );
+      std::vector< Path > blacklist;
 
       // At every tree level expand all frontier nodes
       for( size_t depth = 0; depth < context.params().max_depth; depth++ )
@@ -61,9 +62,9 @@ class TreeTrainer
         bool growing = false;
         for( size_t i = 0; i < num_nodes_d; i++ )
         {
-          std::vector< bool > path = to_path( i, depth );
+          Path path( i, depth );
           NodeType* n = tree.get_node( path );
-          if( is_blacklisted( blacklist, path ) )
+          if( path.is_blacklisted( blacklist ) )
           {
             continue;
           }
@@ -99,54 +100,11 @@ class TreeTrainer
       std::cout << std::endl;
     }
 
-    static bool is_blacklisted( const std::vector< std::vector< bool > >& blacklist, 
-        const std::vector< bool >& path )
-    {
-      for( size_t i = 0; i < blacklist.size(); i++ )
-      {
-        const std::vector< bool >& p = blacklist[ i ];
-        int j = 0;
-        for( ; j < p.size() && path[ j ] == p[ j ]; j++ )
-        {}
-        if( j == p.size() )
-        {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    static std::vector< bool > to_path( size_t x, size_t depth )
-    {
-      std::vector< bool > path( depth );
-      if( depth )
-      {
-        size_t mask = 1UL << ( depth - 1 );
-        for( size_t i = 0; i < depth; i++ )
-        {
-          path[ i ] = x & mask;
-          mask >>= 1;
-        }
-      }
-      return path;
-    }
-
-    static size_t to_int( const std::vector< bool >& path )
-    {
-      size_t idx = 0;
-      for( size_t j = 0; j < path.size(); j++ )
-      {
-        idx += path[ j ] << path.size() - 1 - j;
-      }
-      return idx;
-    }
-
-
   private:
     static void init_candidate_statistics( std::vector< S* >& candidate_statistics,
         size_t depth, 
         size_t num_tests,
-        const std::vector< std::vector< bool > >& blacklist,
+        const std::vector< Path >& blacklist,
         const C& context )
     {
       size_t num_nodes_d = 1UL << depth;
@@ -155,8 +113,8 @@ class TreeTrainer
 
       for( size_t i = 0; i < num_nodes_d; i++ )
       {
-        std::vector< bool > path = to_path( i, depth );
-        if( is_blacklisted( blacklist, path ) )
+        Path path( i, depth );
+        if( path.is_blacklisted( blacklist ) )
         {
           continue;
         }
@@ -176,16 +134,16 @@ class TreeTrainer
         size_t depth,
         const TreeType& tree,
         const std::vector< TestType >& random_tests,
-        const std::vector< std::vector< bool > >& blacklist,
+        const std::vector< Path >& blacklist,
         const C& context,
         std::vector< S* >& candidate_statistics )
     {
       size_t num_nodes_d = 1UL << depth;
       for( size_t i = 0; i < num_nodes_d; i++ )
       {
-        std::vector< bool > path = to_path( i, depth );
+        Path path( i, depth );
         NodeType* n = tree.get_node( path );
-        if( is_blacklisted( blacklist, path ) )
+        if( path.is_blacklisted( blacklist ) )
         {
           continue;
         }
