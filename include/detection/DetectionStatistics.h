@@ -23,6 +23,8 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       type_( -1 ),
       n_( 0 ),
       positive_( 0 ),
+      classification_entropy_( -1.0f ),
+      regression_entropy_( -1.0f ),
       sum_offset_( cvt::Vector2i( 0, 0 ) )
     {}
 
@@ -31,6 +33,8 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       n_( other.n_ ),
       offsets_( other.offsets_ ),
       positive_( other.positive_ ),
+      classification_entropy_( other.classification_entropy_ ),
+      regression_entropy_( other.regression_entropy_ ),
       sum_offset_( other.sum_offset_ )
     {}
 
@@ -45,6 +49,8 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
         n_ = other.n_;
         offsets_ = other.offsets_;
         positive_ = other.positive_;
+        classification_entropy_ = other.classification_entropy_;
+        regression_entropy_ = other.regression_entropy_;
         sum_offset_ = other.sum_offset_;
       }
       return *this;
@@ -66,6 +72,8 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
     {
       n_ += s.n_;
       positive_ += s.positive_;
+      classification_entropy_ = -1.0f;
+      regression_entropy_ = -1.0f;
       offsets_.insert( s.offsets_.begin(), s.offsets_.end() );
       sum_offset_ += s.sum_offset_;
       return *this;
@@ -78,31 +86,40 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
      */
     float get_classification_entropy()
     {
-      if( positive_ == 0 || positive_ == n_ )
+      if( classification_entropy_ < 0.0f )
       {
-        return 0.0f;
+        if( positive_ == 0 || positive_ == n_ )
+        {
+          classification_entropy_ = 0.0f;
+        }
+        else
+        {
+          float p_1 = static_cast< float >( positive_ ) / n_;
+          classification_entropy_ = -p_1 * cvt::Math::log2( p_1 ) - ( 1 - p_1 ) * cvt::Math::log2( 1 - p_1 );
+        }
       }
-
-      float p_1 = static_cast< float >( positive_ ) / n_;
-      return -p_1 * cvt::Math::log2( p_1 ) - ( 1 - p_1 ) * cvt::Math::log2( 1 - p_1 );
+      return classification_entropy_;
     }
 
     float get_regression_entropy()
     {
-      float entropy = 0.0f;
-
-      float x( sum_offset_.x / static_cast< float >( n_ ) );
-      float y( sum_offset_.y / static_cast< float >( n_ ) );
-      cvt::Vector2f mean_offset( x, y );
-
-      VectorSetType::const_iterator it = offsets_.begin(),
-               end = offsets_.end();
-      for( ; it != end; ++it )
+      if( regression_entropy_ < 0.0f )
       {
-        cvt::Vector2f v( it->x, it->y );
-        entropy += ( v - mean_offset ).lengthSqr();
+        regression_entropy_ = 0.0f;
+        float x( sum_offset_.x / static_cast< float >( n_ ) );
+        float y( sum_offset_.y / static_cast< float >( n_ ) );
+        cvt::Vector2f mean_offset( x, y );
+
+        VectorSetType::const_iterator it = offsets_.begin(),
+                 end = offsets_.end();
+        for( ; it != end; ++it )
+        {
+          cvt::Vector2f v( it->x, it->y );
+          regression_entropy_ += ( v - mean_offset ).lengthSqr();
+        }
+        offsets_.clear();
       }
-      return entropy;
+      return regression_entropy_;
     }
 
     float probability( size_t class_index ) const
@@ -163,10 +180,11 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
     }
 
   private:
-
     int             type_;
     size_t          n_;
     size_t          positive_;
+    float           classification_entropy_;
+    float           regression_entropy_;
     VectorSetType   offsets_;
     cvt::Vector2i   sum_offset_;
 
