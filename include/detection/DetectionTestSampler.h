@@ -51,7 +51,7 @@ class DetectionTestSampler: public TestSamplerBase< Test< FeatureType, InputType
 
     static int rand( int LO, int HI )
     {
-      return static_cast< int >( cvt::Math::round( rand( static_cast< float >( LO ), static_cast< float >( HI ) ) ) );
+      return static_cast< int >( rand( static_cast< float >( LO ), static_cast< float >( HI ) ) );
     }
 };
 

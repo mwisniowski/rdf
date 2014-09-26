@@ -5,7 +5,7 @@
 #include "Interfaces.h"
 
 template< typename I, typename S, typename T >
-class Forest 
+class Forest : public cvt::XMLSerializable
 {
   public:
     Forest()
@@ -38,8 +38,30 @@ class Forest
       }
     }
 
-    std::vector< Tree< I, S, T > >  trees_;
+    cvt::XMLNode* serialize() const
+    {
+      cvt::XMLElement* node = new cvt::XMLElement( "Forest" );
+
+      for( size_t i = 0; i < trees_.size(); i++ )
+      {
+        node->addChild( trees_[ i ].serialize() );
+      }
+  
+      return node;
+    }
+
+    void deserialize( cvt::XMLNode* node )
+    {
+      for( size_t i = 0; i < node->childSize(); i++ )
+      {
+        Tree< I, S, T > tree;
+        tree.deserialize( node->child( i ) );
+        trees_.push_back( tree );
+      }
+    }
+
   private:
+    std::vector< Tree< I, S, T > >  trees_;
 };
 
 #endif

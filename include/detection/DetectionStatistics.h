@@ -7,7 +7,7 @@
 #include "core/Interfaces.h"
 #include "detection/DetectionCommon.h"
 
-class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistics >
+class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistics >, public cvt::XMLSerializable
 {
   public:
     struct VectorCompare {
@@ -117,7 +117,6 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
           cvt::Vector2f v( it->x, it->y );
           regression_entropy_ += ( v - mean_offset ).lengthSqr();
         }
-        offsets_.clear();
       }
       return regression_entropy_;
     }
@@ -166,6 +165,11 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
     void set_type( int type )
     {
       type_ = type;
+      if( type == 1 )
+      {
+        get_regression_entropy();
+      }
+      offsets_.clear();
     }
 
     const std::set< cvt::Vector2i, VectorCompare >& offsets() const
@@ -178,6 +182,105 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       os << s.n_ << ": " << s.probability( 1 );
       return os;
     }
+
+    cvt::XMLNode* serialize() const
+    {
+      cvt::XMLElement* node = new cvt::XMLElement( "DetectionStatistics");
+      cvt::String s; 
+      cvt::XMLAttribute* attr;
+      cvt::XMLElement* elem;
+
+      s.sprintf( "%d", type_ );
+      attr = new cvt::XMLAttribute( "type", s );
+      node->addChild( attr );
+
+      s.sprintf( "%d", n_ );
+      attr = new cvt::XMLAttribute( "n", s );
+      node->addChild( attr );
+
+      s.sprintf( "%d", positive_ );
+      attr = new cvt::XMLAttribute( "positive", s );
+      node->addChild( attr );
+
+      if( type_ == 0 )
+      {
+        s.sprintf( "%f", classification_entropy_ );
+        attr = new cvt::XMLAttribute( "entropy", s );
+        node->addChild( attr );
+      }
+      else if( type_ == 1 )
+      {
+        s.sprintf( "%f", regression_entropy_ );
+        attr = new cvt::XMLAttribute( "entropy", s );
+        node->addChild( attr );
+      }
+
+      elem = new cvt::XMLElement( "sum_offset" );
+      s.sprintf( "%d", sum_offset_.x );
+      attr = new cvt::XMLAttribute( "x", s );
+      elem->addChild( attr );
+      s.sprintf( "%d", sum_offset_.y );
+      attr = new cvt::XMLAttribute( "y", s );
+      elem->addChild( attr );
+      node->addChild( elem );
+
+      if( type_ < 0 )
+      {
+        elem = new cvt::XMLElement( "offsets" );
+        cvt::XMLElement* point;
+        VectorSetType::const_iterator it = offsets_.begin(),
+          end = offsets_.end();
+        for( ; it != end; ++it )
+        {
+          point = new cvt::XMLElement( "offset" );
+          s.sprintf( "%d", it->x );
+          attr = new cvt::XMLAttribute( "x", s );
+          point->addChild( attr );
+          s.sprintf( "%d", it->y );
+          attr = new cvt::XMLAttribute( "y", s );
+          point->addChild( attr );
+          elem->addChild( point );
+        }
+        node->addChild( elem );
+      }
+  
+      return node;
+    }
+
+    void deserialize( cvt::XMLNode* node )
+    {
+      type_ = node->childByName( "type" )->value().toInteger();
+      n_ = node->childByName( "n" )->value().toInteger();
+      positive_ = node->childByName( "positive" )->value().toInteger();
+
+      if( type_ == 0 )
+      {
+        classification_entropy_ = node->childByName( "entropy" )->value().toFloat();
+      }
+      else if( type_ == 1 )
+      {
+        regression_entropy_ = node->childByName( "entropy" )->value().toFloat();
+      }
+
+      int x, y;
+      cvt::XMLNode* point = node->childByName( "sum_offset" );
+      x = point->childByName( "x" )->value().toInteger();
+      y = point->childByName( "y" )->value().toInteger();
+      sum_offset_ = cvt::Vector2i( x, y );
+
+      if( type_ < 0 )
+      {
+        cvt::XMLNode* n = node->childByName( "offsets" );
+        for( size_t i = 0; i < point->childSize(); i++ )
+        {
+          cvt::XMLNode* offset = point->child( i );
+          x = point->childByName( "x" )->value().toInteger();
+          y = point->childByName( "y" )->value().toInteger();
+          offsets_.insert( cvt::Vector2i( x, y ) );
+        }
+      }
+    }
+
 
   private:
     int             type_;

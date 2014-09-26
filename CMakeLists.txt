@@ -50,6 +50,7 @@ TARGET_LINK_LIBRARIES( hog_split
 )
 
 ADD_EXECUTABLE( detection
+  src/detection/DetectionFeature.cpp
   src/detection.cpp
 )
 TARGET_LINK_LIBRARIES( detection

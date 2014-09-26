@@ -28,7 +28,7 @@ class TestSamplerBase
 };
 
 template< typename O, typename S >
-class StatisticsBase 
+class StatisticsBase
 { 
   public:
     virtual S& operator+=( const S& s ) =0;

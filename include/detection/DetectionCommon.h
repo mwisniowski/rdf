@@ -7,7 +7,7 @@
 #include "core/Interfaces.h"
 #include "core/ForestTrainer.h"
 
-#define CHANNELS 5
+#define CHANNELS 3
 #define PATCH_SIZE 16
 
 class DetectionFeature;
@@ -26,9 +26,7 @@ struct InputType
   size_t y;
 };
 
-// typedef std::vector< cvt::Image >            InputType;
 typedef std::pair< size_t, cvt::Vector2i >   OutputType;
-// typedef DataPoint< InputType, OutputType >   DataType;
 typedef DetectionFeature                     FeatureType;
 typedef DetectionTestSampler< CHANNELS >     SamplerType;
 typedef DetectionStatistics                  StatisticsType;

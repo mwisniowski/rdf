@@ -15,24 +15,77 @@
 #include "core/Path.h"
 
 template< typename I, typename S, typename T >
-class Tree
+class Tree : public cvt::XMLSerializable
 {
   typedef std::vector< int > v_int;
   typedef float foo;
 
   public:
-    class Node
+    class Node : public cvt::XMLSerializable
     {
       public:
         Node() :
           left( NULL ),
           right( NULL )
-        {};
+      {};
 
         T test;
         S statistics;
         Node* left;
         Node* right;
+
+        bool is_split() const
+        {
+          return left && right;
+        }
+
+        cvt::XMLNode* serialize() const
+        {
+          cvt::XMLElement* node = new cvt::XMLElement( "Node");
+          cvt::XMLElement* elem;
+
+          elem = new cvt::XMLElement( "Statistics" );
+          elem->addChild( statistics.serialize() );
+          node->addChild( elem );
+
+          if( is_split() )
+          {
+            node->addChild( test.serialize() );
+            node->addChild( left->serialize() );
+            node->addChild( right->serialize() );
+          }
+
+          return node;
+        }
+
+        void deserialize( cvt::XMLNode* node )
+        {
+          statistics.deserialize( node->childByName( "Statistics" )->child( 0 ) );
+
+          cvt::XMLNode* n = node->childByName( "Test" );
+          if( n )
+          {
+            test.deserialize( node->childByName( "Test" ) );
+            bool found_left = false;
+            for( size_t i = 0; i < node->childSize(); i++ )
+            {
+              if( node->child( i )->name() == "Node" )
+              {
+                if( found_left )
+                {
+                  right = new Node;
+                  right->deserialize( node->child( i ) );
+                }
+                else
+                {
+                  left = new Node;
+                  left->deserialize( node->child( i ) );
+                  found_left = true;
+                }
+              }
+            }
+          }
+        }
     };
 
     Tree()
@@ -145,6 +198,28 @@ class Tree
     {
       tree.preorder( os, tree.root_ );
       return os;
+    }
+
+    cvt::XMLNode* serialize() const
+    {
+      cvt::XMLElement* node = new cvt::XMLElement( "Tree");
+
+      if( root_ )
+      {
+        node->addChild( root_->serialize() );
+      }
+  
+      return node;
+    }
+
+    void deserialize( cvt::XMLNode* node )
+    {
+      cvt::XMLNode* n = node->childByName( "Node" );
+      if( n )
+      {
+        root_ = new Node;
+        root_->deserialize( n );
+      }
     }
 
   private:

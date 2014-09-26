@@ -5,8 +5,6 @@
 #include <cvt/io/FileSystem.h>
 #include <cvt/gfx/IExpr.h>
 
-#include "helper/gnuplot_i.hpp"
-
 #include "detection/DetectionContext.h"
 #include "detection/DetectionTestSampler.h"
 
@@ -139,6 +137,8 @@ int main(int argc, char *argv[])
   std::cout << "Training" << std::endl;
   ForestType forest;
   ForestTrainerType::train( forest, context, sampler );
+  cvt::String s;
+  forest.deserialize( forest.serialize() );
 
   std::cout << "Testing" << std::endl;
 
@@ -167,6 +167,10 @@ int main(int argc, char *argv[])
       for( size_t i = 0; i < statistics.size(); i++ )
       {
         const StatisticsType& s = *statistics[ i ];
+        if( s.probability( 1 ) < 0.5f )
+        {
+          continue;
+        }
         const StatisticsType::VectorSetType& offsets = s.offsets();
         StatisticsType::VectorSetType::const_iterator it = offsets.begin(),
           end = offsets.end();
