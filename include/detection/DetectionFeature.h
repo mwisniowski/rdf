@@ -7,7 +7,7 @@
 
 #include "detection/DetectionCommon.h"
 
-class DetectionFeature : public FeatureBase< InputType >, public cvt::XMLSerializable
+class DetectionFeature : public FeatureBase< InputType >
 {
   private:
     typedef FeatureBase< InputType > super;

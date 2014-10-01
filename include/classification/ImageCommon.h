@@ -17,7 +17,7 @@ class ImageTestSampler;
 
 class ImageContext;
 
-typedef std::vector< cvt::Image >                     InputType;
+typedef std::vector< cvt::Image >      InputType;
 typedef size_t                         OutputType;
 typedef ImageFeature                   FeatureType;
 typedef ImageTestSampler< CHANNELS >   SamplerType;

@@ -14,7 +14,7 @@ template< typename F, typename I >
 class Test;
 
 template< typename I >
-class FeatureBase
+class FeatureBase : public cvt::XMLSerializable
 {
   public:
     virtual float operator()( const I& input ) const =0;
@@ -28,7 +28,7 @@ class TestSamplerBase
 };
 
 template< typename O, typename S >
-class StatisticsBase
+class StatisticsBase : public cvt::XMLSerializable
 { 
   public:
     virtual S& operator+=( const S& s ) =0;

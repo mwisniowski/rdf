@@ -63,6 +63,44 @@ class ToyFeature: public FeatureBase< InputType >
       return os;
     }
 
+    cvt::XMLNode* serialize() const
+    {
+      cvt::XMLElement* node = new cvt::XMLElement( "ToyFeature ");
+
+      cvt::XMLElement* v = new cvt::XMLElement( "v" );
+      cvt::String s; 
+      s.sprintf( "%d", v_.size() );
+      cvt::XMLAttribute* attr = new cvt::XMLAttribute( "size", s );
+      for( size_t i = 0; i < v_.size(); i++ )
+      {
+        cvt::XMLElement* elem = new cvt::XMLElement( "elem" );
+        s.sprintf( "%d", i );
+        attr = new cvt::XMLAttribute( "idx", s );
+        elem->addChild( attr );
+        s.sprintf( "%f", v_[ i ] );
+        attr = new cvt::XMLAttribute( "value", s );
+        elem->addChild( attr );
+      }
+
+      return node;
+    }
+
+    void deserialize( cvt::XMLNode* node )
+    {
+      cvt::XMLNode* v = node->childByName( "v" );
+      size_t size = v->childByName( "size" )->value().toInteger();
+      v_.resize( size, 0.0f );
+      for( size_t i = 0; i < size; i++ )
+      {
+        cvt::XMLNode* elem = v->child( i );
+        if( elem->name() != "elem" )
+        {
+          continue;
+        }
+        size_t idx = elem->childByName( "idx" )->value().toInteger();
+        v_[ idx ] = elem->childByName( "value" )->value().toFloat();
+      }
+    }
 
   private:
     std::vector< float > v_;

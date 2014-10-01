@@ -126,6 +126,11 @@ class Histogram: public StatisticsBase< O, Histogram< O > >
       }
     }
 
+    size_t n() const
+    {
+      return n_;
+    }
+
     friend std::ostream& operator<<( std::ostream& os, const Histogram& s )
     {
       os << s.n_ << ": { ";
@@ -140,9 +145,60 @@ class Histogram: public StatisticsBase< O, Histogram< O > >
       return os;
     }
 
-    size_t n() const
+    cvt::XMLNode* serialize() const
     {
-      return n_;
+      cvt::XMLElement* node = new cvt::XMLElement( "Histogram");
+      cvt::String s; 
+      cvt::XMLAttribute* attr;
+      cvt::XMLElement* elem;
+
+      s.sprintf( "%d", n_ );
+      attr = new cvt::XMLAttribute( "n", s );
+      node->addChild( attr );
+
+      s.sprintf( "%f", entropy_ );
+      attr = new cvt::XMLAttribute( "entropy", s );
+      node->addChild( attr );
+
+      elem = new cvt::XMLElement( "histogram" );
+      s.sprintf( "%d", histogram_.size() );
+      attr = new cvt::XMLAttribute( "size", s );
+      elem->addChild( attr );
+      cvt::XMLElement* point;
+      for( size_t i = 0; i < histogram_.size(); i++ )
+      {
+        point = new cvt::XMLElement( "class" );
+        s.sprintf( "%d", i );
+        attr = new cvt::XMLAttribute( "index", s );
+        point->addChild( attr );
+        s.sprintf( "%d", histogram_[ i ] );
+        attr = new cvt::XMLAttribute( "count", s );
+        point->addChild( attr );
+        elem->addChild( point );
+      }
+      node->addChild( elem );
+
+      return node;
+    }
+
+    void deserialize( cvt::XMLNode* node )
+    {
+      n_ = node->childByName( "n" )->value().toInteger();
+
+      entropy_ = node->childByName( "entropy" )->value().toFloat();
+
+      cvt::XMLNode* n = node->childByName( "histogram" );
+      histogram_.resize( n->childByName( "size" )->value().toInteger(), 0);
+      for( size_t i = 0; i < n->childSize(); i++ )
+      {
+        cvt::XMLNode* entry = n->child( i );
+        if( entry->name() != "class" )
+        {
+          continue;
+        }
+        size_t idx = entry->childByName( "index" )->value().toInteger();
+        histogram_[ idx ] = entry->childByName( "count" )->value().toInteger();
+      }
     }
 
   private:

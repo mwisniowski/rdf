@@ -54,6 +54,23 @@ class HogFeature: public FeatureBase< InputType >
       return os;
     }
 
+    cvt::XMLNode* serialize() const
+    {
+      cvt::XMLElement* node = new cvt::XMLElement( "HogFeature ");
+
+      cvt::String s; 
+      s.sprintf( "%d", component_ );
+      cvt::XMLAttribute* attr = new cvt::XMLAttribute( "component", s );
+      node->addChild( attr );
+
+      return node;
+    }
+
+    void deserialize( cvt::XMLNode* node )
+    {
+      component_ = node->childByName( "component" )->value().toInteger();
+    }
+
   private:
     size_t component_;
 };

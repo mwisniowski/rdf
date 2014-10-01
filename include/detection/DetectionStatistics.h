@@ -7,7 +7,7 @@
 #include "core/Interfaces.h"
 #include "detection/DetectionCommon.h"
 
-class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistics >, public cvt::XMLSerializable
+class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistics >
 {
   public:
     struct VectorCompare {
@@ -271,16 +271,15 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       if( type_ < 0 )
       {
         cvt::XMLNode* n = node->childByName( "offsets" );
-        for( size_t i = 0; i < point->childSize(); i++ )
+        for( size_t i = 0; i < n->childSize(); i++ )
         {
-          cvt::XMLNode* offset = point->child( i );
-          x = point->childByName( "x" )->value().toInteger();
-          y = point->childByName( "y" )->value().toInteger();
+          cvt::XMLNode* offset = n->child( i );
+          x = offset->childByName( "x" )->value().toInteger();
+          y = offset->childByName( "y" )->value().toInteger();
           offsets_.insert( cvt::Vector2i( x, y ) );
         }
       }
     }
-
 
   private:
     int             type_;
