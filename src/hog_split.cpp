@@ -162,7 +162,7 @@ int main( int argc, char *argv[] )
 
   std::vector< DataType > data;
   cvt::String path( argv[ 1 ] );
-  // std::cout << "Loading data" << std::endl;
+  std::cout << "Loading data" << std::endl;
   std::vector< cvt::String > class_labels;
 
   get_data( data, class_labels, path );
@@ -176,10 +176,10 @@ int main( int argc, char *argv[] )
   // std::cout << "Initializing context (builds lookup table)" << std::endl;
   SamplerType sampler;
   ContextType context( params, training_data, num_classes );
-  // std::cout << "Training" << std::endl;
+  std::cout << "Training" << std::endl;
 
   ForestType forest;
-  ForestTrainerType::train( forest, context, sampler );
+  ForestTrainerType::train( forest, context, sampler, true );
 
   // std::cout << "Classifying" << std::endl;
   std::vector< std::vector< int > > confusion_matrix;

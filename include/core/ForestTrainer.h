@@ -16,13 +16,17 @@ class ForestTrainer
 
     static void train( F& forest, 
         const C& context, 
-        const S& sampler )
+        const S& sampler,
+        bool show_progress = false )
     {
       for( size_t i = 0; i < context.params().trees; i++ )
       {
-        // std::cout << "Training tree " << i + 1 << "/" << context.params().trees << std::endl;
+        if( show_progress )
+        {
+          std::cout << "Training tree " << i + 1 << "/" << context.params().trees << std::endl;
+        }
         TreeType tree;
-        TrainerType::train( tree, context, sampler );
+        TrainerType::train( tree, context, sampler, show_progress );
         forest.add( tree );
         // std::cout << tree << std::endl;
       }

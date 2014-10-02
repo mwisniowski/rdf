@@ -136,7 +136,7 @@ int main(int argc, char *argv[])
 
   std::cout << "Training" << std::endl;
   ForestType forest;
-  ForestTrainerType::train( forest, context, sampler );
+  ForestTrainerType::train( forest, context, sampler, true );
   cvt::String s;
   forest.deserialize( forest.serialize() );
 

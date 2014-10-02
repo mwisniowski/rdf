@@ -37,7 +37,7 @@ class HogTestSampler: public TestSamplerBase< TestType >
       for( size_t i = 0; i < num_tests; i++ )
       {
         HogFeature f( rand( 0, dimensions ) );
-        float threshold = rand( -255.0f, 255.0f );
+        float threshold = rand( -1.0f, 1.0f );
         tests.push_back( Test< FeatureType, InputType >( f, threshold ) );
       }
     }

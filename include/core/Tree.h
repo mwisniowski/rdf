@@ -154,12 +154,12 @@ class Tree : public cvt::XMLSerializable
         return root_;
       }
       Node* n = root_;
-      for( size_t mask = 1UL << ( path.depth() - 1 ); mask; mask >>= 1 )
+      for( int d = path.depth() - 1; d >= 0; d-- )
       {
         // if n is split node
         if( is_split( n ) )
         {
-          if( ( path.path() & mask ) == mask )
+          if( ( path.path() >> d ) & 1 )
           {
             n = n->right;
           }

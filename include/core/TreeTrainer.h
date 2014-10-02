@@ -27,7 +27,8 @@ class TreeTrainer
      */
     static void train( TreeType& tree, 
         const C& context,
-        const TestSamplerBase< TestType >& sampler )
+        const TestSamplerBase< TestType >& sampler,
+        bool show_progress = false )
     {
       S root_s = context.get_root_statistics();
       tree.make_root( root_s );
@@ -37,7 +38,10 @@ class TreeTrainer
       // At every tree level expand all frontier nodes
       for( size_t depth = 0; depth < context.params().max_depth; depth++ )
       { 
-        loadbar( depth, context.params().max_depth );
+        if( show_progress )
+        {
+          loadbar( depth, context.params().max_depth );
+        }
 
         // sample tests
         std::vector< TestType > random_tests;
@@ -96,8 +100,11 @@ class TreeTrainer
 
         // std::cout << tree << std::endl;
       }
-      loadbar( 1, 1 );
-      std::cout << std::endl;
+      if( show_progress )
+      {
+        loadbar( 1, 1 );
+        std::cout << std::endl;
+      }
     }
 
   private:

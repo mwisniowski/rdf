@@ -69,8 +69,8 @@ class Path
     }
 
   private:
-    uint16_t path_;
-    uint16_t depth_;
+    size_t path_;
+    size_t depth_;
 };
 
 #endif

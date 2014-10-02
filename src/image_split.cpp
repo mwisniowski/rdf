@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
   std::cout << "Training" << std::endl;
 
   ForestType forest;
-  ForestTrainerType::train( forest, context, sampler );
+  ForestTrainerType::train( forest, context, sampler, true );
 
   std::cout << "Classifying" << std::endl;
   std::vector< std::vector< int > > confusion_matrix( num_classes, std::vector< int >( num_classes, 0 ) );
