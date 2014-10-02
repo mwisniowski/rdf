@@ -1,27 +1,23 @@
-#ifndef TOY_FEATURE_H
-#define TOY_FEATURE_H
+#ifndef HOG_FEATURE_H
+#define HOG_FEATURE_H
 
 #include <vector>
-#include <cvt/gfx/Image.h>
-#include <cvt/gfx/IMapScoped.h>
 
 #include "classification/HogCommon.h"
 
+template< size_t d >
 class HogFeature: public FeatureBase< InputType >
 {
-  private:
-    typedef FeatureBase< InputType > super;
-
   public:
     HogFeature()
     {}
 
-    HogFeature( size_t component ) :
-      component_( component )
+    HogFeature( const std::vector< float >& vec ) :
+      v_( vec )
     {}
 
     HogFeature( const HogFeature& other ) :
-      component_( other.component_ )
+      v_( other.v_ )
     {}
 
     virtual ~HogFeature()
@@ -31,7 +27,7 @@ class HogFeature: public FeatureBase< InputType >
     {
       if( this != &other )
       {
-        component_ = other.component_;
+        v_ = other.v_;
       }
       return *this;
     }
@@ -45,12 +41,21 @@ class HogFeature: public FeatureBase< InputType >
      */
     float operator()( const InputType& input ) const
     {
-      return input[ component_ ];
+      float sum = 0;
+      for( size_t i = 0; i < d; i++ )
+      {
+        sum += v_[ i ] * input[ i ];
+      }
+      return sum;
     }
 
-    friend std::ostream& operator<<( std::ostream& os, const HogFeature& f )
+    friend std::ostream& operator<<( std::ostream& os, const HogFeature& feature )
     {
-      os << "[ " << f.component_ << " ]";
+      int last = feature.v_.size() - 1;
+      os << "[";
+      for(int i = 0; i < last; i++)
+        os << feature.v_[ i ] << ", ";
+      os << feature.v_[ last ] << "]";
       return os;
     }
 
@@ -58,21 +63,43 @@ class HogFeature: public FeatureBase< InputType >
     {
       cvt::XMLElement* node = new cvt::XMLElement( "HogFeature ");
 
+      cvt::XMLElement* v = new cvt::XMLElement( "v" );
       cvt::String s; 
-      s.sprintf( "%d", component_ );
-      cvt::XMLAttribute* attr = new cvt::XMLAttribute( "component", s );
-      node->addChild( attr );
+      s.sprintf( "%d", v_.size() );
+      cvt::XMLAttribute* attr = new cvt::XMLAttribute( "size", s );
+      for( size_t i = 0; i < v_.size(); i++ )
+      {
+        cvt::XMLElement* elem = new cvt::XMLElement( "elem" );
+        s.sprintf( "%d", i );
+        attr = new cvt::XMLAttribute( "idx", s );
+        elem->addChild( attr );
+        s.sprintf( "%f", v_[ i ] );
+        attr = new cvt::XMLAttribute( "value", s );
+        elem->addChild( attr );
+      }
 
       return node;
     }
 
     void deserialize( cvt::XMLNode* node )
     {
-      component_ = node->childByName( "component" )->value().toInteger();
+      cvt::XMLNode* v = node->childByName( "v" );
+      size_t size = v->childByName( "size" )->value().toInteger();
+      v_.resize( size, 0.0f );
+      for( size_t i = 0; i < size; i++ )
+      {
+        cvt::XMLNode* elem = v->child( i );
+        if( elem->name() != "elem" )
+        {
+          continue;
+        }
+        size_t idx = elem->childByName( "idx" )->value().toInteger();
+        v_[ idx ] = elem->childByName( "value" )->value().toFloat();
+      }
     }
 
   private:
-    size_t component_;
+    std::vector< float > v_;
 };
 
 #endif

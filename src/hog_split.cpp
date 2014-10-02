@@ -1,7 +1,8 @@
 #include <cvt/gfx/Image.h>
+#include <cvt/gfx/IMapScoped.h>
 #include "cvt/io/FileSystem.h"
 
-#include "helper/gnuplot_i.hpp"
+// #include "helper/gnuplot_i.hpp"
 
 #include "classification/HogContext.h"
 #include "classification/HogTestSampler.h"

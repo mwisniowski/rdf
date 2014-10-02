@@ -8,9 +8,6 @@
 template< size_t d >
 class ToyFeature: public FeatureBase< InputType >
 {
-  private:
-    typedef FeatureBase< InputType > super;
-
   public:
     ToyFeature()
     {}
@@ -20,7 +17,6 @@ class ToyFeature: public FeatureBase< InputType >
     {}
 
     ToyFeature( const ToyFeature& other ) :
-      super( other ),
       v_( other.v_ )
     {}
 

@@ -19,12 +19,16 @@ class ImageFeature : public FeatureBase< InputType >
       super( other ),
       point1_( other.point1_ ),
       point2_( other.point2_ ),
+      w1_( other.w1_ ),
+      w2_( other.w2_ ),
       channel_( other.channel_ )
     {}
 
-    ImageFeature( const cvt::Point2f& point1_, const cvt::Point2f& point2_, size_t channel_ ) :
+    ImageFeature( const cvt::Point2f& point1_, const cvt::Point2f& point2_, const float w1, float w2, size_t channel_ ) :
       point1_( point1_ ),
       point2_( point2_ ),
+      w1_( w1 ),
+      w2_( w2 ),
       channel_( channel_ )
     {}
 
@@ -37,6 +41,8 @@ class ImageFeature : public FeatureBase< InputType >
       {
         point1_ = other.point1_;
         point2_ = other.point2_;
+        w1_ = other.w1_;
+        w2_ = other.w2_;
         channel_ = other.channel_;
       }
       return *this;
@@ -49,7 +55,7 @@ class ImageFeature : public FeatureBase< InputType >
       cvt::Vector2i p( i.width() * point1_.x, i.height() * point1_.y ),
         q( i.width() * point2_.x, i.height() * point2_.y );
 
-      return map( p.x, p.y ) - map( q.x, q.y );
+      return w1_ * map( p.x, p.y ) - w2_ * map( q.x, q.y );
     }
 
     friend std::ostream& operator<<( std::ostream& os, const ImageFeature& f )
@@ -107,6 +113,8 @@ class ImageFeature : public FeatureBase< InputType >
   public:
     cvt::Point2f point1_;
     cvt::Point2f point2_;
+    float w1_;
+    float w2_;
     size_t channel_;
 };
 
