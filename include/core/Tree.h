@@ -97,7 +97,11 @@ class Tree : public cvt::XMLSerializable
 
     Tree& operator=( const Tree& other )
     {
-      root_ = other.root_;
+      if( &other != this )
+      {
+        root_ = other.root_;
+      }
+      return *this;
     }
 
     virtual ~Tree() 

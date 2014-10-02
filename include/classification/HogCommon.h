@@ -8,8 +8,8 @@
 
 #define K 9 // bins
 #define SIGMA 1 // std deviation for feature extraction
-#define CELLS_X 3 // number of cells in x direction
-#define CELLS_Y 3 // number of cells in y direction
+#define CELLS_X 8 // number of cells in x direction
+#define CELLS_Y 8 // number of cells in y direction
 #define DIMENSIONS 4 * K * ( CELLS_X - 1 ) * ( CELLS_Y - 1 ) 
 
 template< size_t dimensions >
