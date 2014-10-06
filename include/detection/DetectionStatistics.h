@@ -10,6 +10,13 @@
 class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistics >
 {
   public:
+    enum TYPE
+    {
+      NONE = 0,
+      CLASSIFICATION = 1,
+      REGRESSION = 2
+    };
+
     struct VectorCompare {
       bool operator()( const cvt::Vector2i& lhs, const cvt::Vector2i& rhs) const
       {
@@ -20,7 +27,7 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
     typedef std::set< cvt::Vector2i, VectorCompare > VectorSetType;
 
     DetectionStatistics() :
-      type_( -1 ),
+      type_( NONE ),
       n_( 0 ),
       positive_( 0 ),
       classification_entropy_( -1.0f ),
@@ -157,15 +164,15 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       return n_;
     }
 
-    size_t type() const
+    TYPE type() const
     {
       return type_;
     }
 
-    void set_type( int type )
+    void set_type( TYPE type )
     {
       type_ = type;
-      if( type == 1 )
+      if( type == REGRESSION )
       {
         get_regression_entropy();
       }
@@ -249,15 +256,28 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
 
     void deserialize( cvt::XMLNode* node )
     {
-      type_ = node->childByName( "type" )->value().toInteger();
+
+      int type_int = node->childByName( "type" )->value().toInteger();
+      switch( type_int )
+      {
+        case 1:
+          type_ = CLASSIFICATION;
+          break;
+        case 2:
+          type_ = REGRESSION;
+          break;
+        default:
+          type_ = NONE;
+      }
+
       n_ = node->childByName( "n" )->value().toInteger();
       positive_ = node->childByName( "positive" )->value().toInteger();
 
-      if( type_ == 0 )
+      if( type_ == CLASSIFICATION )
       {
         classification_entropy_ = node->childByName( "entropy" )->value().toFloat();
       }
-      else if( type_ == 1 )
+      else if( type_ == REGRESSION )
       {
         regression_entropy_ = node->childByName( "entropy" )->value().toFloat();
       }
@@ -268,7 +288,7 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       y = point->childByName( "y" )->value().toInteger();
       sum_offset_ = cvt::Vector2i( x, y );
 
-      if( type_ < 0 )
+      if( type_ == NONE )
       {
         cvt::XMLNode* n = node->childByName( "offsets" );
         for( size_t i = 0; i < n->childSize(); i++ )
@@ -282,7 +302,7 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
     }
 
   private:
-    int             type_;
+    TYPE            type_;
     size_t          n_;
     size_t          positive_;
     float           classification_entropy_;

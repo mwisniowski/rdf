@@ -50,17 +50,17 @@ void extract_hog_feature_vector( std::vector< float >& feature_vector, const cvt
       size_t cell_y = y / cell_height;
       size_t offset = ( cell_y * CELLS_X + cell_x ) * K;
 
-      // size_t k = angle / cvt::Math::PI;
-      // float interpolation_factor = ( angle - k * bin_range ) / bin_range;
-      // unnormalized_feature_vector[ offset + k ] += ( 1 - interpolation_factor ) * magnitude;
-      // unnormalized_feature_vector[ offset + k + 1 ] += interpolation_factor * magnitude;
+      size_t k = angle / cvt::Math::PI;
+      float interpolation_factor = ( angle - k * bin_range ) / bin_range;
+      unnormalized_feature_vector[ offset + k ] += ( 1 - interpolation_factor ) * magnitude;
+      unnormalized_feature_vector[ offset + k + 1 ] += interpolation_factor * magnitude;
 
-      for( size_t k = 0; k < K; k++ )
-      {
-        float bin_mean = ( 2 * k + 1 ) * bin_mean_base;
-        float distance_to_mean = cvt::Math::exp( -( ( cvt::Math::sqr( angle - bin_mean ) ) / ( 2.0f * SIGMA * SIGMA ) ) ) / ( SIGMA * 2.506628275f );
-        unnormalized_feature_vector[ offset + k ] += magnitude * distance_to_mean;
-      }
+      // for( size_t k = 0; k < K; k++ )
+      // {
+      //   float bin_mean = ( 2 * k + 1 ) * bin_mean_base;
+      //   float distance_to_mean = cvt::Math::exp( -( ( cvt::Math::sqr( angle - bin_mean ) ) / ( 2.0f * SIGMA * SIGMA ) ) ) / ( SIGMA * 2.506628275f );
+      //   unnormalized_feature_vector[ offset + k ] += magnitude * distance_to_mean;
+      // }
     }
   }
 

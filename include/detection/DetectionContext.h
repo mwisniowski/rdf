@@ -71,7 +71,7 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
         StatisticsType& left_statistics,
         StatisticsType& right_statistics ) const
     {
-      if( parent_statistics.type() == 0 )
+      if( parent_statistics.type() == StatisticsType::CLASSIFICATION )
       {
         float H_p = parent_statistics.get_classification_entropy();
         float H_l = left_statistics.get_classification_entropy();
@@ -81,7 +81,7 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
 
         return H_p - ( ( fraction * H_l ) + ( ( 1.0f  - fraction ) * H_r ) );
       } 
-      else if( parent_statistics.type() == 1 )
+      else if( parent_statistics.type() == StatisticsType::REGRESSION )
       {
         float H_p = parent_statistics.get_regression_entropy();
         float H_l = left_statistics.get_regression_entropy();
@@ -95,10 +95,18 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
       {
         if( parent_statistics.probability( 0 ) < 0.05f )
         {
-          parent_statistics.set_type( 1 );
+          parent_statistics.set_type( StatisticsType::REGRESSION );
         }
         else {
-          parent_statistics.set_type( std::rand() % 2 );
+          bool r = std::rand() % 2;
+          if( r )
+          {
+            parent_statistics.set_type( StatisticsType::CLASSIFICATION );
+          }
+          else
+          {
+            parent_statistics.set_type( StatisticsType::REGRESSION );
+          }
         }
         return compute_information_gain( parent_statistics, left_statistics, right_statistics );
       }
