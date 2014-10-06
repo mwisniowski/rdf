@@ -75,28 +75,6 @@ void get_data( std::vector< cvt::Image >& images,
   file.close();
 }
 
-void extract_patches( std::vector< std::vector< cvt::Image > >& patches,
-    cvt::String image_path )
-{
-  cvt::Image img;
-  img.load( image_path );
-  img.convert( img, cvt::IFormat::RGBA_UINT8 );
-
-    const size_t border = PATCH_SIZE / 2;
-    for( size_t y = border; y < img.height() - border; y++ )
-    {
-      for( size_t x = PATCH_SIZE; x < img.width() - PATCH_SIZE; x++ )
-      {
-        cvt::Recti roi( x - border, y - border, PATCH_SIZE, PATCH_SIZE );
-        cvt::Image patch( img, &roi, 0 );
-        std::vector< cvt::Image > patch_vector( 3 );
-        patch.decompose( patch_vector[ 0 ], patch_vector[ 1 ], patch_vector[ 2 ] );
-
-        patches.push_back( patch_vector );
-      }
-    }
-}
-
 int main(int argc, char *argv[])
 {
   std::cout << "##########     Starting     ##########" << std::endl;

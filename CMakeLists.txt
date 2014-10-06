@@ -49,6 +49,13 @@ TARGET_LINK_LIBRARIES( hog_split
   ${CVT_LIBRARIES}
 )
 
+ADD_EXECUTABLE( hog_like
+  src/hog_like.cpp  
+)
+TARGET_LINK_LIBRARIES( hog_like
+  ${CVT_LIBRARIES}
+)
+
 ADD_EXECUTABLE( detection
   src/detection/DetectionFeature.cpp
   src/detection.cpp

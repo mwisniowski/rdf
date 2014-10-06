@@ -8,7 +8,7 @@
 #include "core/Histogram.h"
 #include "core/ForestTrainer.h"
 
-#define CHANNELS 3
+#define CHANNELS 16
 
 class ImageFeature;
 
