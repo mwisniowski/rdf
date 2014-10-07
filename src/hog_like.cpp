@@ -36,24 +36,26 @@ void get_data( std::vector< DataType >& data,
       {
         cvt::Image i, grayscale;
         i.load( class_data[ j ] );
-        i.convert( i, cvt::IFormat::RGBA_FLOAT );
-        i.convert( grayscale, cvt::IFormat::GRAY_FLOAT );
-        std::vector< cvt::Image > v( 16, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT ) );
+        i.convert( i, cvt::IFormat::RGBA_UINT8 );
+        i.convert( grayscale, cvt::IFormat::GRAY_UINT8 );
+        std::vector< cvt::Image > v( 16, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_UINT8 ) );
         i.decompose( v[ 0 ], v[ 1 ], v[ 2 ] );
         grayscale.convolve( v[ 3 ], cvt::IKernel::HAAR_HORIZONTAL_3 );
         grayscale.convolve( v[ 4 ], cvt::IKernel::HAAR_VERTICAL_3 );
         v[ 3 ].convolve( v[ 5 ], cvt::IKernel::HAAR_HORIZONTAL_3 );
         v[ 4 ].convolve( v[ 6 ], cvt::IKernel::HAAR_VERTICAL_3 );
+
+        std::vector< cvt::Image > hog_like( 9, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT ) );
         
-        cvt::IMapScoped< float > dx_map( v[ 3 ] );
-        cvt::IMapScoped< float > dy_map( v[ 4 ] );
+        cvt::IMapScoped< uint8_t > dx_map( v[ 3 ] );
+        cvt::IMapScoped< uint8_t > dy_map( v[ 4 ] );
         float max_magnitude = cvt::Math::EPSILONF;
         for( size_t y = 0; y < grayscale.height(); y++ )
         {
           for( size_t x = 0; x < grayscale.width(); x++ )
           {
-            float g_x = dx_map( x, y );
-            float g_y = dy_map( x, y );
+            uint8_t g_x = dx_map( x, y );
+            uint8_t g_y = dy_map( x, y );
             float magnitude = cvt::Math::sqrt( cvt::Math::sqr( g_x ) + cvt::Math::sqr( g_y ) );
             if( magnitude == 0.0f )
             {
@@ -66,7 +68,7 @@ void get_data( std::vector< DataType >& data,
             float angle = ( g_x > 0 ) ? ( std::atan( cvt::Math::abs( g_x ) / cvt::Math::abs( g_x ) ) ) : 0.0f;
             size_t k = angle / cvt::Math::PI;
 
-            cvt::IMapScoped< float > bin_map( v[ 6 + k ] );
+            cvt::IMapScoped< float > bin_map( hog_like[ k ] );
             for( int y1 = y - 2; y1 < y + 2; y1++ )
             {
               for( int x1 = x - 2; x1 < x + 2; x1++ )
@@ -82,7 +84,7 @@ void get_data( std::vector< DataType >& data,
 
         for( size_t k = 0; k < 9; k++ )
         {
-          cvt::IMapScoped< float > map( v[ 6 + k ] );
+          cvt::IMapScoped< float > map( hog_like[ k ] );
           for( size_t y = 0; y < i.height(); y++ )
           {
             for( size_t x = 0; x < i.width(); x++ )
@@ -90,6 +92,11 @@ void get_data( std::vector< DataType >& data,
               map( x, y ) /= max_magnitude;
             }
           }
+        }
+
+        for( size_t i = 0; i < hog_like.size(); i++ )
+        {
+          hog_like[ i ].convert( v[ 6 + i ], cvt::IFormat::GRAY_UINT8 );
         }
 
         data.push_back( DataType( v, c ) );

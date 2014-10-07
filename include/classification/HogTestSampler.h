@@ -35,8 +35,8 @@ class HogTestSampler: public TestSamplerBase< TestType >
       for( size_t i = 0; i < num_tests; i++ )
       {
         InputType v;
-        gaussian_vector( v, d );
-        FeatureType f( v );
+        // gaussian_vector( v, d );
+        FeatureType f( rand( 0, d ) );
         float threshold = rand( -1.0f, 1.0f );
         tests.push_back( Test< FeatureType, InputType >( f, threshold ) );
       }
