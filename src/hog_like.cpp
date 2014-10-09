@@ -1,8 +1,8 @@
 #include <cvt/gfx/Image.h>
 #include "cvt/io/FileSystem.h"
 
-#include "classification/ImageContext.h"
-#include "classification/ImageTestSampler.h"
+#include "classification/HlfContext.h"
+#include "classification/HlfTestSampler.h"
 
 void get_data( std::vector< DataType >& data,
     std::vector< cvt::String >& class_labels, 
@@ -147,7 +147,6 @@ int main(int argc, char *argv[])
   std::vector< DataType > training_data( data.begin(), data.end() - n );
   std::vector< DataType > testing_data( data.end() - n, data.end() );
 
-  // std::cout << "Initializing context (builds lookup table)" << std::endl;
   SamplerType sampler;
   ContextType context( params, training_data, num_classes );
   std::cout << "Training" << std::endl;
