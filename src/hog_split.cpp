@@ -22,8 +22,8 @@ void extract_hog_feature_vector( std::vector< float >& feature_vector, const cvt
     dx( input.width(), input.height(), cvt::IFormat::GRAY_FLOAT ), 
     dy( input.width(), input.height(), cvt::IFormat::GRAY_FLOAT );
   input.convert( grayscale, cvt::IFormat::GRAY_FLOAT );
-  grayscale.convolve( dx, cvt::IKernel::HAAR_HORIZONTAL_3 );
-  grayscale.convolve( dy, cvt::IKernel::HAAR_VERTICAL_3 );
+  grayscale.convolve( dx, cvt::IKernel::HAAR_HORIZONTAL_3, cvt::IKernel::GAUSS_VERTICAL_3 );
+  grayscale.convolve( dy, cvt::IKernel::HAAR_VERTICAL_3, cvt::IKernel::GAUSS_HORIZONTAL_3 );
 
   cvt::IMapScoped< float > dx_map( dx );
   cvt::IMapScoped< float > dy_map( dy );
@@ -33,6 +33,7 @@ void extract_hog_feature_vector( std::vector< float >& feature_vector, const cvt
   float cell_height = input.height() / static_cast< float >( CELLS_Y );
   float bin_range = cvt::Math::PI / K;
   float bin_mean_base = cvt::Math::PI / ( 2 * K ); // center of 1st bin
+  const float PI_9 = cvt::Math::PI / 9.0f;
   for( size_t y = 0; y < input.height(); y++ )
   {
     for( size_t x = 0; x < input.width(); x++ )
@@ -44,13 +45,13 @@ void extract_hog_feature_vector( std::vector< float >& feature_vector, const cvt
       {
         continue;
       }
-      float angle = ( g_x > 0 ) ? ( std::atan( cvt::Math::abs( g_x ) / cvt::Math::abs( g_x ) ) ) : 0.0f;
+      float angle = std::atan2f( cvt::Math::abs( g_y ), g_x );
 
       size_t cell_x = x / cell_width;
       size_t cell_y = y / cell_height;
       size_t offset = ( cell_y * CELLS_X + cell_x ) * K;
 
-      size_t k = angle / cvt::Math::PI;
+      size_t k = angle / PI_9;
       float interpolation_factor = ( angle - k * bin_range ) / bin_range;
       unnormalized_feature_vector[ offset + k ] += ( 1 - interpolation_factor ) * magnitude;
       unnormalized_feature_vector[ offset + k + 1 ] += interpolation_factor * magnitude;

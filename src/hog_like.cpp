@@ -34,28 +34,37 @@ void get_data( std::vector< DataType >& data,
       cvt::FileSystem::filesWithExtension( p, class_data, "ppm" );
       for( size_t j = 0; j < class_data.size(); j++ )
       {
-        cvt::Image i, grayscale;
+        cvt::Image i;
         i.load( class_data[ j ] );
-        i.convert( i, cvt::IFormat::RGBA_UINT8 );
-        i.convert( grayscale, cvt::IFormat::GRAY_UINT8 );
-        std::vector< cvt::Image > v( 16, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_UINT8 ) );
-        i.decompose( v[ 0 ], v[ 1 ], v[ 2 ] );
-        grayscale.convolve( v[ 3 ], cvt::IKernel::HAAR_HORIZONTAL_3 );
-        grayscale.convolve( v[ 4 ], cvt::IKernel::HAAR_VERTICAL_3 );
-        v[ 3 ].convolve( v[ 5 ], cvt::IKernel::HAAR_HORIZONTAL_3 );
-        v[ 4 ].convolve( v[ 6 ], cvt::IKernel::HAAR_VERTICAL_3 );
+        cvt::Image i_float( i.width(), i.height(), cvt::IFormat::RGBA_FLOAT );
+        i.convert( i_float, cvt::IFormat::RGBA_FLOAT );
+        std::vector< cvt::Image > v( 3, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT ) );
+        i_float.decompose( v[ 0 ], v[ 1 ], v[ 2 ] );
+
+        cvt::Image grayscale( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+        i_float.convert( grayscale, cvt::IFormat::GRAY_FLOAT );
+
+        cvt::Image dx( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+        cvt::Image dy( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+        cvt::Image dxx( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+        cvt::Image dyy( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+        grayscale.convolve( dx, cvt::IKernel::HAAR_HORIZONTAL_3, cvt::IKernel::GAUSS_VERTICAL_3 );
+        grayscale.convolve( dy, cvt::IKernel::GAUSS_HORIZONTAL_3, cvt::IKernel::HAAR_VERTICAL_3 );
+        dx.convolve( dxx, cvt::IKernel::HAAR_HORIZONTAL_3, cvt::IKernel::GAUSS_VERTICAL_3 );
+        dy.convolve( dyy, cvt::IKernel::GAUSS_HORIZONTAL_3, cvt::IKernel::HAAR_VERTICAL_3 );
 
         std::vector< cvt::Image > hog_like( 9, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT ) );
         
-        cvt::IMapScoped< uint8_t > dx_map( v[ 3 ] );
-        cvt::IMapScoped< uint8_t > dy_map( v[ 4 ] );
+        cvt::IMapScoped< float > dx_map( dx );
+        cvt::IMapScoped< float > dy_map( dy );
         float max_magnitude = cvt::Math::EPSILONF;
+        const float PI_9 = cvt::Math::PI / 9.0f;
         for( size_t y = 0; y < grayscale.height(); y++ )
         {
           for( size_t x = 0; x < grayscale.width(); x++ )
           {
-            uint8_t g_x = dx_map( x, y );
-            uint8_t g_y = dy_map( x, y );
+            float g_x = dx_map( x, y );
+            float g_y = dy_map( x, y );
             float magnitude = cvt::Math::sqrt( cvt::Math::sqr( g_x ) + cvt::Math::sqr( g_y ) );
             if( magnitude == 0.0f )
             {
@@ -65,8 +74,9 @@ void get_data( std::vector< DataType >& data,
             {
               max_magnitude = magnitude;
             }
-            float angle = ( g_x > 0 ) ? ( std::atan( cvt::Math::abs( g_x ) / cvt::Math::abs( g_x ) ) ) : 0.0f;
-            size_t k = angle / cvt::Math::PI;
+            // signed angle
+            float angle = std::atan2f( cvt::Math::abs( g_y ), g_x );
+            size_t k = angle / PI_9;
 
             cvt::IMapScoped< float > bin_map( hog_like[ k ] );
             for( int y1 = y - 2; y1 < y + 2; y1++ )
@@ -94,12 +104,24 @@ void get_data( std::vector< DataType >& data,
           }
         }
 
-        for( size_t i = 0; i < hog_like.size(); i++ )
+        std::vector< cvt::Image > input( 16, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_UINT8 ) );
+
+        for( size_t i = 0; i < 3; i++ )
         {
-          hog_like[ i ].convert( v[ 6 + i ], cvt::IFormat::GRAY_UINT8 );
+          v[ i ].convert( input[ i ], cvt::IFormat::GRAY_UINT8 );
         }
 
-        data.push_back( DataType( v, c ) );
+        dx.convert( input[ 3 ], cvt::IFormat::GRAY_UINT8 );
+        dy.convert( input[ 4 ], cvt::IFormat::GRAY_UINT8 );
+        dxx.convert( input[ 5 ], cvt::IFormat::GRAY_UINT8 );
+        dyy.convert( input[ 6 ], cvt::IFormat::GRAY_UINT8 );
+
+        for( size_t i = 0; i < hog_like.size(); i++ )
+        {
+          hog_like[ i ].convert( input[ 7 + i ], cvt::IFormat::GRAY_UINT8 );
+        }
+
+        data.push_back( DataType( input, c ) );
       }
     }
   }
