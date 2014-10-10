@@ -52,6 +52,7 @@ void extract_hog_feature_vector( std::vector< float >& feature_vector, const cvt
       size_t offset = ( cell_y * CELLS_X + cell_x ) * K;
 
       size_t k = angle / PI_9;
+      k = k % 9;
       float interpolation_factor = ( angle - k * bin_range ) / bin_range;
       unnormalized_feature_vector[ offset + k ] += ( 1 - interpolation_factor ) * magnitude;
       unnormalized_feature_vector[ offset + k + 1 ] += interpolation_factor * magnitude;
@@ -79,7 +80,6 @@ void extract_hog_feature_vector( std::vector< float >& feature_vector, const cvt
         sum += cvt::Math::sqr( unnormalized_feature_vector[ cell_offset_lower + i ] );
       }
       sum = cvt::Math::sqrt( sum );
-
 
       size_t block_offset_first = ( y * ( CELLS_X - 1 ) + x ) * 4 * K;
       size_t block_offset_second = block_offset_first + 2 * K;

@@ -75,8 +75,9 @@ void get_data( std::vector< DataType >& data,
               max_magnitude = magnitude;
             }
             // signed angle
-            float angle = std::atan2f( cvt::Math::abs( g_y ), g_x );
+            float angle = cvt::Math::atan2( cvt::Math::abs( g_y ), g_x );
             size_t k = angle / PI_9;
+            k = k % 9;
 
             cvt::IMapScoped< float > bin_map( hog_like[ k ] );
             for( int y1 = y - 2; y1 < y + 2; y1++ )
