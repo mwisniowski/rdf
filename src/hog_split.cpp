@@ -45,7 +45,7 @@ void extract_hog_feature_vector( std::vector< float >& feature_vector, const cvt
       {
         continue;
       }
-      float angle = std::atan2f( cvt::Math::abs( g_y ), g_x );
+      float angle = cvt::Math::atan2( cvt::Math::abs( g_y ), g_x );
 
       size_t cell_x = x / cell_width;
       size_t cell_y = y / cell_height;
