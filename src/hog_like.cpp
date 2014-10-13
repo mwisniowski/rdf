@@ -138,7 +138,6 @@ int main(int argc, char *argv[])
     10,  //noCandidateFeatures
     10  //maxDecisionLevels
   };
-  float split = 0.3;
 
   if( argc < 2 ) {
     std::cerr << "Please provide a data file";
@@ -148,27 +147,22 @@ int main(int argc, char *argv[])
   if( argc > 2 ) params.tests = atoi( argv[ 2 ] );
   if( argc > 3 ) params.max_depth = atoi( argv[ 3 ] );
   if( argc > 4 ) params.trees = atoi( argv[ 4 ] );
-  if( argc > 5 ) split = atof( argv[ 5 ] );
 
   std::cout << "Parameters:"   << std::endl;
-  std::cout << "  tests="      << params.tests << std::endl;
-  std::cout << "  max_depth="  << params.max_depth << std::endl;
-  std::cout << "  trees="      << params.trees << std::endl;
-  std::cout << "  split="      << split << std::endl;
-  std::cout << "  path="       << argv[ 1 ] << std::endl;
+  std::cout << "  tests="         << params.tests     << std::endl;
+  std::cout << "  max_depth="     << params.max_depth << std::endl;
+  std::cout << "  trees="         << params.trees     << std::endl;
+  std::cout << "  training_path=" << argv[ 1 ]        << std::endl;
+  std::cout << "  testing_path="  << argv[ 2 ]        << std::endl;
 
-  std::vector< DataType > data;
-  cvt::String path( argv[ 1 ] );
+  std::vector< DataType > training_data, testing_data;
+  cvt::String path_training( argv[ 1 ] );
+  cvt::String path_testing( argv[ 2 ] );
   std::cout << "Loading data" << std::endl;
   std::vector< cvt::String > class_labels;
 
-  get_data( data, class_labels, path );
+  get_data( training_data, class_labels, path_training );
   size_t num_classes = class_labels.size();
-  std::random_shuffle( data.begin(), data.end() );
-
-  size_t n = data.size() * split;
-  std::vector< DataType > training_data( data.begin(), data.end() - n );
-  std::vector< DataType > testing_data( data.end() - n, data.end() );
 
   SamplerType sampler;
   ContextType context( params, training_data, num_classes );
@@ -178,7 +172,12 @@ int main(int argc, char *argv[])
   ForestTrainerType::train( forest, context, sampler, true );
 
   std::cout << "Classifying" << std::endl;
-  std::vector< std::vector< int > > confusion_matrix( num_classes, std::vector< int >( num_classes, 0 ) );
+  get_data( testing_data, class_labels, path_testing );
+  std::vector< std::vector< int > > confusion_matrix;
+  for( size_t i = 0; i < num_classes; i++ )
+  {
+    confusion_matrix.push_back( std::vector< int >( num_classes, 0 ) );
+  }
   for( size_t i = 0; i < testing_data.size(); i++ )
   {
     StatisticsType s = context.get_statistics();
@@ -191,7 +190,7 @@ int main(int argc, char *argv[])
   {
     acc += confusion_matrix[ c ][ c ];
   }
-  acc /= n;
+  acc /= testing_data.size();
 
   float numerator = 0.0f;
   float denominator_lk_gf = 0.0f;
