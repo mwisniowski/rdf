@@ -144,9 +144,9 @@ int main(int argc, char *argv[])
     return 1;
   }
 
-  if( argc > 2 ) params.tests = atoi( argv[ 2 ] );
-  if( argc > 3 ) params.max_depth = atoi( argv[ 3 ] );
-  if( argc > 4 ) params.trees = atoi( argv[ 4 ] );
+  if( argc > 2 ) params.tests = atoi( argv[ 3 ] );
+  if( argc > 3 ) params.max_depth = atoi( argv[ 4 ] );
+  if( argc > 4 ) params.trees = atoi( argv[ 5 ] );
 
   std::cout << "Parameters:"   << std::endl;
   std::cout << "  tests="         << params.tests     << std::endl;
