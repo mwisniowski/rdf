@@ -93,7 +93,7 @@ void extract_channels( std::vector< cvt::Image >& channels, const cvt::Image& i 
     }
 
     channels.clear();
-    channels.resize( 16, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_UINT8 ) );
+    channels.resize( 32, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_UINT8 ) );
 
     for( size_t i = 0; i < 3; i++ )
     {
@@ -108,6 +108,12 @@ void extract_channels( std::vector< cvt::Image >& channels, const cvt::Image& i 
     for( size_t i = 0; i < hog_like.size(); i++ )
     {
       hog_like[ i ].convert( channels[ 7 + i ], cvt::IFormat::GRAY_UINT8 );
+    }
+
+    for( size_t i = 0; i < 16; i++ )
+    {
+      channels[ i ].dilate( channels[ 16 + i ], 3 );
+      channels[ i ].erode( channels[ i ], 3 );
     }
 }
 
@@ -264,7 +270,7 @@ int main(int argc, char *argv[])
   }
   loadbar( 1, 1 );
   std::cout << std::endl;
-  std::cout << "Max peak: " << max_peak << std::endl;
+  // std::cout << "Max peak: " << max_peak << std::endl;
 
   for( size_t y = 0; y < input.height(); y++ )
   {
@@ -274,10 +280,10 @@ int main(int argc, char *argv[])
     }
   }
 
-  output.boxfilter( output, 3, 3 );
+  output.convolve( output, cvt::IKernel::GAUSS_VERTICAL_3, cvt::IKernel::GAUSS_HORIZONTAL_3 );
 
-  cvt::Image input_gray;
-  input.convert( input_gray, cvt::IFormat::GRAY_FLOAT );
+  // cvt::Image input_gray;
+  // input.convert( input_gray, cvt::IFormat::GRAY_FLOAT );
   // input_gray = 1.0f - input_gray;
   // input_gray.save( "input_inv.png" );
 
