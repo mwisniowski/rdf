@@ -209,13 +209,13 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       attr = new cvt::XMLAttribute( "positive", s );
       node->addChild( attr );
 
-      if( type_ == 0 )
+      if( type_ == CLASSIFICATION )
       {
         s.sprintf( "%f", classification_entropy_ );
         attr = new cvt::XMLAttribute( "entropy", s );
         node->addChild( attr );
       }
-      else if( type_ == 1 )
+      else if( type_ == REGRESSION )
       {
         s.sprintf( "%f", regression_entropy_ );
         attr = new cvt::XMLAttribute( "entropy", s );
@@ -231,7 +231,7 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
       elem->addChild( attr );
       node->addChild( elem );
 
-      if( type_ < 0 )
+      if( type_ == NONE )
       {
         elem = new cvt::XMLElement( "offsets" );
         cvt::XMLElement* point;
@@ -256,7 +256,6 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
 
     void deserialize( cvt::XMLNode* node )
     {
-
       int type_int = node->childByName( "type" )->value().toInteger();
       switch( type_int )
       {

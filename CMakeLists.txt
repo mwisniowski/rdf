@@ -56,10 +56,18 @@ TARGET_LINK_LIBRARIES( hog_like
   ${CVT_LIBRARIES}
 )
 
-ADD_EXECUTABLE( detection
+ADD_EXECUTABLE( detection_trainer
   src/detection/DetectionFeature.cpp
-  src/detection.cpp
+  src/detection_trainer.cpp
 )
-TARGET_LINK_LIBRARIES( detection
+TARGET_LINK_LIBRARIES( detection_trainer
+  ${CVT_LIBRARIES}
+)
+
+ADD_EXECUTABLE( detection_tester
+  src/detection/DetectionFeature.cpp
+  src/detection_tester.cpp
+)
+TARGET_LINK_LIBRARIES( detection_tester
   ${CVT_LIBRARIES}
 )

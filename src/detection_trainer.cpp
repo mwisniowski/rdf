@@ -237,18 +237,18 @@ int main(int argc, char *argv[])
   if( argc > 4 ) params.max_depth = atoi( argv[ 4 ] );
   if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
 
-  std::cout << "Parameters:"   << std::endl;
-  std::cout << "  tests="      << params.tests << std::endl;
-  std::cout << "  max_depth="  << params.max_depth << std::endl;
-  std::cout << "  trees="      << params.trees << std::endl;
-  std::cout << "  path="       << argv[ 1 ] << std::endl;
-  std::cout << "  test_img="   << argv[ 2 ] << std::endl;
+  std::cout  << "Parameters:"       << std::endl;
+  std::cout  << "  tests="          << params.tests      << std::endl;
+  std::cout  << "  max_depth="      << params.max_depth  << std::endl;
+  std::cout  << "  trees="          << params.trees      << std::endl;
+  std::cout  << "  training_data="  << argv[ 1 ]         << std::endl;
+  std::cout  << "  forest_xml="     << argv[ 2 ]         << std::endl;
 
-  cvt::String path( argv[ 1 ] );
+  cvt::String training_data_path( argv[ 1 ] );
 
   std::cout << "Loading data" << std::endl;
   std::vector< DataType > data;
-  get_data( data, path );
+  get_data( data, training_data_path );
 
   SamplerType sampler;
   DetectionContext context( params, data );
@@ -256,87 +256,12 @@ int main(int argc, char *argv[])
   std::cout << "Training" << std::endl;
   ForestType forest;
   ForestTrainerType::train( forest, context, sampler, true );
-  cvt::String s;
 
-  std::cout << "Testing" << std::endl;
-
-  cvt::String image_path( argv[ 2 ] );
-  cvt::Image input;
-  input.load( image_path );
-  input.convert( input, cvt::IFormat::RGBA_UINT8 );
-  std::vector< cvt::Image > channels;
-  extract_channels( channels, input );
-
-  cvt::Image output( input.width(), input.height(), cvt::IFormat::GRAY_FLOAT );
-  cvt::IMapScoped< float > output_map( output );
-
-  float max_peak = 0.0f;
-  const size_t border = PATCH_SIZE / 2;
-  size_t counter = 0;
-  size_t total = ( input.height() - PATCH_SIZE ) * ( input.width() - PATCH_SIZE );
-  for( size_t y = border; y < input.height() - border; y++ )
-  {
-    for( size_t x = border; x < input.width() - border; x++ )
-    {
-      loadbar( counter++, total );
-      InputType in;
-      get_patch( in, x, y, channels );
-      std::vector< const StatisticsType* > statistics;
-      forest.evaluate( statistics, in );
-
-      for( size_t i = 0; i < statistics.size(); i++ )
-      {
-        const StatisticsType& s = *statistics[ i ];
-        if( s.probability( 1 ) < 0.5f )
-        {
-          continue;
-        }
-        const StatisticsType::VectorSetType& offsets = s.offsets();
-        StatisticsType::VectorSetType::const_iterator it = offsets.begin(),
-          end = offsets.end();
-        float weight = s.probability( 1 ) / ( offsets.size() );
-        for( ; it != end; ++it )
-        {
-          cvt::Vector2i center( x + it->x, y + it->y );
-          if( center.x < output.width() && center.x >= 0 && center.y < output.height() && center.y >= 0 )
-          {
-            float& p_value = output_map( center.x, center.y );
-            p_value += weight;
-            if( p_value > max_peak )
-            {
-              max_peak = p_value;
-            }
-          }
-        }
-      }
-    }
-  }
-  loadbar( 1, 1 );
-  std::cout << std::endl;
-  // std::cout << "Max peak: " << max_peak << std::endl;
-
-  for( size_t y = 0; y < input.height(); y++ )
-  {
-    for( size_t x = 0; x < input.width(); x++ )
-    {
-      output_map( x, y ) /= max_peak;
-    }
-  }
-
-  output.convolve( output, cvt::IKernel::GAUSS_VERTICAL_3, cvt::IKernel::GAUSS_HORIZONTAL_3 );
-
-  // cvt::Image input_gray;
-  // input.convert( input_gray, cvt::IFormat::GRAY_FLOAT );
-  // input_gray = 1.0f - input_gray;
-  // input_gray.save( "input_inv.png" );
-
-  // cvt::Image output_inv( output );
-  // output_inv = ( 1.0f - output );
-
-  output.save( "detection.png" );
-  // output_inv.save( "detection_inv.png" );
-  // 
-  system( "open detection.png" );
+  // Save tree to file
+  cvt::XMLNode* n = forest.serialize();
+  cvt::XMLDocument d;
+  d.addNode( n );
+  d.save( argv[ 2 ] );
 
   std::cout << "##########     Finished     ##########" << std::endl;
 
