@@ -172,11 +172,11 @@ class DetectionStatistics: public StatisticsBase< OutputType, DetectionStatistic
     void set_type( TYPE type )
     {
       type_ = type;
-      if( type == REGRESSION )
-      {
-        get_regression_entropy();
-      }
-      offsets_.clear();
+      // if( type == REGRESSION )
+      // {
+      //   get_regression_entropy();
+      // }
+      // offsets_.clear();
     }
 
     const std::set< cvt::Vector2i, VectorCompare >& offsets() const

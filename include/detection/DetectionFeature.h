@@ -45,9 +45,8 @@ class DetectionFeature : public FeatureBase< InputType >
 
     float operator()( const InputType& input ) const
     {
-      const uint8_t i1 = *( input.map.ptr() + input.map.stride() * ( input.y + point1_.y ) + 4 * ( input.x + point1_.x ) + channel_ );
-      const uint8_t i2 = *( input.map.ptr() + input.map.stride() * ( input.y + point2_.y ) + 4 * ( input.x + point2_.x ) + channel_ );
-      return i1 - i2;
+      const cvt::IMapScoped< const uint8_t > map( input.channels[ channel_ ] );
+      return map( input.x + point1_.x, input.y + point1_.y ) - map( input.x + point2_.x, input.y + point2_.y );
     }
 
     friend std::ostream& operator<<( std::ostream& os, const DetectionFeature& f )

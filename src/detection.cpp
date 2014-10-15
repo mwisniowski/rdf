@@ -21,7 +21,97 @@ static inline void loadbar(unsigned int x, unsigned int n, unsigned int w = 50)
     std::cout << "]\r" << std::flush;
 }
 
-void get_data( std::vector< cvt::Image >& images,
+void extract_channels( std::vector< cvt::Image >& channels, const cvt::Image& i )
+{
+    cvt::Image i_float( i.width(), i.height(), cvt::IFormat::RGBA_FLOAT );
+    i.convert( i_float, cvt::IFormat::RGBA_FLOAT );
+    std::vector< cvt::Image > v( 3, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT ) );
+    i_float.decompose( v[ 0 ], v[ 1 ], v[ 2 ] );
+
+    cvt::Image grayscale( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+    i_float.convert( grayscale, cvt::IFormat::GRAY_FLOAT );
+
+    cvt::Image dx( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+    cvt::Image dy( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+    cvt::Image dxx( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+    cvt::Image dyy( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+    grayscale.convolve( dx, cvt::IKernel::HAAR_HORIZONTAL_3, cvt::IKernel::GAUSS_VERTICAL_3 );
+    grayscale.convolve( dy, cvt::IKernel::GAUSS_HORIZONTAL_3, cvt::IKernel::HAAR_VERTICAL_3 );
+    dx.convolve( dxx, cvt::IKernel::HAAR_HORIZONTAL_3, cvt::IKernel::GAUSS_VERTICAL_3 );
+    dy.convolve( dyy, cvt::IKernel::GAUSS_HORIZONTAL_3, cvt::IKernel::HAAR_VERTICAL_3 );
+
+    std::vector< cvt::Image > hog_like( 9, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT ) );
+
+    cvt::IMapScoped< float > dx_map( dx );
+    cvt::IMapScoped< float > dy_map( dy );
+    float max_magnitude = cvt::Math::EPSILONF;
+    const float PI_9 = cvt::Math::PI / 9.0f;
+    for( size_t y = 0; y < grayscale.height(); y++ )
+    {
+      for( size_t x = 0; x < grayscale.width(); x++ )
+      {
+        float g_x = dx_map( x, y );
+        float g_y = dy_map( x, y );
+        float magnitude = cvt::Math::sqrt( cvt::Math::sqr( g_x ) + cvt::Math::sqr( g_y ) );
+        if( magnitude == 0.0f )
+        {
+          continue;
+        }
+        if( magnitude > max_magnitude )
+        {
+          max_magnitude = magnitude;
+        }
+        // signed angle
+        float angle = cvt::Math::atan2( cvt::Math::abs( g_y ), g_x );
+        size_t k = angle / PI_9;
+        k = k % 9;
+
+        cvt::IMapScoped< float > bin_map( hog_like[ k ] );
+        for( int y1 = y - 2; y1 < y + 2; y1++ )
+        {
+          for( int x1 = x - 2; x1 < x + 2; x1++ )
+          {
+            if( y1 >= 0 && y1 < grayscale.height() && x1 >= 0 && x1 < grayscale.width() )
+            {
+              bin_map( x1, y1 ) += magnitude;
+            }
+          }
+        }
+      }
+    }
+
+    for( size_t k = 0; k < 9; k++ )
+    {
+      cvt::IMapScoped< float > map( hog_like[ k ] );
+      for( size_t y = 0; y < i.height(); y++ )
+      {
+        for( size_t x = 0; x < i.width(); x++ )
+        {
+          map( x, y ) /= max_magnitude;
+        }
+      }
+    }
+
+    channels.clear();
+    channels.resize( 16, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_UINT8 ) );
+
+    for( size_t i = 0; i < 3; i++ )
+    {
+      v[ i ].convert( channels[ i ], cvt::IFormat::GRAY_UINT8 );
+    }
+
+    dx.convert( channels[ 3 ], cvt::IFormat::GRAY_UINT8 );
+    dy.convert( channels[ 4 ], cvt::IFormat::GRAY_UINT8 );
+    dxx.convert( channels[ 5 ], cvt::IFormat::GRAY_UINT8 );
+    dyy.convert( channels[ 6 ], cvt::IFormat::GRAY_UINT8 );
+
+    for( size_t i = 0; i < hog_like.size(); i++ )
+    {
+      hog_like[ i ].convert( channels[ 7 + i ], cvt::IFormat::GRAY_UINT8 );
+    }
+}
+
+void get_data( std::vector< std::vector< cvt::Image > >& images,
     std::vector< std::vector< cvt::Recti > >& rois,
     cvt::String& idl_path )
 {
@@ -49,10 +139,12 @@ void get_data( std::vector< cvt::Image >& images,
     std::regex_search( line, filename_match, filename_rgx );
     std::string data_filename( filename_match[ 1 ] );
 
-    cvt::Image img;
-    img.load( folder_path + cvt::String( data_filename.c_str() ) );
-    img.convert( img, cvt::IFormat::RGBA_UINT8 );
-    images.push_back( img );
+    cvt::Image i;
+    i.load( folder_path + cvt::String( data_filename.c_str() ) );
+    std::vector< cvt::Image > channels;
+    extract_channels( channels, i );
+
+    images.push_back( channels );
 
     std::vector< cvt::Recti > rects;
     const std::sregex_token_iterator end;
@@ -74,6 +166,7 @@ void get_data( std::vector< cvt::Image >& images,
   }
   file.close();
 }
+
 
 int main(int argc, char *argv[])
 {
@@ -105,7 +198,7 @@ int main(int argc, char *argv[])
   cvt::String path( argv[ 1 ] );
 
   std::cout << "Loading data" << std::endl;
-  std::vector< cvt::Image > images;
+  std::vector< std::vector< cvt::Image > > images;
   std::vector< std::vector< cvt::Recti > > rois;
   get_data( images, rois, path );
 
@@ -116,7 +209,6 @@ int main(int argc, char *argv[])
   ForestType forest;
   ForestTrainerType::train( forest, context, sampler, true );
   cvt::String s;
-  forest.deserialize( forest.serialize() );
 
   std::cout << "Testing" << std::endl;
 
@@ -124,7 +216,8 @@ int main(int argc, char *argv[])
   cvt::Image input;
   input.load( image_path );
   input.convert( input, cvt::IFormat::RGBA_UINT8 );
-  cvt::IMapScoped< const uint8_t > input_map( input );
+  std::vector< cvt::Image > channels;
+  extract_channels( channels, input );
 
   cvt::Image output( input.width(), input.height(), cvt::IFormat::GRAY_FLOAT );
   cvt::IMapScoped< float > output_map( output );
@@ -138,7 +231,7 @@ int main(int argc, char *argv[])
     for( size_t x = border; x < input.width() - border; x++ )
     {
       loadbar( counter++, total );
-      const InputType in = { input_map, x, y };
+      const InputType in = { channels, x, y };
       std::vector< const StatisticsType* > statistics;
       forest.evaluate( statistics, in );
 
@@ -171,7 +264,7 @@ int main(int argc, char *argv[])
   }
   loadbar( 1, 1 );
   std::cout << std::endl;
-  // std::cout << "Max peak: " << max_peak << std::endl;
+  std::cout << "Max peak: " << max_peak << std::endl;
 
   for( size_t y = 0; y < input.height(); y++ )
   {
@@ -181,7 +274,7 @@ int main(int argc, char *argv[])
     }
   }
 
-  // output.boxfilter( output, 5, 5 );
+  output.boxfilter( output, 3, 3 );
 
   cvt::Image input_gray;
   input.convert( input_gray, cvt::IFormat::GRAY_FLOAT );
@@ -194,7 +287,7 @@ int main(int argc, char *argv[])
   output.save( "detection.png" );
   // output_inv.save( "detection_inv.png" );
   // 
-  // system( "open detection.png" );
+  system( "open detection.png" );
 
   std::cout << "##########     Finished     ##########" << std::endl;
 

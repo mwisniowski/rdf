@@ -9,6 +9,7 @@
 
 #define CHANNELS 3
 #define PATCH_SIZE 16
+#define SAMPLE_SIZE 250
 
 class DetectionFeature;
 
@@ -21,7 +22,7 @@ class DetectionContext;
 
 struct InputType
 {
-  cvt::IMapScoped< const uint8_t > map;
+  const std::vector< cvt::Image >& channels;
   size_t x;
   size_t y;
 };

@@ -15,16 +15,41 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
 
   public:
     DetectionContext( const TrainingParameters& params,
-       const std::vector< cvt::Image >& images,
+       const std::vector< std::vector< cvt::Image > >& images,
        const std::vector< std::vector< cvt::Recti > >& rois ) :
       super( params ),
       images_( images ),
-      rois_( rois ),
-      num_data_points_( images.size(), 0 )
+      rois_( rois )
     {
+      const int border = PATCH_SIZE / 2;
       for( size_t i = 0; i < images.size(); i++ )
       {
-        num_data_points_[ i ] = ( images[ i ].width() - PATCH_SIZE ) * ( images[ i ].height() - PATCH_SIZE );
+        std::vector< std::pair< size_t, size_t > > sample_i;
+        size_t pos = 0;
+        while( pos < SAMPLE_SIZE / 2 )
+        {
+          size_t x = cvt::Math::rand( border, images[ i ][ 0 ].width() - border );
+          size_t y = cvt::Math::rand( border, images[ i ][ 0 ].height() - border );
+          OutputType o = get_output( i, x, y );
+          if( o.first == 1 )
+          {
+            pos++;
+            sample_i.push_back( std::pair< size_t, size_t >( x, y ) );
+          }
+        }
+        size_t neg = 0;
+        while( neg < SAMPLE_SIZE / 2 )
+        {
+          size_t x = cvt::Math::rand( border, images[ i ][ 0 ].width() - border );
+          size_t y = cvt::Math::rand( border, images[ i ][ 0 ].height() - border );
+          OutputType o = get_output( i, x, y );
+          if( o.first == 0 )
+          {
+            neg++;
+            sample_i.push_back( std::pair< size_t, size_t >( x, y ) );
+          }
+        }
+        samples_.push_back( sample_i );
       }
     }
 
@@ -40,17 +65,13 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
     {
       StatisticsType s;
 
-      //TODO only go over rois
       const size_t border = PATCH_SIZE / 2;
       for( size_t i = 0; i < images_.size(); i++ )
       {
-        const cvt::Image& img = images_[ i ];
-        for( size_t y = border; y < img.height() - border; y++ )
+        const std::vector< std::pair< size_t, size_t > >& sample = samples_[ i ];
+        for( size_t j = 0; j < SAMPLE_SIZE; j++ )
         {
-          for( size_t x = border; x < img.width() - border; x++ )
-          {
-            s += get_output( i, x, y );
-          }
+          s += get_output( i, sample[ j ].first, sample[ j ].second );
         }
       }
 
@@ -133,39 +154,32 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
       const size_t border = PATCH_SIZE / 2;
       for( size_t i = 0; i < images_.size(); i++ )
       {
-        size_t path_idx = 0;
-        for( size_t j = 0; j < i; j++ )
-        {
-          path_idx += num_data_points_[ j ];
-        }
+        const std::vector< cvt::Image >& channels = images_[ i ];
+        const std::vector< std::pair< size_t, size_t > >& sample = samples_[ i ];
 
-        size_t counter = 0;
-        const cvt::Image& img = images_[ i ];
-        cvt::IMapScoped< const uint8_t > map( img );
-        for( size_t y = border; y < img.height() - border; y++ )
+        for( size_t s = 0; s < SAMPLE_SIZE; s++ )
         {
-          for( size_t x = border; x < img.width() - border; x++ )
+          const Path& path = paths[ i * SAMPLE_SIZE + s ];
+          if( path.is_blacklisted( blacklist ) )
           {
-            const Path& path = paths[ path_idx + counter ];
-            counter++;
-            if( path.is_blacklisted( blacklist ) )
+            continue;
+          }
+          const InputType in = { channels, sample[ s ].first, sample[ s ].second };
+
+          size_t idx = path.path();
+          for( size_t j = 0; j < random_tests.size(); j++ )
+          {
+            size_t candidate_idx = idx * 2 * random_tests.size() + 2 * j;
+            bool result = random_tests[ j ]( in );
+            if( result ) 
             {
-              continue;
+              candidate_idx++;
             }
 
-            const InputType in = { map, x, y };
-            size_t idx = path.path();
-            for( size_t j = 0; j < random_tests.size(); j++ )
-            {
-              size_t candidate_idx = idx * 2 * random_tests.size() + 2 * j;
-              bool result = random_tests[ j ]( in );
-              if( result ) 
-              {
-                candidate_idx++;
-              }
-
-              candidate_statistics[ candidate_idx ]->operator+=( get_output( i, x, y ) );
-            }
+            OutputType o = get_output( i, sample[ s ].first, sample[ s ].second );
+            StatisticsType& s = *candidate_statistics[ candidate_idx ];
+            s += o;
+            // candidate_statistics[ candidate_idx ]->operator+=( o );
           }
         }
       }
@@ -175,29 +189,18 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
          const std::vector< Path >& blacklist, 
          const TreeType& tree ) const
     {
-      const size_t border = PATCH_SIZE / 2;
       for( size_t i = 0; i < images_.size(); i++ )
       {
-        size_t path_idx = 0;
-        for( size_t j = 0; j < i; j++ )
-        {
-          path_idx += num_data_points_[ j ];
-        }
+        const std::vector< cvt::Image >& channels = images_[ i ];
+        const std::vector< std::pair< size_t, size_t > >& sample = samples_[ i ];
 
-        size_t counter = 0;
-        const cvt::Image& img = images_[ i ];
-        cvt::IMapScoped< const uint8_t > map( img );
-        for( size_t y = border; y < img.height() - border; y++ )
+        for( size_t j = 0; j < SAMPLE_SIZE; j++ )
         {
-          for( size_t x = border; x < img.width() - border; x++ )
+          Path& path = paths[ i * SAMPLE_SIZE + j ];
+          if( !path.is_blacklisted( blacklist ) )
           {
-            Path& path = paths[ path_idx + counter ];
-            counter++;
-            if( !path.is_blacklisted( blacklist ) )
-            {
-              const InputType in = { map, x, y };
-              path.add( tree.get_node( path )->test( in ) );
-            }
+            const InputType in = { channels, sample[ j ].first, sample[ j ].second };
+            path.add( tree.get_node( path )->test( in ) );
           }
         }
       }
@@ -205,9 +208,9 @@ class DetectionContext : public TrainingContextBase< InputType, StatisticsType, 
 
 
   private:
-    std::vector< cvt::Image > images_;
+    std::vector< std::vector< cvt::Image > > images_;
     std::vector< std::vector< cvt::Recti > > rois_;
-    std::vector< size_t > num_data_points_;
+    std::vector< std::vector< std::pair< size_t, size_t > > > samples_;
 
     OutputType get_output( size_t image_idx, size_t x, size_t y ) const
     {
