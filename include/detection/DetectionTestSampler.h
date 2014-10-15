@@ -32,11 +32,10 @@ class DetectionTestSampler: public TestSamplerBase< Test< FeatureType, InputType
         size_t num_tests ) const
     {
       tests.clear();
-      const int p_half = PATCH_SIZE / 2;
       for( size_t i = 0; i < num_tests; i++ )
       {
-        cvt::Vector2i p1( rand( -p_half, p_half ), rand( -p_half, p_half ) );
-        cvt::Point2f p2( rand( -p_half, p_half ), rand( -p_half, p_half ) );
+        cvt::Vector2i p1( rand( 0, PATCH_SIZE ), rand( 0, PATCH_SIZE ) );
+        cvt::Point2f p2( rand( 0, PATCH_SIZE ), rand( 0, PATCH_SIZE ) );
         size_t channel = rand( 0, channels );
         FeatureType f( p1, p2, channel );
         float threshold = rand( -255.0f, 255.0f );

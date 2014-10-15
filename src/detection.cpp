@@ -117,8 +117,31 @@ void extract_channels( std::vector< cvt::Image >& channels, const cvt::Image& i 
     }
 }
 
-void get_data( std::vector< std::vector< cvt::Image > >& images,
-    std::vector< std::vector< cvt::Recti > >& rois,
+OutputType get_output( const std::vector< cvt::Recti >& rois, size_t x, size_t y )
+{
+  for( size_t r = 0; r < rois.size(); r++ )
+  {
+    const cvt::Recti& rect = rois[ r ];
+    if( rect.contains( x, y ) )
+    {
+      cvt::Vector2i center( rect.x + ( rect.width / 2 ), rect.y + ( rect.height / 2 ) );
+      return OutputType( 1, center - cvt::Vector2i( x, y ) );
+    }
+  }
+  return OutputType( 0, cvt::Vector2i( 0, 0 ) );
+}
+
+void get_patch( std::vector< cvt::Image >& patch, size_t x, size_t y, const std::vector< cvt::Image >& channels )
+{
+  patch.clear();
+  for( size_t i = 0; i < channels.size(); i++ )
+  {
+    cvt::Recti roi( x - PATCH_SIZE / 2, y - PATCH_SIZE / 2, PATCH_SIZE, PATCH_SIZE );
+    patch.push_back( cvt::Image( channels[ i ], &roi ) ); 
+  }
+}
+
+void get_data( std::vector< DataType >& data,
     cvt::String& idl_path )
 {
   const std::regex filename_rgx( "\"([^\"]+)\": " );
@@ -145,13 +168,6 @@ void get_data( std::vector< std::vector< cvt::Image > >& images,
     std::regex_search( line, filename_match, filename_rgx );
     std::string data_filename( filename_match[ 1 ] );
 
-    cvt::Image i;
-    i.load( folder_path + cvt::String( data_filename.c_str() ) );
-    std::vector< cvt::Image > channels;
-    extract_channels( channels, i );
-
-    images.push_back( channels );
-
     std::vector< cvt::Recti > rects;
     const std::sregex_token_iterator end;
     std::sregex_token_iterator ri( line.begin(), line.end(), rect_rgx, rgx_token_vector );
@@ -168,7 +184,34 @@ void get_data( std::vector< std::vector< cvt::Image > >& images,
       rects.push_back( cvt::Recti( x1, y1, width, height ) );
     }
 
-    rois.push_back( rects );
+    cvt::Image i;
+    i.load( folder_path + cvt::String( data_filename.c_str() ) );
+    std::vector< cvt::Image > channels;
+    extract_channels( channels, i );
+
+    const int border = PATCH_SIZE / 2;
+    size_t pos = 0;
+    size_t neg = 0;
+    while( pos + neg < SAMPLE_SIZE )
+    {
+      size_t x = cvt::Math::rand( border, i.width() - border );
+      size_t y = cvt::Math::rand( border, i.height() - border );
+      OutputType output = get_output( rects, x, y );
+      if( output.first == 1 && pos < SAMPLE_SIZE / 2 )
+      {
+        pos++;
+        InputType input;
+        get_patch( input, x, y, channels );
+        data.push_back( DataType( input, output ) );
+      }
+      if( output.first == 0 && neg < SAMPLE_SIZE / 2 )
+      {
+        neg++;
+        InputType input;
+        get_patch( input, x, y, channels );
+        data.push_back( DataType( input, output ) );
+      }
+    }
   }
   file.close();
 }
@@ -204,12 +247,11 @@ int main(int argc, char *argv[])
   cvt::String path( argv[ 1 ] );
 
   std::cout << "Loading data" << std::endl;
-  std::vector< std::vector< cvt::Image > > images;
-  std::vector< std::vector< cvt::Recti > > rois;
-  get_data( images, rois, path );
+  std::vector< DataType > data;
+  get_data( data, path );
 
   SamplerType sampler;
-  DetectionContext context( params, images, rois );
+  DetectionContext context( params, data );
 
   std::cout << "Training" << std::endl;
   ForestType forest;
@@ -237,7 +279,8 @@ int main(int argc, char *argv[])
     for( size_t x = border; x < input.width() - border; x++ )
     {
       loadbar( counter++, total );
-      const InputType in = { channels, x, y };
+      InputType in;
+      get_patch( in, x, y, channels );
       std::vector< const StatisticsType* > statistics;
       forest.evaluate( statistics, in );
 

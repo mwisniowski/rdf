@@ -5,6 +5,7 @@
 #include <cvt/gfx/IMapScoped.h>
 
 #include "core/Interfaces.h"
+#include "core/DataPoint.h"
 #include "core/ForestTrainer.h"
 
 #define CHANNELS 32
@@ -20,14 +21,9 @@ class DetectionStatistics;
 
 class DetectionContext;
 
-struct InputType
-{
-  const std::vector< cvt::Image >& channels;
-  size_t x;
-  size_t y;
-};
-
+typedef std::vector< cvt::Image >            InputType;
 typedef std::pair< size_t, cvt::Vector2i >   OutputType;
+typedef DataPoint< InputType, OutputType >   DataType;
 typedef DetectionFeature                     FeatureType;
 typedef DetectionTestSampler< CHANNELS >     SamplerType;
 typedef DetectionStatistics                  StatisticsType;
