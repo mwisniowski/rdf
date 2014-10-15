@@ -44,11 +44,13 @@ class Tree : public cvt::XMLSerializable
           cvt::XMLElement* node = new cvt::XMLElement( "Node");
           cvt::XMLElement* elem;
 
-          elem = new cvt::XMLElement( "Statistics" );
-          elem->addChild( statistics.serialize() );
-          node->addChild( elem );
-
-          if( is_split() )
+          if( !is_split() )
+          {
+            elem = new cvt::XMLElement( "Statistics" );
+            elem->addChild( statistics.serialize() );
+            node->addChild( elem );
+          }
+          else
           {
             node->addChild( test.serialize() );
             node->addChild( left->serialize() );
@@ -60,10 +62,12 @@ class Tree : public cvt::XMLSerializable
 
         void deserialize( cvt::XMLNode* node )
         {
-          statistics.deserialize( node->childByName( "Statistics" )->child( 0 ) );
-
-          cvt::XMLNode* n = node->childByName( "Test" );
+          cvt::XMLNode* n = node->childByName( "Statistics" );
           if( n )
+          {
+            statistics.deserialize( n->child( 0 ) );
+          }
+          else
           {
             test.deserialize( node->childByName( "Test" ) );
             bool found_left = false;
