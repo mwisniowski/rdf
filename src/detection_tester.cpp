@@ -1,5 +1,7 @@
 #include <cvt/gfx/Image.h>
 #include <cvt/gfx/IExpr.h>
+#include <cvt/gfx/GFXEngineImage.h>
+#include <cvt/vision/features/FeatureSet.h>
 
 #include "detection/DetectionCommon.h"
 #include "detection/DetectionStatistics.h"
@@ -124,6 +126,49 @@ void get_patch( std::vector< cvt::Image >& patch, size_t x, size_t y, const std:
   }
 }
 
+// void filterNMS( cvt::Image& output, const cvt::Image& input, int radius )
+// {
+//   cvt::IMapScoped< const float > in_map( input );
+//   cvt::IMapScoped< float > out_map( output );
+//
+//
+//   for( int y = 0; y < input.height(); y++ )
+//   {
+//     int ybegin = cvt::Math::max( 0, y - radius ),
+//       yend = cvt::Math::min( y + radius, (int) input.height() );
+//     for( int x = 0; x < input.width(); x++ )
+//     {
+//       float val = in_map( x, y );
+//       int curx = cvt::Math::max( 0, x - radius ),
+//           xend = cvt::Math::min( x + radius, (int) input.width() );
+//       for( size_t cury = ybegin; cury < yend; cury++ )
+//       {
+//         for( ; curx < xend; curx++ )
+//         {
+//           if( in_map( curx, cury ) > val )
+//           {
+//             goto suppressed;
+//           }
+//         }
+//       }
+//       out_map( x, y ) = val;
+// suppressed:;
+//     }
+//   }
+// }
+
+void mark( cvt::Image& image, const cvt::Vector2f& point, size_t size )
+{
+  cvt::GFXEngineImage gi( image );
+  cvt::GFX gfx( &gi );
+  gfx.color().set( 1.0f, 0.0f, 0.0f );
+
+  cvt::Vector2i p( point.x, point.y );
+
+  gfx.drawLine( p + cvt::Vector2i(-size,0.0f), p + cvt::Vector2i(size,0.0f) );
+  gfx.drawLine( p + cvt::Vector2i(0.0f,-size), p + cvt::Vector2i(0.0f,size) );
+}
+
 int main(int argc, char *argv[])
 {
   std::cout << "##########     Starting     ##########" << std::endl;
@@ -201,6 +246,7 @@ int main(int argc, char *argv[])
   std::cout << std::endl;
   // std::cout << "Max peak: " << max_peak << std::endl;
 
+
   for( size_t y = 0; y < input.height(); y++ )
   {
     for( size_t x = 0; x < input.width(); x++ )
@@ -209,7 +255,25 @@ int main(int argc, char *argv[])
     }
   }
 
-  output.convolve( output, cvt::IKernel::GAUSS_VERTICAL_3, cvt::IKernel::GAUSS_HORIZONTAL_3 );
+  // output.convolve( output, cvt::IKernel::GAUSS_VERTICAL_7, cvt::IKernel::GAUSS_HORIZONTAL_7 );
+  output.boxfilter( output, 9, 9 );
+
+  cvt::FeatureSet hypotheses;
+  for( size_t y = 0; y < output.height(); y++ )
+  {
+    for( size_t x = 0; x < output.width(); x++ )
+    {
+      hypotheses.add( cvt::Feature( x, y, 0.0f, 0, output_map( x, y ) ) );
+    }
+  }
+  hypotheses.filterNMS( 20, true );
+  hypotheses.filterBest( 5, true );
+
+  cvt::Image marked( input );
+  for( size_t i = 0; i < hypotheses.size(); i++ )
+  {
+    mark( marked, hypotheses[ i ].pt, 5 );
+  }
 
   // cvt::Image input_gray;
   // input.convert( input_gray, cvt::IFormat::GRAY_FLOAT );
@@ -220,6 +284,7 @@ int main(int argc, char *argv[])
   // output_inv = ( 1.0f - output );
 
   output.save( "detection.png" );
+  marked.save( "marked.png" );
   // output_inv.save( "detection_inv.png" );
   // 
   system( "open detection.png" );
