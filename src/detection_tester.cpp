@@ -201,7 +201,6 @@ int main(int argc, char *argv[])
   cvt::Image output( input.width(), input.height(), cvt::IFormat::GRAY_FLOAT );
   cvt::IMapScoped< float > output_map( output );
 
-  float max_peak = 0.0f;
   const size_t border = PATCH_SIZE / 2;
   size_t counter = 0;
   size_t total = ( input.height() - PATCH_SIZE ) * ( input.width() - PATCH_SIZE );
@@ -233,10 +232,6 @@ int main(int argc, char *argv[])
           {
             float& p_value = output_map( center.x, center.y );
             p_value += weight;
-            if( p_value > max_peak )
-            {
-              max_peak = p_value;
-            }
           }
         }
       }
@@ -246,47 +241,35 @@ int main(int argc, char *argv[])
   std::cout << std::endl;
   // std::cout << "Max peak: " << max_peak << std::endl;
 
+  output.convolve( output, cvt::IKernel::GAUSS_VERTICAL_7, cvt::IKernel::GAUSS_HORIZONTAL_7 );
+  // output.boxfilter( output, 9, 9 );
+
+  float max_peak = 0.0f;
+  for( size_t y = 0; y < input.height(); y++ )
+  {
+    for( size_t x = 0; x < input.width(); x++ )
+    {
+      if( output_map( x, y ) > max_peak )
+      {
+        max_peak = output_map( x, y );
+      }
+    }
+  }
 
   for( size_t y = 0; y < input.height(); y++ )
   {
     for( size_t x = 0; x < input.width(); x++ )
     {
       output_map( x, y ) /= max_peak;
+      // output_map( x, y ) = 1.0f - output_map( x, y );
     }
   }
 
-  // output.convolve( output, cvt::IKernel::GAUSS_VERTICAL_7, cvt::IKernel::GAUSS_HORIZONTAL_7 );
-  output.boxfilter( output, 9, 9 );
-
-  cvt::FeatureSet hypotheses;
-  for( size_t y = 0; y < output.height(); y++ )
-  {
-    for( size_t x = 0; x < output.width(); x++ )
-    {
-      hypotheses.add( cvt::Feature( x, y, 0.0f, 0, output_map( x, y ) ) );
-    }
-  }
-  hypotheses.filterNMS( 20, true );
-  hypotheses.filterBest( 5, true );
-
-  cvt::Image marked( input );
-  for( size_t i = 0; i < hypotheses.size(); i++ )
-  {
-    mark( marked, hypotheses[ i ].pt, 5 );
-  }
-
-  // cvt::Image input_gray;
-  // input.convert( input_gray, cvt::IFormat::GRAY_FLOAT );
-  // input_gray = 1.0f - input_gray;
-  // input_gray.save( "input_inv.png" );
-
-  // cvt::Image output_inv( output );
-  // output_inv = ( 1.0f - output );
+  // cvt::Image marked( output.width(), output.height(), cvt::IFormat::GRAY_FLOAT );
+  // marked.save( "marked.png" );
 
   output.save( "detection.png" );
-  marked.save( "marked.png" );
-  // output_inv.save( "detection_inv.png" );
-  // 
+
   system( "open detection.png" );
 
   std::cout << "##########     Finished     ##########" << std::endl;
