@@ -4,7 +4,7 @@
 #include <cvt/gfx/Image.h>
 #include <cvt/gfx/IMapScoped.h>
 
-#include "classification/ImageCommon.h"
+#include "classification/HlfCommon.h"
 
 class ImageFeature : public FeatureBase< InputType >
 {

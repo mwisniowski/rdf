@@ -1,5 +1,6 @@
-#ifndef CVT_RDF_DATAPOINT_H
-#define CVT_RDF_DATAPOINT_H
+#ifndef RDF_DATAPOINT_H
+
+#define RDF_DATAPOINT_H
 
 #include <vector>
 #include <istream>
@@ -11,7 +12,7 @@ template< typename I, typename O >
 struct DataPoint
 {
   public:
-    DataPoint( const std::vector<I>& input, const O& output ) :
+    DataPoint( const I& input, const O& output ) :
       input_( input ),
       output_( output )
     {}
@@ -53,13 +54,8 @@ struct DataPoint
     {
       return input_ == other.input && output_ == other.output;
     }
-    
-    const I& input( size_t idx ) const
-    {
-      return input_[ idx ];
-    }
 
-    const std::vector< I >& input() const
+    const I& input() const
     {
       return input_;
     }
@@ -70,8 +66,8 @@ struct DataPoint
     }
 
   private:
-    std::vector< I >  input_;
-    O                 output_;
+    I   input_;
+    O   output_;
 };
 
 #endif

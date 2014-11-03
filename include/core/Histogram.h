@@ -1,37 +1,27 @@
-#ifndef HISTOGRAM_H
-#define HISTOGRAM_H
+#ifndef RDF_HISTOGRAM_H
+#define RDF_HISTOGRAM_H
 
 #include <cvt/math/Math.h>
 #include <map>
 
 #include "Interfaces.h"
 
-template< typename D, typename F >
-class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
+template< typename O >
+class Histogram: public StatisticsBase< O, Histogram< O > >
 {
   private:
-    typedef StatisticsBase< D, F, Histogram< D, F > >  super;
+    typedef StatisticsBase< O, Histogram< O > >  super;
 
   public:
+    Histogram() :
+      entropy_( -1.0f )
+    {}
+
     Histogram( size_t num_classes ) :
       histogram_( num_classes, 0 ),
       n_( 0 ),
       entropy_( -1.0f )
     {}
-
-    // Histogram( const std::vector< D const* >& data, size_t num_classes ) :
-    //   histogram_( num_classes ),
-    //   n_( 0 )
-    // {
-    //   typename std::vector< D const* >::const_iterator it = data.begin(),
-    //     end = data.end();
-    //   for( ; it != end; ++it )
-    //   {
-    //     size_t c = (**it).output();
-    //     histogram_[ c ]++;
-    //     n_++;
-    //   }
-    // }
 
     Histogram( const Histogram& other ) :
       histogram_( other.histogram_ ),
@@ -53,21 +43,9 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
       return *this;
     }
 
-    // Histogram& operator+=( const std::vector< size_t >& data_idxs )
-    // {
-    //   std::vector< size_t >::const_iterator it( data_idxs.begin() );
-    //   for( ; it != data_idxs.end(); ++it )
-    //   {
-    //     const D& d = this->context_.data_point( *it );
-    //     histogram_[ d.output() ]++;
-    //     n_++;
-    //   }
-    //   return *this;
-    // }
-    // 
-    Histogram& operator+=( const D& data_point )
+    Histogram& operator+=( const O& output )
     {
-      histogram_[ data_point.output() ]++;
+      histogram_[ output ]++;
       n_++;
       entropy_ = -1.0f;
       return *this;
@@ -94,7 +72,7 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
      *
      * @return 
      */
-    std::pair< size_t, float > get_mode() const
+    std::pair< O, float > predict() const
     {
       float max_value = FLT_MIN;
       size_t max_c;
@@ -148,9 +126,14 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
       }
     }
 
+    size_t n() const
+    {
+      return n_;
+    }
+
     friend std::ostream& operator<<( std::ostream& os, const Histogram& s )
     {
-      os << s.n << ": { ";
+      os << s.n_ << ": { ";
       typename std::vector< size_t >::const_iterator it = s.histogram_.begin(),
         end = s.histogram_.end();
       for( size_t c = 0; it != end; ++it, c++ )
@@ -162,9 +145,60 @@ class Histogram: public StatisticsBase< D, F, Histogram< D, F > >
       return os;
     }
 
-    size_t n() const
+    cvt::XMLNode* serialize() const
     {
-      return n_;
+      cvt::XMLElement* node = new cvt::XMLElement( "Histogram");
+      cvt::String s; 
+      cvt::XMLAttribute* attr;
+      cvt::XMLElement* elem;
+
+      s.sprintf( "%d", n_ );
+      attr = new cvt::XMLAttribute( "n", s );
+      node->addChild( attr );
+
+      s.sprintf( "%f", entropy_ );
+      attr = new cvt::XMLAttribute( "entropy", s );
+      node->addChild( attr );
+
+      elem = new cvt::XMLElement( "histogram" );
+      s.sprintf( "%d", histogram_.size() );
+      attr = new cvt::XMLAttribute( "size", s );
+      elem->addChild( attr );
+      cvt::XMLElement* point;
+      for( size_t i = 0; i < histogram_.size(); i++ )
+      {
+        point = new cvt::XMLElement( "class" );
+        s.sprintf( "%d", i );
+        attr = new cvt::XMLAttribute( "index", s );
+        point->addChild( attr );
+        s.sprintf( "%d", histogram_[ i ] );
+        attr = new cvt::XMLAttribute( "count", s );
+        point->addChild( attr );
+        elem->addChild( point );
+      }
+      node->addChild( elem );
+
+      return node;
+    }
+
+    void deserialize( cvt::XMLNode* node )
+    {
+      n_ = node->childByName( "n" )->value().toInteger();
+
+      entropy_ = node->childByName( "entropy" )->value().toFloat();
+
+      cvt::XMLNode* n = node->childByName( "histogram" );
+      histogram_.resize( n->childByName( "size" )->value().toInteger(), 0);
+      for( size_t i = 0; i < n->childSize(); i++ )
+      {
+        cvt::XMLNode* entry = n->child( i );
+        if( entry->name() != "class" )
+        {
+          continue;
+        }
+        size_t idx = entry->childByName( "index" )->value().toInteger();
+        histogram_[ idx ] = entry->childByName( "count" )->value().toInteger();
+      }
     }
 
   private:

@@ -1,8 +1,8 @@
 #include <cvt/gfx/Image.h>
 #include "cvt/io/FileSystem.h"
 
-#include "helper/gnuplot_i.hpp"
 #include "classification/ImageContext.h"
+#include "classification/ImageTestSampler.h"
 
 void get_data( std::vector< DataType >& data,
     std::vector< cvt::String >& class_labels, 
@@ -51,26 +51,20 @@ int main(int argc, char *argv[])
   srand( time( NULL ) );
   TrainingParameters params = {
     1, //trees
-    100,  //no_candidate_features
-    100,  //no_candidate_thresholds
-    15,   //max_decision_levels
-    1000
+    10,  //noCandidateFeatures
+    10  //maxDecisionLevels
   };
-
   size_t folds = 10;
-  if( argc > 2 ) params.no_candidate_features = atoi( argv[ 2 ] );
-  if( argc > 3 ) params.no_candate_thresholds = atoi( argv[ 3 ] );
-  if( argc > 4 ) params.max_decision_levels = atoi( argv[ 4 ] );
-  if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
-  if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
-  if( argc > 7 ) folds = atoi( argv[ 7 ] );
 
-  std::cout << "Parameters:" << std::endl;
-  std::cout << "  features="   << params.no_candidate_features << std::endl;
-  std::cout << "  thresholds=" << params.no_candate_thresholds << std::endl;
-  std::cout << "  depth="      << params.max_decision_levels << std::endl;
+  if( argc > 2 ) params.tests = atoi( argv[ 2 ] );
+  if( argc > 3 ) params.max_depth = atoi( argv[ 3 ] );
+  if( argc > 4 ) params.trees = atoi( argv[ 4 ] );
+  if( argc > 5 ) folds = atoi( argv[ 5 ] );
+
+  std::cout << "Parameters:"   << std::endl;
+  std::cout << "  tests="      << params.tests << std::endl;
+  std::cout << "  max_depth="  << params.max_depth << std::endl;
   std::cout << "  trees="      << params.trees << std::endl;
-  std::cout << "  pool_size="  << params.pool_size << std::endl;
   std::cout << "  folds="      << folds << std::endl;
   std::cout << "  path="       << argv[ 1 ] << std::endl;
 
@@ -106,17 +100,19 @@ int main(int argc, char *argv[])
     std::vector< DataType > testing_data( partition_map[ f ], partition_map[ f + 1 ] );
 
     // std::cout << "Initializing context (builds lookup table)" << std::endl;
-    ImageContext context( params, training_data, num_classes );
-
+    SamplerType sampler;
+    ContextType context( params, training_data, num_classes );
     // std::cout << "Training" << std::endl;
-    ClassifierType classifier;
-    TrainerType::train( classifier, context );
+
+    ForestType forest;
+    ForestTrainerType::train( forest, context, sampler );
     
     // std::cout << "Classifying" << std::endl;
     for( size_t i = 0; i < n; i++ )
     {
-      const StatisticsType s = classifier.classify( context, testing_data[ i ] );
-      confusion_matrix[ s.get_mode().first ][ testing_data[ i ].output() ]++;
+      StatisticsType s = context.get_statistics();
+      forest.evaluate( s, testing_data[ i ].input() );
+      confusion_matrix[ s.predict().first ][ testing_data[ i ].output() ]++;
     }
 
     float acc = 0.0f;

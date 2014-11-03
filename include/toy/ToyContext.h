@@ -4,25 +4,21 @@
 #include <cvt/math/Math.h>
 #include <map>
 
-#include "ToyCommon.h"
-#include "ToyFeature.h"
+#include "toy/ToyCommon.h"
+#include "toy/ToyFeature.h"
 
-class ToyContext : public TrainingContextBase< DataType, FeatureType, StatisticsType >
+class ToyContext : public TrainingContextBase< InputType, StatisticsType, TestType, TreeType >
 {
   private:
-    typedef TrainingContextBase< DataType, FeatureType, StatisticsType > super;
+    typedef TrainingContextBase< InputType, StatisticsType, TestType, TreeType > super;
 
   public:
     ToyContext( const TrainingParameters& params,
-        const std::vector< DataType >& data,
+        std::vector< DataType >& data,
         size_t num_classes ) :
-      super( params, data ),
+      super( params ),
+      data_( data ),
       num_classes_( num_classes )
-    {}
-
-    ToyContext( const ToyContext& other ) :
-      super( other ),
-      num_classes_( other.num_classes_ )
     {}
 
     virtual ~ToyContext()
@@ -33,13 +29,12 @@ class ToyContext : public TrainingContextBase< DataType, FeatureType, Statistics
       return StatisticsType( num_classes_ );
     }
 
-    StatisticsType get_statistics( const std::vector< size_t >& data_idxs ) const
+    StatisticsType get_root_statistics() const
     {
       StatisticsType s( num_classes_ );
-      for( size_t i = 0; i < data_idxs.size(); ++i )
+      for( size_t i = 0; i < data_.size(); ++i )
       {
-        const DataType& d = data_point( data_idxs[ i ] );
-        s += d;
+        s += data_[ i ].output();
       }
       return s;
     }
@@ -80,8 +75,56 @@ class ToyContext : public TrainingContextBase< DataType, FeatureType, Statistics
       return information_gain < 0.01f;
     }
 
+    size_t num_data_points() const
+    {
+      return data_.size();
+    }
+
+    void fill_statistics( std::vector< StatisticsType* >& candidate_statistics,
+        const std::vector< TestType >& random_tests,
+        const std::vector< Path >& blacklist,
+        const std::vector< Path >& paths ) const
+    {
+      for( size_t i = 0; i < data_.size(); i++ )
+      {
+        const Path& path = paths[ i ];
+        if( path.is_blacklisted( blacklist ) )
+        {
+          continue;
+        }
+
+        size_t idx = path.path();
+        for( size_t j = 0; j < random_tests.size(); j++ )
+        {
+          size_t candidate_idx = idx * 2 * random_tests.size() + 2 * j;
+          bool result = random_tests[ j ]( data_[ i ].input() );
+          if( result ) 
+          {
+            candidate_idx++;
+          }
+
+          candidate_statistics[ candidate_idx ]->operator+=( data_[ i ].output() );
+        }
+      }
+    }
+
+    void update_paths( std::vector< Path >& paths,
+        const std::vector< Path >& blacklist,
+        const TreeType& tree ) const
+    {
+      for( size_t i = 0; i < data_.size(); i++ )
+      {
+        Path& path = paths[ i ];
+        if( !path.is_blacklisted( blacklist ) )
+        {
+          path.add( tree.get_node( path )->test( data_[ i ].input() ) );
+        }
+      }
+    }
+
   private:
-    size_t num_classes_;
+    size_t                                              num_classes_;
+    std::vector< DataPoint< InputType, OutputType > >   data_;
 };
 
 #endif

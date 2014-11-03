@@ -1,97 +1,8 @@
 #include <cvt/gfx/Image.h>
-#include <cvt/gfx/IMapScoped.h>
 #include "cvt/io/FileSystem.h"
 
-// #include "helper/gnuplot_i.hpp"
-
-#include "classification/HogContext.h"
-#include "classification/HogTestSampler.h"
-
-void extract_hog_feature_vector( std::vector< float >& feature_vector, const cvt::Image& input )
-{
-  feature_vector.clear();
-  feature_vector.resize( 4 * K * ( CELLS_X - 1 ) * ( CELLS_Y - 1 ), 0.0f );
-
-  std::vector< float > unnormalized_feature_vector( K * CELLS_X * CELLS_Y, 0.0f );
-
-  float kernel_data[] = { -1, 0, 1 };
-  cvt::IKernel h_kernel( 3, 1, kernel_data );
-  cvt::IKernel v_kernel( 1, 3, kernel_data );
-
-  cvt::Image grayscale( input.width(), input.height(), cvt::IFormat::GRAY_FLOAT ), 
-    dx( input.width(), input.height(), cvt::IFormat::GRAY_FLOAT ), 
-    dy( input.width(), input.height(), cvt::IFormat::GRAY_FLOAT );
-  input.convert( grayscale, cvt::IFormat::GRAY_FLOAT );
-  grayscale.convolve( dx, cvt::IKernel::HAAR_HORIZONTAL_3, cvt::IKernel::GAUSS_VERTICAL_3 );
-  grayscale.convolve( dy, cvt::IKernel::HAAR_VERTICAL_3, cvt::IKernel::GAUSS_HORIZONTAL_3 );
-
-  cvt::IMapScoped< float > dx_map( dx );
-  cvt::IMapScoped< float > dy_map( dy );
-
-  // Gaussian-weighted histogram binning of gradient direction and magnitude
-  float cell_width = input.width() / static_cast< float >( CELLS_X );
-  float cell_height = input.height() / static_cast< float >( CELLS_Y );
-  float bin_range = cvt::Math::PI / K;
-  float bin_mean_base = cvt::Math::PI / ( 2 * K ); // center of 1st bin
-  const float PI_9 = cvt::Math::PI / 9.0f;
-  for( size_t y = 0; y < input.height(); y++ )
-  {
-    for( size_t x = 0; x < input.width(); x++ )
-    {
-      float g_x = dx_map( x, y );
-      float g_y = dy_map( x, y );
-      float magnitude = cvt::Math::sqrt( cvt::Math::sqr( g_x ) + cvt::Math::sqr( g_y ) );
-      if( magnitude == 0.0f )
-      {
-        continue;
-      }
-      float angle = cvt::Math::atan2( cvt::Math::abs( g_y ), g_x );
-
-      size_t cell_x = x / cell_width;
-      size_t cell_y = y / cell_height;
-      size_t offset = ( cell_y * CELLS_X + cell_x ) * K;
-
-      size_t k = angle / PI_9;
-      k = k % 9;
-      float interpolation_factor = ( angle - k * bin_range ) / bin_range;
-      unnormalized_feature_vector[ offset + k ] += ( 1 - interpolation_factor ) * magnitude;
-      unnormalized_feature_vector[ offset + k + 1 ] += interpolation_factor * magnitude;
-
-      // for( size_t k = 0; k < K; k++ )
-      // {
-      //   float bin_mean = ( 2 * k + 1 ) * bin_mean_base;
-      //   float distance_to_mean = cvt::Math::exp( -( ( cvt::Math::sqr( angle - bin_mean ) ) / ( 2.0f * SIGMA * SIGMA ) ) ) / ( SIGMA * 2.506628275f );
-      //   unnormalized_feature_vector[ offset + k ] += magnitude * distance_to_mean;
-      // }
-    }
-  }
-
-  // Block normalization
-  for( size_t y = 0; y < CELLS_Y - 1; y++ )
-  {
-    for( size_t x = 0; x < CELLS_X - 1; x++ )
-    {
-      float sum = 0.0f;
-      size_t cell_offset_upper = ( y * CELLS_X + x ) * K;
-      size_t cell_offset_lower = ( ( y + 1 ) * CELLS_X + x ) * K;
-      for( size_t i = 0; i < 2 * K; i++ )
-      {
-        sum += cvt::Math::sqr( unnormalized_feature_vector[ cell_offset_upper + i ] );
-        sum += cvt::Math::sqr( unnormalized_feature_vector[ cell_offset_lower + i ] );
-      }
-      sum = cvt::Math::sqrt( sum );
-
-      size_t block_offset_first = ( y * ( CELLS_X - 1 ) + x ) * 4 * K;
-      size_t block_offset_second = block_offset_first + 2 * K;
-
-      for( size_t i = 0; i < 2 * K; i++ )
-      {
-        feature_vector[ block_offset_first + i ] = unnormalized_feature_vector[ cell_offset_upper + i ] / sum;
-        feature_vector[ block_offset_second + i ] = unnormalized_feature_vector[ cell_offset_lower + i ] / sum;
-      }
-    }
-  }
-}
+#include "classification/HlfContext.h"
+#include "classification/HlfTestSampler.h"
 
 void get_data( std::vector< DataType >& data,
     std::vector< cvt::String >& class_labels, 
@@ -125,15 +36,99 @@ void get_data( std::vector< DataType >& data,
       {
         cvt::Image i;
         i.load( class_data[ j ] );
-        std::vector< float > feature_vector;
-        extract_hog_feature_vector( feature_vector, i );
-        data.push_back( DataType( feature_vector, c ) );
+        cvt::Image i_float( i.width(), i.height(), cvt::IFormat::RGBA_FLOAT );
+        i.convert( i_float, cvt::IFormat::RGBA_FLOAT );
+        std::vector< cvt::Image > v( 3, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT ) );
+        i_float.decompose( v[ 0 ], v[ 1 ], v[ 2 ] );
+
+        cvt::Image grayscale( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+        i_float.convert( grayscale, cvt::IFormat::GRAY_FLOAT );
+
+        cvt::Image dx( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+        cvt::Image dy( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+        cvt::Image dxx( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+        cvt::Image dyy( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT );
+        grayscale.convolve( dx, cvt::IKernel::HAAR_HORIZONTAL_3, cvt::IKernel::GAUSS_VERTICAL_3 );
+        grayscale.convolve( dy, cvt::IKernel::GAUSS_HORIZONTAL_3, cvt::IKernel::HAAR_VERTICAL_3 );
+        dx.convolve( dxx, cvt::IKernel::HAAR_HORIZONTAL_3, cvt::IKernel::GAUSS_VERTICAL_3 );
+        dy.convolve( dyy, cvt::IKernel::GAUSS_HORIZONTAL_3, cvt::IKernel::HAAR_VERTICAL_3 );
+
+        std::vector< cvt::Image > hog_like( 9, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_FLOAT ) );
+        
+        cvt::IMapScoped< float > dx_map( dx );
+        cvt::IMapScoped< float > dy_map( dy );
+        float max_magnitude = cvt::Math::EPSILONF;
+        const float PI_9 = cvt::Math::PI / 9.0f;
+        for( size_t y = 0; y < grayscale.height(); y++ )
+        {
+          for( size_t x = 0; x < grayscale.width(); x++ )
+          {
+            float g_x = dx_map( x, y );
+            float g_y = dy_map( x, y );
+            float magnitude = cvt::Math::sqrt( cvt::Math::sqr( g_x ) + cvt::Math::sqr( g_y ) );
+            if( magnitude == 0.0f )
+            {
+              continue;
+            }
+            if( magnitude > max_magnitude )
+            {
+              max_magnitude = magnitude;
+            }
+            // signed angle
+            float angle = cvt::Math::atan2( cvt::Math::abs( g_y ), g_x );
+            size_t k = angle / PI_9;
+            k = k % 9;
+
+            cvt::IMapScoped< float > bin_map( hog_like[ k ] );
+            for( int y1 = y - 2; y1 < y + 2; y1++ )
+            {
+              for( int x1 = x - 2; x1 < x + 2; x1++ )
+              {
+                if( y1 >= 0 && y1 < grayscale.height() && x1 >= 0 && x1 < grayscale.width() )
+                {
+                  bin_map( x1, y1 ) += magnitude;
+                }
+              }
+            }
+          }
+        }
+
+        for( size_t k = 0; k < 9; k++ )
+        {
+          cvt::IMapScoped< float > map( hog_like[ k ] );
+          for( size_t y = 0; y < i.height(); y++ )
+          {
+            for( size_t x = 0; x < i.width(); x++ )
+            {
+              map( x, y ) /= max_magnitude;
+            }
+          }
+        }
+
+        std::vector< cvt::Image > input( 16, cvt::Image( i.width(), i.height(), cvt::IFormat::GRAY_UINT8 ) );
+
+        for( size_t i = 0; i < 3; i++ )
+        {
+          v[ i ].convert( input[ i ], cvt::IFormat::GRAY_UINT8 );
+        }
+
+        dx.convert( input[ 3 ], cvt::IFormat::GRAY_UINT8 );
+        dy.convert( input[ 4 ], cvt::IFormat::GRAY_UINT8 );
+        dxx.convert( input[ 5 ], cvt::IFormat::GRAY_UINT8 );
+        dyy.convert( input[ 6 ], cvt::IFormat::GRAY_UINT8 );
+
+        for( size_t i = 0; i < hog_like.size(); i++ )
+        {
+          hog_like[ i ].convert( input[ 7 + i ], cvt::IFormat::GRAY_UINT8 );
+        }
+
+        data.push_back( DataType( input, c ) );
       }
     }
   }
 }
 
-int main( int argc, char *argv[] )
+int main(int argc, char *argv[])
 {
   std::cout << "##########     Starting     ##########" << std::endl;
 
@@ -169,7 +164,6 @@ int main( int argc, char *argv[] )
   get_data( training_data, class_labels, path_training );
   size_t num_classes = class_labels.size();
 
-  // std::cout << "Initializing context (builds lookup table)" << std::endl;
   SamplerType sampler;
   ContextType context( params, training_data, num_classes );
   std::cout << "Training" << std::endl;
@@ -177,7 +171,7 @@ int main( int argc, char *argv[] )
   ForestType forest;
   ForestTrainerType::train( forest, context, sampler, true );
 
-  // std::cout << "Classifying" << std::endl;
+  std::cout << "Classifying" << std::endl;
   get_data( testing_data, class_labels, path_testing );
   std::vector< std::vector< int > > confusion_matrix;
   for( size_t i = 0; i < num_classes; i++ )
@@ -248,6 +242,5 @@ int main( int argc, char *argv[] )
 
   std::cout << "##########     Finished     ##########" << std::endl;
 
-  
   return 0;
 }

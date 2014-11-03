@@ -1,11 +1,12 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(CVT_RDF CXX C)
 
-find_package(CVT_DEBUG REQUIRED)
+find_package(CVT_DEBUG REQUIRED )
 
 ###########
 ## Build ##
 ###########
+
 SET( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11" )
 
 ## Specify additional locations of header files
@@ -22,8 +23,8 @@ TARGET_LINK_LIBRARIES( toy_plot
   ${CVT_LIBRARIES}
 )
 
-ADD_EXECUTABLE( toy_roc
-  src/toy_roc.cpp
+ADD_EXECUTABLE( toy_stat
+  src/toy_stat.cpp
 )
 
 ADD_EXECUTABLE( image_split
@@ -36,6 +37,7 @@ TARGET_LINK_LIBRARIES( image_split
 ADD_EXECUTABLE( image_cross
   src/image_cross.cpp
 )
+
 TARGET_LINK_LIBRARIES( image_cross
   ${CVT_LIBRARIES}
 )
@@ -47,6 +49,25 @@ TARGET_LINK_LIBRARIES( hog_split
   ${CVT_LIBRARIES}
 )
 
-ADD_EXECUTABLE( el_test
-  src/el_test.cpp
+ADD_EXECUTABLE( hog_like
+  src/hog_like.cpp  
+)
+TARGET_LINK_LIBRARIES( hog_like
+  ${CVT_LIBRARIES}
+)
+
+ADD_EXECUTABLE( detection_trainer
+  src/detection/DetectionFeature.cpp
+  src/detection_trainer.cpp
+)
+TARGET_LINK_LIBRARIES( detection_trainer
+  ${CVT_LIBRARIES}
+)
+
+ADD_EXECUTABLE( detection_tester
+  src/detection/DetectionFeature.cpp
+  src/detection_tester.cpp
+)
+TARGET_LINK_LIBRARIES( detection_tester
+  ${CVT_LIBRARIES}
 )

@@ -1,11 +1,11 @@
-#ifndef FOREST_H
-#define FOREST_H
+#ifndef RDF_FOREST_H
+#define RDF_FOREST_H
 
 #include "Tree.h"
 #include "Interfaces.h"
 
-template< typename D, typename F, typename S >
-class Forest 
+template< typename I, typename S, typename T >
+class Forest : public cvt::XMLSerializable
 {
   public:
     Forest()
@@ -13,27 +13,55 @@ class Forest
 
     virtual ~Forest() {}
 
-    void add( const Tree< D, F, S >& tree )
+    void add( const Tree< I, S, T >& tree )
     {
       trees_.push_back( tree );
     }
 
-    S classify( const TrainingContextBase< D, F, S >& context, const D& point )
+    void evaluate( std::vector< const S* >& statistics, const I& input )
     {
-      S statistics = context.get_statistics();
-
-      typename std::vector< Tree< D, F, S > >::iterator it = trees_.begin(),
+      typename std::vector< Tree< I, S, T > >::iterator it = trees_.begin(),
         end = trees_.end();
       for( ; it != end; ++it )
       {
-        statistics += it->classify( point );
+        statistics.push_back( &( it->evaluate( input ) ) );
       }
+    }
 
-      return statistics;
+    void evaluate( S& s, const I& input )
+    {
+      typename std::vector< Tree< I, S, T > >::iterator it = trees_.begin(),
+        end = trees_.end();
+      for( ; it != end; ++it )
+      {
+        s += it->evaluate( input );
+      }
+    }
+
+    cvt::XMLNode* serialize() const
+    {
+      cvt::XMLElement* node = new cvt::XMLElement( "Forest" );
+
+      for( size_t i = 0; i < trees_.size(); i++ )
+      {
+        node->addChild( trees_[ i ].serialize() );
+      }
+  
+      return node;
+    }
+
+    void deserialize( cvt::XMLNode* node )
+    {
+      for( size_t i = 0; i < node->childSize(); i++ )
+      {
+        Tree< I, S, T > tree;
+        tree.deserialize( node->child( i ) );
+        trees_.push_back( tree );
+      }
     }
 
   private:
-    std::vector< Tree< D, F, S > >  trees_;
+    std::vector< Tree< I, S, T > >  trees_;
 };
 
 #endif

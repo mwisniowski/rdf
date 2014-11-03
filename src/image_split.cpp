@@ -1,9 +1,8 @@
 #include <cvt/gfx/Image.h>
 #include "cvt/io/FileSystem.h"
 
-#include "helper/gnuplot_i.hpp"
-
 #include "classification/ImageContext.h"
+#include "classification/ImageTestSampler.h"
 
 void get_data( std::vector< DataType >& data,
     std::vector< cvt::String >& class_labels, 
@@ -52,59 +51,51 @@ int main(int argc, char *argv[])
   srand( time( NULL ) );
   TrainingParameters params = {
     1, //trees
-    100,  //no_candidate_features
-    100,  //no_candidate_thresholds
-    15,   //max_decision_levels
-    3000
+    10,  //noCandidateFeatures
+    10  //maxDecisionLevels
   };
 
-  float split = 0.3;
-  if( argc > 2 ) params.no_candidate_features = atoi( argv[ 2 ] );
-  if( argc > 3 ) params.no_candate_thresholds = atoi( argv[ 3 ] );
-  if( argc > 4 ) params.max_decision_levels = atoi( argv[ 4 ] );
-  if( argc > 5 ) params.trees = atoi( argv[ 5 ] );
-  if( argc > 6 ) params.pool_size = atoi( argv[ 6 ] );
-  if( argc > 7 ) split = atof( argv[ 7 ] );
+  if( argc < 2 ) {
+    std::cerr << "Please provide a data file";
+    return 1;
+  }
 
-  std::cout << "Parameters:" << std::endl;
-  std::cout << "  features="   << params.no_candidate_features << std::endl;
-  std::cout << "  thresholds=" << params.no_candate_thresholds << std::endl;
-  std::cout << "  depth="      << params.max_decision_levels << std::endl;
-  std::cout << "  trees="      << params.trees << std::endl;
-  std::cout << "  pool_size="  << params.pool_size << std::endl;
-  std::cout << "  split="      << split << std::endl;
-  std::cout << "  path="       << argv[ 1 ] << std::endl;
+  if( argc > 2 ) params.tests = atoi( argv[ 3 ] );
+  if( argc > 3 ) params.max_depth = atoi( argv[ 4 ] );
+  if( argc > 4 ) params.trees = atoi( argv[ 5 ] );
 
-  std::vector< DataType > data;
-  cvt::String path( argv[ 1 ] );
-  // std::cout << "Loading data" << std::endl;
+  std::cout << "Parameters:"   << std::endl;
+  std::cout << "  tests="         << params.tests     << std::endl;
+  std::cout << "  max_depth="     << params.max_depth << std::endl;
+  std::cout << "  trees="         << params.trees     << std::endl;
+  std::cout << "  training_path=" << argv[ 1 ]        << std::endl;
+  std::cout << "  testing_path="  << argv[ 2 ]        << std::endl;
+
+  std::vector< DataType > training_data, testing_data;
+  cvt::String path_training( argv[ 1 ] );
+  cvt::String path_testing( argv[ 2 ] );
+  std::cout << "Loading data" << std::endl;
   std::vector< cvt::String > class_labels;
 
-  get_data( data, class_labels, path );
+  get_data( training_data, class_labels, path_training );
   size_t num_classes = class_labels.size();
-  std::random_shuffle( data.begin(), data.end() );
-
-  size_t n = data.size() * split;
-  std::vector< DataType > training_data( data.begin(), data.end() - n );
-  std::vector< DataType > testing_data( data.end() - n, data.end() );
 
   // std::cout << "Initializing context (builds lookup table)" << std::endl;
-  ImageContext context( params, training_data, num_classes );
-  // std::cout << "Training" << std::endl;
+  SamplerType sampler;
+  ContextType context( params, training_data, num_classes );
+  std::cout << "Training" << std::endl;
 
-  ClassifierType classifier;
-  TrainerType::train( classifier, context );
+  ForestType forest;
+  ForestTrainerType::train( forest, context, sampler, true );
 
-  // std::cout << "Classifying" << std::endl;
-  std::vector< std::vector< int > > confusion_matrix;
-  for( size_t i = 0; i < num_classes; i++ )
-  {
-    confusion_matrix.push_back( std::vector< int >( num_classes, 0 ) );
-  }
+  std::cout << "Classifying" << std::endl;
+  get_data( testing_data, class_labels, path_testing );
+  std::vector< std::vector< int > > confusion_matrix( num_classes, std::vector< int >( num_classes, 0 ) );
   for( size_t i = 0; i < testing_data.size(); i++ )
   {
-    const StatisticsType s = classifier.classify( context, testing_data[ i ] );
-    confusion_matrix[ s.get_mode().first ][ testing_data[ i ].output() ]++;
+    StatisticsType s = context.get_statistics();
+    forest.evaluate( s, testing_data[ i ].input() );
+    confusion_matrix[ s.predict().first ][ testing_data[ i ].output() ]++;
   }
 
   float acc = 0.0f;
@@ -112,7 +103,7 @@ int main(int argc, char *argv[])
   {
     acc += confusion_matrix[ c ][ c ];
   }
-  acc /= n;
+  acc /= testing_data.size();
 
   float numerator = 0.0f;
   float denominator_lk_gf = 0.0f;

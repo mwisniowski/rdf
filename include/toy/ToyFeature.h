@@ -3,21 +3,20 @@
 
 #include <vector>
 
-#include "ToyCommon.h"
+#include "toy/ToyCommon.h"
 
 template< size_t d >
-class ToyFeature: public FeatureBase< DataType >
+class ToyFeature: public FeatureBase< InputType >
 {
-  private:
-    typedef FeatureBase< DataType > super;
-
   public:
+    ToyFeature()
+    {}
+
     ToyFeature( const std::vector< float >& vec ) :
       v_( vec )
     {}
 
     ToyFeature( const ToyFeature& other ) :
-      super( other ),
       v_( other.v_ )
     {}
 
@@ -40,54 +39,67 @@ class ToyFeature: public FeatureBase< DataType >
      *
      * @return 
      */
-    float operator()( const DataType& point ) const
+    float operator()( const InputType& input ) const
     {
       float sum = 0;
       for( size_t i = 0; i < d; i++ )
       {
-        sum += v_[ i ] * point.input( i );
+        sum += v_[ i ] * input[ i ];
       }
       return sum;
     }
 
-    static ToyFeature get_random_feature()
+    friend std::ostream& operator<<( std::ostream& os, const ToyFeature& feature )
     {
-      std::vector< float > v;
-      gaussian_vector( v, d );
-      return ToyFeature( v );
+      int last = feature.v_.size() - 1;
+      os << "[";
+      for(int i = 0; i < last; i++)
+        os << feature.v_[ i ] << ", ";
+      os << feature.v_[ last ] << "]";
+      return os;
+    }
+
+    cvt::XMLNode* serialize() const
+    {
+      cvt::XMLElement* node = new cvt::XMLElement( "ToyFeature ");
+
+      cvt::XMLElement* v = new cvt::XMLElement( "v" );
+      cvt::String s; 
+      s.sprintf( "%d", v_.size() );
+      cvt::XMLAttribute* attr = new cvt::XMLAttribute( "size", s );
+      for( size_t i = 0; i < v_.size(); i++ )
+      {
+        cvt::XMLElement* elem = new cvt::XMLElement( "elem" );
+        s.sprintf( "%d", i );
+        attr = new cvt::XMLAttribute( "idx", s );
+        elem->addChild( attr );
+        s.sprintf( "%f", v_[ i ] );
+        attr = new cvt::XMLAttribute( "value", s );
+        elem->addChild( attr );
+      }
+
+      return node;
+    }
+
+    void deserialize( cvt::XMLNode* node )
+    {
+      cvt::XMLNode* v = node->childByName( "v" );
+      size_t size = v->childByName( "size" )->value().toInteger();
+      v_.resize( size, 0.0f );
+      for( size_t i = 0; i < size; i++ )
+      {
+        cvt::XMLNode* elem = v->child( i );
+        if( elem->name() != "elem" )
+        {
+          continue;
+        }
+        size_t idx = elem->childByName( "idx" )->value().toInteger();
+        v_[ idx ] = elem->childByName( "value" )->value().toFloat();
+      }
     }
 
   private:
     std::vector< float > v_;
-
-    static void gaussian_vector( std::vector< float >& gv, size_t dimensions )
-    {
-      gv.clear();
-      for( size_t i = 0; i < dimensions; i+=2 )
-      {
-        float u, v, s;
-        do {
-          u = cvt::Math::rand( -1.0f, 1.0f );
-          v = cvt::Math::rand( -1.0f, 1.0f );
-          s = u * u + v * v;
-        } while ( s >= 1 );
-
-        gv.push_back( u * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
-        gv.push_back( v * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
-      }
-
-      if( dimensions % 2 == 1 )
-      {
-        float u, v, s;
-        do {
-          u = cvt::Math::rand( -1.0f, 1.0f );
-          v = cvt::Math::rand( -1.0f, 1.0f );
-          s = u * u + v * v;
-        } while ( s >= 1 );
-
-        gv.push_back( u * sqrtf( -2 * cvt::Math::log2( s ) / s ) );
-      }
-    }
 };
 
 #endif

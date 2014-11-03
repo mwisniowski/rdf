@@ -3,24 +3,24 @@
 
 #include <cvt/gfx/Image.h>
 
-#include "classification/HogCommon.h"
-#include "classification/HogFeature.h"
+#include "classification/HlfCommon.h"
+#include "ImageFeature.h"
 
-class HogContext : public TrainingContextBase< InputType, StatisticsType, TestType, TreeType >
+class ImageContext : public TrainingContextBase< InputType, StatisticsType, TestType, TreeType >
 {
   private:
     typedef TrainingContextBase< InputType, StatisticsType, TestType, TreeType > super;
 
   public:
-    HogContext( const TrainingParameters& params, 
-        std::vector< DataType >& data,
+    ImageContext( const TrainingParameters& params, 
+        const std::vector< DataType >& data,
         size_t num_classes ) :
       super( params ),
       data_( data ),
       num_classes_( num_classes )
     {}
 
-    virtual ~HogContext() 
+    virtual ~ImageContext() 
     {}
 
     StatisticsType get_statistics() const
@@ -122,8 +122,8 @@ class HogContext : public TrainingContextBase< InputType, StatisticsType, TestTy
     }
 
   private:
-    size_t                                              num_classes_;
-    std::vector< DataPoint< InputType, OutputType > >   data_;
+    std::vector< DataType > data_;
+    size_t num_classes_;
 };
 
 #endif
