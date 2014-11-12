@@ -6,7 +6,8 @@
 
 void get_data( std::vector< DataType >& data,
     std::vector< cvt::String >& class_labels, 
-    cvt::String& path )
+    cvt::String& path,
+    std::vector< cvt::String >& filenames )
 {
   if( !path.hasSuffix( "/" ) )
   {
@@ -39,6 +40,7 @@ void get_data( std::vector< DataType >& data,
         std::vector< cvt::Image > v( 3 );
         i.decompose( v[ 0 ], v[ 1 ], v[ 2 ] );
         data.push_back( DataType( v, c ) );
+        filenames.push_back( class_data[ j ] );
       }
     }
   }
@@ -76,8 +78,9 @@ int main(int argc, char *argv[])
   cvt::String path_testing( argv[ 2 ] );
   std::cout << "Loading data" << std::endl;
   std::vector< cvt::String > class_labels;
+  std::vector< cvt::String > filenames;
 
-  get_data( training_data, class_labels, path_training );
+  get_data( training_data, class_labels, path_training, filenames );
   size_t num_classes = class_labels.size();
 
   // std::cout << "Initializing context (builds lookup table)" << std::endl;
@@ -89,13 +92,15 @@ int main(int argc, char *argv[])
   ForestTrainerType::train( forest, context, sampler, true );
 
   std::cout << "Classifying" << std::endl;
-  get_data( testing_data, class_labels, path_testing );
+  filenames.clear();
+  get_data( testing_data, class_labels, path_testing, filenames );
   std::vector< std::vector< int > > confusion_matrix( num_classes, std::vector< int >( num_classes, 0 ) );
   for( size_t i = 0; i < testing_data.size(); i++ )
   {
     StatisticsType s = context.get_statistics();
     forest.evaluate( s, testing_data[ i ].input() );
     confusion_matrix[ s.predict().first ][ testing_data[ i ].output() ]++;
+    std::cout << filenames[ i ] << ": " << s.predict().first << " - " << testing_data[ i ].output() << ", " << s.predict().second << std::endl;
   }
 
   float acc = 0.0f;

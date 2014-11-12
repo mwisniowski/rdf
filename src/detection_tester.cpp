@@ -2,6 +2,7 @@
 #include <cvt/gfx/IExpr.h>
 #include <cvt/gfx/GFXEngineImage.h>
 #include <cvt/vision/features/FeatureSet.h>
+#include <regex>
 
 #include "detection/DetectionCommon.h"
 #include "detection/DetectionStatistics.h"
@@ -157,6 +158,74 @@ void get_patch( std::vector< cvt::Image >& patch, size_t x, size_t y, const std:
 //   }
 // }
 
+OutputType get_output( const std::vector< cvt::Recti >& rois, size_t x, size_t y )
+{
+  for( size_t r = 0; r < rois.size(); r++ )
+  {
+    const cvt::Recti& rect = rois[ r ];
+    if( rect.contains( x, y ) )
+    {
+      cvt::Vector2i center( rect.x + ( rect.width / 2 ), rect.y + ( rect.height / 2 ) );
+      return OutputType( 1, center - cvt::Vector2i( x, y ) );
+    }
+  }
+  return OutputType( 0, cvt::Vector2i( 0, 0 ) );
+}
+
+void get_images( std::vector< cvt::Image >& images,
+    std::vector< std::vector< cvt::Recti > >& rois,
+    std::vector< cvt::String >& filenames,
+    cvt::String& idl_path )
+{
+  const std::regex filename_rgx( "\"([^\"]+)\": " );
+  const std::regex rect_rgx( "\\((-?\\d+), (-?\\d+), (-?\\d+), (-?\\d+)\\)" );
+  const std::regex coord_rgx( "-?\\d+" );
+  std::vector< int > rgx_token_vector; 
+  rgx_token_vector.push_back( 1 );
+  rgx_token_vector.push_back( 2 );
+  rgx_token_vector.push_back( 3 );
+  rgx_token_vector.push_back( 4 );
+
+  if( !idl_path.hasSuffix( "idl" ) )
+  {
+    std::cerr << "Please provide an IDL file" << std::endl;
+    return;
+  }
+  cvt::String folder_path = idl_path.substring( 0, idl_path.rfind( '/' ) + 1 );
+
+  std::string line;
+  std::ifstream file( ( idl_path  ).c_str() );
+  while( std::getline( file, line ) )
+  {
+    std::smatch filename_match;
+    std::regex_search( line, filename_match, filename_rgx );
+    std::string data_filename( filename_match[ 1 ] );
+
+    std::vector< cvt::Recti > rects;
+    const std::sregex_token_iterator end;
+    std::sregex_token_iterator ri( line.begin(), line.end(), rect_rgx, rgx_token_vector );
+    while( ri != end )
+    {
+      int x1 = atoi( ri->str().c_str() ); ++ri;
+      int y1 = atoi( ri->str().c_str() ); ++ri;
+      int x2 = atoi( ri->str().c_str() ); ++ri;
+      int y2 = atoi( ri->str().c_str() ); ++ri;
+      if( x2 < x1 ) std::swap( x1, x2 );
+      if( y2 < y1 ) std::swap( y1, y2 );
+      int width = x2 - x1;
+      int height = y2 - y1;
+      rects.push_back( cvt::Recti( x1, y1, width, height ) );
+    }
+    rois.push_back( rects );
+
+    cvt::String filename( data_filename.c_str() );
+    filenames.push_back( filename );
+    cvt::Image i;
+    i.load( folder_path + filename );
+    images.push_back( i );
+  }
+  file.close();
+}
 void mark( cvt::Image& image, const cvt::Vector2f& point, size_t size )
 {
   cvt::GFXEngineImage gi( image );
@@ -180,10 +249,18 @@ int main(int argc, char *argv[])
 
   std::cout << "Parameters:"   << std::endl;
   std::cout << "  forest_xml="   << argv[ 1 ] << std::endl;
-  std::cout << "  testing_image=" << argv[ 2 ] << std::endl;
+  std::cout << "  testing_data=" << argv[ 2 ] << std::endl;
 
   cvt::String forest_path( argv[ 1 ] );
-  cvt::String image_path( argv[ 2 ] );
+  // cvt::String image_path( argv[ 2 ] );
+  cvt::String testing_data_path( argv[ 2 ] );
+
+  std::cout << "Loading data" << std::endl;
+
+  std::vector< cvt::Image > images;
+  std::vector< std::vector< cvt::Recti > > rois;
+  std::vector< cvt::String > filenames;
+  get_images( images, rois, filenames, testing_data_path );
 
   ForestType forest;
   cvt::XMLDocument d;
@@ -192,85 +269,162 @@ int main(int argc, char *argv[])
 
   std::cout << "Testing" << std::endl;
 
-  cvt::Image input;
-  input.load( image_path );
-  input.convert( input, cvt::IFormat::RGBA_UINT8 );
-  std::vector< cvt::Image > channels;
-  extract_channels( channels, input );
+  cvt::String dirname( forest_path );
+  dirname = dirname.substring( dirname.rfind( '/' ) + 1, dirname.length() );
+  dirname = dirname.substring( 0, dirname.rfind( '.' ) );
 
-  cvt::Image output( input.width(), input.height(), cvt::IFormat::GRAY_FLOAT );
-  cvt::IMapScoped< float > output_map( output );
-
-  const size_t border = PATCH_SIZE / 2;
-  size_t counter = 0;
-  size_t total = ( input.height() - PATCH_SIZE ) * ( input.width() - PATCH_SIZE );
-  for( size_t y = border; y < input.height() - border; y++ )
+  cvt::String root_dir( "detection_results" );
+  if( !cvt::FileSystem::exists( root_dir ) )
   {
-    for( size_t x = border; x < input.width() - border; x++ )
-    {
-      loadbar( counter++, total );
-      InputType in;
-      get_patch( in, x, y, channels );
-      std::vector< const StatisticsType* > statistics;
-      forest.evaluate( statistics, in );
+    cvt::FileSystem::mkdir( root_dir );
+  }
+  if( !cvt::FileSystem::exists( root_dir + "/" + dirname ) )
+  {
+    cvt::FileSystem::mkdir( root_dir + "/" + dirname );
+  }
+  if( !cvt::FileSystem::exists( root_dir + "/" + dirname + "/marked" ) )
+  {
+    cvt::FileSystem::mkdir( root_dir + "/" + dirname + "/marked" );
+  }
+  if( !cvt::FileSystem::exists( root_dir + "/" + dirname + "/hough" ) )
+  {
+    cvt::FileSystem::mkdir( root_dir + "/" + dirname + "/hough" );
+  }
 
-      for( size_t i = 0; i < statistics.size(); i++ )
+  for( size_t j = 0; j < images.size(); j++ )
+  {
+    std::cout << "Testing image " << j+1 << "/" << images.size() << std::endl;
+
+    cvt::Image input;
+    images[ j ].convert( input, cvt::IFormat::RGBA_UINT8 );
+    std::vector< cvt::Image > channels;
+    extract_channels( channels, input );
+
+    cvt::Image output( input.width(), input.height(), cvt::IFormat::GRAY_FLOAT );
+    output.fill( cvt::Color::BLACK );
+    cvt::IMapScoped< float > output_map( output );
+
+    const size_t border = PATCH_SIZE / 2;
+    size_t counter = 0;
+    size_t total = ( input.height() - PATCH_SIZE ) * ( input.width() - PATCH_SIZE );
+    for( size_t y = border; y < input.height() - border; y++ )
+    {
+      for( size_t x = border; x < input.width() - border; x++ )
       {
-        const StatisticsType& s = *statistics[ i ];
-        if( s.probability( 1 ) < 0.5f )
+        loadbar( counter++, total );
+        InputType in;
+        get_patch( in, x, y, channels );
+        std::vector< const StatisticsType* > statistics;
+        forest.evaluate( statistics, in );
+
+        for( size_t i = 0; i < statistics.size(); i++ )
         {
-          continue;
-        }
-        const StatisticsType::VectorSetType& offsets = s.offsets();
-        StatisticsType::VectorSetType::const_iterator it = offsets.begin(),
-          end = offsets.end();
-        float weight = s.probability( 1 ) / ( offsets.size() );
-        for( ; it != end; ++it )
-        {
-          cvt::Vector2i center( x + it->x, y + it->y );
-          if( center.x < output.width() && center.x >= 0 && center.y < output.height() && center.y >= 0 )
+          const StatisticsType& s = *statistics[ i ];
+          // if( s.probability( 1 ) < 0.5f )
+          // {
+          //   continue;
+          // }
+          const StatisticsType::VectorSetType& offsets = s.offsets();
+          StatisticsType::VectorSetType::const_iterator it = offsets.begin(),
+            end = offsets.end();
+          float weight = s.probability( 1 ) / ( offsets.size() );
+          for( ; it != end; ++it )
           {
-            float& p_value = output_map( center.x, center.y );
-            p_value += weight;
+            cvt::Vector2i center( x + it->x, y + it->y );
+            if( center.x < output.width() && center.x >= 0 && center.y < output.height() && center.y >= 0 )
+            {
+              float& p_value = output_map( center.x, center.y );
+              p_value += weight;
+            }
           }
         }
       }
     }
-  }
-  loadbar( 1, 1 );
-  std::cout << std::endl;
-  // std::cout << "Max peak: " << max_peak << std::endl;
+    loadbar( 1, 1 );
+    std::cout << std::endl;
+    // std::cout << "Max peak: " << max_peak << std::endl;
 
-  output.convolve( output, cvt::IKernel::GAUSS_VERTICAL_7, cvt::IKernel::GAUSS_HORIZONTAL_7 );
-  // output.boxfilter( output, 9, 9 );
+    output.convolve( output, cvt::IKernel::GAUSS_VERTICAL_7, cvt::IKernel::GAUSS_HORIZONTAL_7 );
+    output.convolve( output, cvt::IKernel::GAUSS_VERTICAL_7, cvt::IKernel::GAUSS_HORIZONTAL_7 );
+    // output.boxfilter( output, 9, 9 );
 
-  float max_peak = 0.0f;
-  for( size_t y = 0; y < input.height(); y++ )
-  {
-    for( size_t x = 0; x < input.width(); x++ )
+    float max_peak = 0.0f;
+    cvt::FeatureSet fs;
+    for( size_t y = 0; y < input.height(); y++ )
     {
-      if( output_map( x, y ) > max_peak )
+      for( size_t x = 0; x < input.width(); x++ )
       {
-        max_peak = output_map( x, y );
+        if( output_map( x, y ) > max_peak )
+        {
+          max_peak = output_map( x, y );
+        }
+        cvt::Feature f;
+        f.pt = cvt::Vector2f( x, y );
+        f.score = output_map( x, y );
+        fs.add( f );
       }
     }
-  }
 
-  for( size_t y = 0; y < input.height(); y++ )
-  {
-    for( size_t x = 0; x < input.width(); x++ )
+    for( size_t y = 0; y < input.height(); y++ )
     {
-      output_map( x, y ) /= max_peak;
-      // output_map( x, y ) = 1.0f - output_map( x, y );
+      for( size_t x = 0; x < input.width(); x++ )
+      {
+        output_map( x, y ) /= max_peak;
+        output_map( x, y ) = 1.0f - output_map( x, y );
+      }
     }
+
+    cvt::Image marked( output.width(), output.height(), cvt::IFormat::RGBA_FLOAT );
+    output.convert( marked, cvt::IFormat::RGBA_FLOAT );
+
+    cvt::GFXEngineImage gi( marked );
+    cvt::GFX gfx( &gi );
+    gfx.setColor( cvt::Color::RED );
+
+    for( size_t k = 0; k < rois[ j ].size(); k++ )
+    {
+      const cvt::Recti& r = rois[ j ][ k ];
+      gfx.drawRect( r );
+      // gfx.drawLine( r.x, r.y, r.x + r.width, r.y + r.height );
+      // gfx.drawLine( r.x + r.width, r.y, r.x, r.y + r.height );
+    }
+
+    fs.filterNMS( 30, true );
+    float avg = 0.0f;
+    for( size_t k = 0; k < fs.size(); k++ )
+    {
+      avg += fs[ k ].score;
+    }
+    avg /= fs.size();
+    // std::cout << "Avg: " << avg << std::endl;
+
+    float std_dev = 0.0f;
+    for( size_t k = 0; k < fs.size(); k++ )
+    {
+      std_dev += ( fs[ k ].score - avg ) * ( fs[ k ].score - avg );
+    }
+    std_dev /= fs.size() - 1;
+    // std::cout << "Sigma: " << std_dev << std::endl;
+
+    for( size_t k = 0; k < fs.size(); k++ )
+    {
+      if( fs[ k ].score < avg + 5 * std_dev )
+      {
+        continue;
+      }
+      cvt::Vector2f v = fs[ k ].pt;
+      gfx.drawLine( v.x - 4, v.y - 4, v.x + 4, v.y + 4 );
+      gfx.drawLine( v.x + 4, v.y - 4, v.x - 4, v.y + 4 );
+      // std::cout << "(" << v.x << ", " << v.y << "): " << fs[ k ].score << std::endl;
+    }
+
+    cvt::String filename = filenames[ j ];
+    filename = filename.substring( filename.rfind( '/' ) + 1, filename.length() );
+    cvt::String result_path = root_dir + "/" + dirname + "/" + filename;
+
+    marked.save( root_dir + "/" + dirname + "/marked/" + filename );
+    output.save( root_dir + "/" + dirname + "/hough/" + filename );
   }
-
-  // cvt::Image marked( output.width(), output.height(), cvt::IFormat::GRAY_FLOAT );
-  // marked.save( "marked.png" );
-
-  output.save( "detection.png" );
-
-  system( "open detection.png" );
 
   std::cout << "##########     Finished     ##########" << std::endl;
 
